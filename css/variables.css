@@ -1,0 +1,15 @@
+:root {
+  --cor-fundo:          #0d0d0d;
+  --cor-superficie:     #1a1a1a;
+  --cor-borda:          #2a2a2a;
+  --cor-primaria:       #8B0000;
+  --cor-primaria-hover: #a50000;
+  --cor-destaque:       #c0392b;
+  --cor-dourado:        #c9a84c;
+  --cor-dourado-hover:  #e0be6a;
+  --cor-texto:          #e8e8e8;
+  --cor-texto-suave:    #a0a0a0;
+  --fonte-corpo:        'Crimson Text', serif;
+  --raio:               6px;
+  --raio-grande:        12px;
+}

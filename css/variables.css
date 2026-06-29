@@ -1,15 +1,43 @@
 :root {
-  --cor-fundo:          #0d0d0d;
-  --cor-superficie:     #1a1a1a;
-  --cor-borda:          #2a2a2a;
-  --cor-primaria:       #8B0000;
-  --cor-primaria-hover: #a50000;
-  --cor-destaque:       #c0392b;
-  --cor-dourado:        #c9a84c;
-  --cor-dourado-hover:  #e0be6a;
-  --cor-texto:          #e8e8e8;
-  --cor-texto-suave:    #a0a0a0;
-  --fonte-corpo:        'Crimson Text', serif;
-  --raio:               6px;
-  --raio-grande:        12px;
+  /* === CORES === */
+  --cor-fundo:           #0a0a0a;
+  --cor-fundo-alt:       #080808;
+  --cor-superficie:      #111111;
+  --cor-superficie-2:    #161616;
+  --cor-borda:           #1e1e1e;
+  --cor-borda-forte:     #2a2a2a;
+
+  /* Carmesim — alma do Tormenta */
+  --cor-primaria:        #8B0000;
+  --cor-primaria-hover:  #a50000;
+  --cor-primaria-suave:  rgba(139, 0, 0, 0.15);
+  --cor-primaria-trace:  rgba(139, 0, 0, 0.06);
+
+  /* Dourado — detalhes medievais */
+  --cor-dourado:         #c9a84c;
+  --cor-dourado-hover:   #e0be6a;
+  --cor-dourado-suave:   rgba(201, 168, 76, 0.15);
+
+  /* Texto */
+  --cor-texto:           #e8e8e8;
+  --cor-texto-suave:     #888888;
+  --cor-texto-mudo:      #555555;
+  --cor-texto-escuro:    #333333;
+
+  /* === TIPOGRAFIA === */
+  --fonte-titulo:        'Cinzel', serif;
+  --fonte-corpo:         'Crimson Text', serif;
+
+  /* === ESPAÇAMENTO === */
+  --raio:                3px;
+  --raio-medio:          6px;
+  --raio-grande:         12px;
+
+  /* === TRANSIÇÕES === */
+  --transicao:           0.2s ease;
+  --transicao-lenta:     0.4s ease;
+
+  /* === SOMBRAS === */
+  --sombra-carmesim:     0 0 20px rgba(139, 0, 0, 0.2);
+  --sombra-suave:        0 4px 24px rgba(0, 0, 0, 0.4);
 }

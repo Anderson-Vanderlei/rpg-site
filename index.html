@@ -1,14 +1,368 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Tormenta 20</title>
-    <link rel="stylesheet" href="css/variables.css" />
-    <link rel="stylesheet" href="css/style.css" />
-  </head>
-  <body>
-    <h1>Bem vindo ao Tormenta 20</h1>
-    <script src="js/main.js"></script>
-  </body>
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <!-- SEO e Meta Tags -->
+  <title>Tormenta 20 — Central de Mestres e Jogadores</title>
+  <meta name="description" content="Seu compêndio digital completo para o sistema Tormenta 20. Fichas, regras, bestiário e gerenciamento de sessão em um só lugar." />
+  <meta name="theme-color" content="#8B0000" />
+
+  <!-- Open Graph (redes sociais) -->
+  <meta property="og:title" content="Tormenta 20 — Central de Mestres e Jogadores" />
+  <meta property="og:description" content="Fichas, regras, bestiário e sessão em um só lugar." />
+  <meta property="og:type" content="website" />
+
+  <!-- Favicon -->
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><circle cx='16' cy='16' r='14' fill='none' stroke='%238B0000' stroke-width='2'/><circle cx='16' cy='16' r='5' fill='%238B0000'/></svg>" />
+
+  <!-- Fontes -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;600&family=Crimson+Text:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet" />
+
+  <!-- Ícones Tabler -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/dist/tabler-icons.min.css" />
+
+  <!-- CSS -->
+  <link rel="stylesheet" href="css/variables.css" />
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+
+  <!-- ============================================================
+       CURSOR PERSONALIZADO
+  ============================================================ -->
+  <div class="cursor-dot"></div>
+  <div class="cursor-ring"></div>
+
+  <!-- ============================================================
+       NAVBAR
+  ============================================================ -->
+  <nav class="navbar transparente" id="navbar">
+    <a class="nav-logo" href="index.html">
+      <div class="nav-emblem"></div>
+      <div>
+        <span class="nav-logo-text" id="system-name">Tormenta 20</span>
+        <span class="nav-logo-sub">Sistema</span>
+      </div>
+    </a>
+
+    <div class="nav-divider"></div>
+
+    <div class="nav-links">
+      <a class="nav-link ativo" href="#">Fichas</a>
+      <a class="nav-link" href="#">Wiki</a>
+      <a class="nav-link" href="#">Atlas</a>
+      <a class="nav-link" href="#">Compêndio</a>
+      <a class="nav-link" href="#">Livros</a>
+
+      <div class="nav-search">
+        <i class="ti ti-search" aria-hidden="true"></i>
+        <input type="text" placeholder="Buscar em Arton… (Ctrl+K)" aria-label="Buscar" />
+      </div>
+    </div>
+
+    <div class="nav-right">
+      <button class="btn-sessao">
+        <i class="ti ti-sword" aria-hidden="true"></i>
+        Sessão
+      </button>
+    </div>
+  </nav>
+
+  <!-- ============================================================
+       HERO
+  ============================================================ -->
+  <section class="hero">
+    <div class="hero-bg"></div>
+    <div class="hero-fade-top"></div>
+    <div class="hero-fade-bottom"></div>
+    <div class="hero-fade-sides"></div>
+
+    <div class="hero-content">
+      <p class="hero-eyebrow reveal">Central de Mestres e Jogadores</p>
+      <p class="hero-ornamento reveal reveal-delay-1">— ✦ —</p>
+      <h1 class="hero-titulo reveal reveal-delay-2">
+        O mundo de<br>
+        <span class="hero-titulo-acento">Arton</span> te aguarda
+      </h1>
+      <div class="hero-linha reveal reveal-delay-3"></div>
+      <p class="hero-sub reveal reveal-delay-3">
+        Seu compêndio digital para o sistema Tormenta 20.<br>
+        Fichas, regras, bestiário e sessão em um só lugar.
+      </p>
+      <div class="hero-botoes reveal reveal-delay-4">
+        <button class="btn-primario">
+          <i class="ti ti-user-plus" aria-hidden="true"></i>
+          Criar Personagem
+        </button>
+        <button class="btn-contorno">
+          <i class="ti ti-map" aria-hidden="true"></i>
+          Criar Campanha
+        </button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================
+       SEÇÃO — EM DESTAQUE
+  ============================================================ -->
+  <section class="secao">
+    <div class="secao-cabecalho reveal">
+      <span class="secao-tag">Wiki de Arton</span>
+      <h2 class="secao-titulo">Em Destaque</h2>
+    </div>
+
+    <!-- Abas -->
+    <div class="abas reveal reveal-delay-1">
+      <button class="aba ativa" data-tipo="personagem" onclick="definirAba(this)">
+        <i class="ti ti-user" aria-hidden="true"></i> Personagens
+      </button>
+      <button class="aba" data-tipo="local" onclick="definirAba(this)">
+        <i class="ti ti-map-pin" aria-hidden="true"></i> Locais
+      </button>
+      <button class="aba" data-tipo="org" onclick="definirAba(this)">
+        <i class="ti ti-shield" aria-hidden="true"></i> Organizações
+      </button>
+      <button class="aba" data-tipo="evento" onclick="definirAba(this)">
+        <i class="ti ti-calendar-event" aria-hidden="true"></i> Eventos
+      </button>
+      <button class="aba" data-tipo="item" onclick="definirAba(this)">
+        <i class="ti ti-diamond" aria-hidden="true"></i> Itens
+      </button>
+      <button class="aba" data-tipo="criatura" onclick="definirAba(this)">
+        <i class="ti ti-paw" aria-hidden="true"></i> Criaturas
+      </button>
+      <button class="aba" data-tipo="divindade" onclick="definirAba(this)">
+        <i class="ti ti-sparkles" aria-hidden="true"></i> Divindades
+      </button>
+      <button class="aba" data-tipo="raca" onclick="definirAba(this)">
+        <i class="ti ti-users" aria-hidden="true"></i> Raças
+      </button>
+    </div>
+
+    <!-- Grid de cards -->
+    <div class="grid-destaque reveal reveal-delay-2">
+
+      <div class="card-item">
+        <div class="card-placeholder">
+          <i class="ti ti-user" aria-hidden="true"></i>
+        </div>
+        <div class="card-overlay"></div>
+        <div class="card-tooltip" id="d1">Guerreiro errante do norte</div>
+        <div class="card-info">
+          <div class="card-tipo">
+            <div class="card-emblema"><i class="ti ti-user" aria-hidden="true"></i></div>
+            Personagem
+          </div>
+          <div class="card-nome" id="c1">Ivor, o Caçador</div>
+        </div>
+      </div>
+
+      <div class="card-item">
+        <div class="card-placeholder">
+          <i class="ti ti-user" aria-hidden="true"></i>
+        </div>
+        <div class="card-overlay"></div>
+        <div class="card-tooltip" id="d2">Maga do Círculo Arcano</div>
+        <div class="card-info">
+          <div class="card-tipo">
+            <div class="card-emblema"><i class="ti ti-user" aria-hidden="true"></i></div>
+            Personagem
+          </div>
+          <div class="card-nome" id="c2">Lena, a Sábia</div>
+        </div>
+      </div>
+
+      <!-- Card Destaque (grande) -->
+      <div class="card-item destaque">
+        <div class="card-placeholder">
+          <i class="ti ti-user" aria-hidden="true"></i>
+        </div>
+        <div class="card-overlay"></div>
+        <div class="card-tooltip" id="df">O Deus da Justiça e protetor dos fracos de Arton.</div>
+        <div class="card-info">
+          <div class="card-tipo">
+            <div class="card-emblema"><i class="ti ti-user" aria-hidden="true"></i></div>
+            Destaque
+          </div>
+          <div class="card-nome" id="cf">Khalmyr, o Justo</div>
+        </div>
+      </div>
+
+      <div class="card-item">
+        <div class="card-placeholder">
+          <i class="ti ti-user" aria-hidden="true"></i>
+        </div>
+        <div class="card-overlay"></div>
+        <div class="card-tooltip" id="d3">Bárbaro das Estepes</div>
+        <div class="card-info">
+          <div class="card-tipo">
+            <div class="card-emblema"><i class="ti ti-user" aria-hidden="true"></i></div>
+            Personagem
+          </div>
+          <div class="card-nome" id="c3">Tork, o Bárbaro</div>
+        </div>
+      </div>
+
+      <div class="card-item">
+        <div class="card-placeholder">
+          <i class="ti ti-user" aria-hidden="true"></i>
+        </div>
+        <div class="card-overlay"></div>
+        <div class="card-tooltip" id="d4">Druida da Floresta Negra</div>
+        <div class="card-info">
+          <div class="card-tipo">
+            <div class="card-emblema"><i class="ti ti-user" aria-hidden="true"></i></div>
+            Personagem
+          </div>
+          <div class="card-nome" id="c4">Syra, a Druida</div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ============================================================
+       SEÇÃO — ATIVIDADE RECENTE
+  ============================================================ -->
+  <section class="secao-recente">
+    <div class="recente-cabecalho reveal">
+      <span class="recente-titulo">
+        <i class="ti ti-clock" aria-hidden="true"></i>
+        Atividade Recente
+      </span>
+      <button class="btn-ver-tudo">Ver Tudo</button>
+    </div>
+
+    <div class="recente-grid">
+      <div class="recente-card reveal reveal-delay-1">
+        <div class="recente-avatar"><i class="ti ti-user" aria-hidden="true"></i></div>
+        <div class="recente-info">
+          <div class="recente-nome">Aldric Stonehammer</div>
+          <div class="recente-meta">há 12 min</div>
+          <span class="badge badge-personagem">Personagem</span>
+        </div>
+      </div>
+      <div class="recente-card reveal reveal-delay-2">
+        <div class="recente-avatar"><i class="ti ti-map" aria-hidden="true"></i></div>
+        <div class="recente-info">
+          <div class="recente-nome">A Maldição de Volk</div>
+          <div class="recente-meta">há 34 min</div>
+          <span class="badge badge-campanha">Campanha</span>
+        </div>
+      </div>
+      <div class="recente-card reveal reveal-delay-3">
+        <div class="recente-avatar"><i class="ti ti-user" aria-hidden="true"></i></div>
+        <div class="recente-info">
+          <div class="recente-nome">Seraphina Luz</div>
+          <div class="recente-meta">há 1 hora</div>
+          <span class="badge badge-personagem">Personagem</span>
+        </div>
+      </div>
+      <div class="recente-card reveal reveal-delay-4">
+        <div class="recente-avatar"><i class="ti ti-map" aria-hidden="true"></i></div>
+        <div class="recente-info">
+          <div class="recente-nome">Sombras de Vectora</div>
+          <div class="recente-meta">há 2 horas</div>
+          <span class="badge badge-campanha">Campanha</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================
+       RODAPÉ
+  ============================================================ -->
+  <footer>
+    <div class="footer-top reveal">
+      <div class="footer-col">
+        <p class="footer-col-titulo">
+          <i class="ti ti-tool" aria-hidden="true"></i>
+          Ferramentas
+        </p>
+        <ul class="footer-links">
+          <li><a href="#">Calculadora de Atributos</a></li>
+          <li><a href="#">Gerar Ameaças</a></li>
+          <li><a href="#">Gerar Item</a></li>
+          <li><a href="#">Gerar Recompensa</a></li>
+          <li><a href="#">Quadro de Missões</a></li>
+        </ul>
+      </div>
+
+      <div class="footer-col">
+        <p class="footer-col-titulo">
+          <i class="ti ti-book" aria-hidden="true"></i>
+          Construção
+        </p>
+        <ul class="footer-links">
+          <li><a href="#">Raça</a></li>
+          <li><a href="#">Classes</a></li>
+          <li><a href="#">Origens</a></li>
+          <li><a href="#">Deuses</a></li>
+          <li><a href="#">Distinções</a></li>
+          <li><a href="#">Poderes</a></li>
+          <li><a href="#">Magias</a></li>
+        </ul>
+      </div>
+
+      <div class="footer-col">
+        <p class="footer-col-titulo">
+          <i class="ti ti-users" aria-hidden="true"></i>
+          Comunidade
+        </p>
+        <ul class="footer-links">
+          <li><a href="#">Campanhas</a></li>
+          <li><a href="#">Personagens</a></li>
+          <li><a href="#">Calendário</a></li>
+          <li><a href="#">Bestiário</a></li>
+          <li><a href="#">Cronologia</a></li>
+          <li><a href="#">Cartografia</a></li>
+        </ul>
+      </div>
+
+      <div class="footer-col">
+        <p class="footer-col-titulo">
+          <i class="ti ti-user-circle" aria-hidden="true"></i>
+          Perfil
+        </p>
+        <ul class="footer-links">
+          <li><a href="#">Criar Ficha</a></li>
+          <li><a href="#">Criar Ameaça</a></li>
+          <li><a href="#">Criar Campanha</a></li>
+          <li><a href="#">Minha Conta</a></li>
+          <li><a href="#">Sugestões</a></li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="footer-divisor"></div>
+
+    <div class="footer-bottom">
+      <div class="footer-logo">
+        <div class="footer-emblema"></div>
+        <span class="footer-logo-texto">Tormenta 20</span>
+      </div>
+
+      <p class="footer-copy">
+        Site não oficial, criado por fãs para fãs. <span>·</span><br>
+        Tormenta 20 é propriedade de Jambô Editora.
+      </p>
+
+      <div class="footer-links-bottom">
+        <a href="#">Privacidade</a>
+        <a href="#">Termos</a>
+        <a href="#">Contato</a>
+      </div>
+    </div>
+
+    <div class="footer-ornamento">— ✦ —</div>
+  </footer>
+
+  <!-- JavaScript -->
+  <script src="js/main.js"></script>
+
+</body>
 </html>

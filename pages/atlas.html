@@ -4,398 +4,401 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Atlas de Arton — Tormenta 20</title>
-  <meta name="description" content="Mapa interativo do mundo de Arton. Explore regiões, cidades, masmorras e pontos de interesse do sistema Tormenta 20." />
+  <meta name="description" content="Mapa interativo do mundo de Arton. Explore regiões, cidades, masmorras e pontos de interesse do Tormenta 20." />
   <meta name="theme-color" content="#8B0000" />
-
-  <!-- Favicon -->
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><circle cx='16' cy='16' r='14' fill='none' stroke='%238B0000' stroke-width='2'/><circle cx='16' cy='16' r='5' fill='%238B0000'/></svg>" />
-
-  <!-- Fontes -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;600&family=Crimson+Text:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet" />
-
-  <!-- Ícones -->
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/dist/tabler-icons.min.css" />
-
-  <!-- CSS -->
   <link rel="stylesheet" href="../css/variables.css" />
   <link rel="stylesheet" href="../css/atlas.css" />
 </head>
 <body>
 
-  <!-- CURSOR -->
-  <div class="cursor-dot"></div>
-  <div class="cursor-ring"></div>
+<!-- CURSOR -->
+<div class="cursor-dot"></div>
+<div class="cursor-ring"></div>
 
-  <!-- TELA DE INTRO -->
-  <div class="intro-screen" id="introScreen">
-    <div class="intro-logo-grande"></div>
-    <div class="intro-titulo">Atlas de Arton</div>
-    <div class="intro-sub">Tormenta 20 · Cartografia de Arton</div>
-    <div class="intro-bar"></div>
-  </div>
+<!-- INTRO -->
+<div class="intro-screen" id="introScreen">
+  <div class="intro-emblema"></div>
+  <div class="intro-titulo">Atlas de Arton</div>
+  <div class="intro-sub">Tormenta 20 · Cartografia Completa</div>
+  <div class="intro-bar"></div>
+</div>
 
-  <!-- SIDEBAR ESQUERDA -->
-  <aside class="atlas-sidebar">
-    <a class="sb-logo" href="../index.html" title="Voltar ao início"></a>
-    <div class="sb-sep"></div>
+<!-- SIDEBAR ESQUERDA -->
+<aside class="atlas-sidebar">
+  <a class="sb-logo" href="../index.html" title="Início"></a>
+  <div class="sb-sep"></div>
 
-    <button class="sb-btn" onclick="toggleFiltros(this)">
-      <i class="ti ti-layers" aria-hidden="true"></i>
-      <span class="sb-tooltip">Regiões e Filtros</span>
-    </button>
-
-    <button class="sb-btn" onclick="toggleBusca()">
-      <i class="ti ti-search" aria-hidden="true"></i>
-      <span class="sb-tooltip">Buscar Local (Ctrl+K)</span>
-    </button>
-
-    <div class="sb-sep"></div>
-
-    <button class="sb-btn" onclick="toggleTipoSb(this,'capital')">
-      <i class="ti ti-crown" aria-hidden="true"></i>
-      <span class="sb-tooltip">Capitais</span>
-    </button>
-    <button class="sb-btn" onclick="toggleTipoSb(this,'cidade')">
-      <i class="ti ti-building" aria-hidden="true"></i>
-      <span class="sb-tooltip">Cidades</span>
-    </button>
-    <button class="sb-btn" onclick="toggleTipoSb(this,'magico')">
-      <i class="ti ti-sparkles" aria-hidden="true"></i>
-      <span class="sb-tooltip">Locais Mágicos</span>
-    </button>
-    <button class="sb-btn" onclick="toggleTipoSb(this,'masmorra')">
-      <i class="ti ti-flame" aria-hidden="true"></i>
-      <span class="sb-tooltip">Masmorras</span>
-    </button>
-    <button class="sb-btn perigo" onclick="toggleTipoSb(this,'perigo')">
-      <i class="ti ti-skull" aria-hidden="true"></i>
-      <span class="sb-tooltip">Zonas de Perigo</span>
-    </button>
-
-    <div class="sb-sep"></div>
-
-    <button class="sb-btn" onclick="abrirModal()">
-      <i class="ti ti-map-pin-plus" aria-hidden="true"></i>
-      <span class="sb-tooltip">Novo Ponto</span>
-    </button>
-    <button class="sb-btn" onclick="exportarPontos()">
-      <i class="ti ti-download" aria-hidden="true"></i>
-      <span class="sb-tooltip">Exportar Pontos</span>
-    </button>
-  </aside>
-
-  <!-- TOPBAR -->
-  <header class="atlas-topbar">
-    <a class="topbar-logo" href="../index.html">
-      <div class="topbar-emblem"></div>
-      <span class="topbar-system">Tormenta 20</span>
-    </a>
-    <div class="topbar-div"></div>
-    <div class="topbar-title">
-      <i class="ti ti-map" aria-hidden="true"></i>
-      Atlas de Arton
-    </div>
-
-    <!-- Busca -->
-    <div class="topbar-search" id="topbarSearch" style="display:none">
-      <i class="ti ti-search" aria-hidden="true"></i>
-      <input type="text" id="searchInput" placeholder="Buscar cidade, região… (Esc para fechar)" />
-    </div>
-    <div class="search-results" id="searchResults"></div>
-  </header>
-
-  <!-- PAINEL DE FILTROS -->
-  <div class="filtros-panel" id="filtrosPanel">
-    <div class="fp-titulo">
-      <i class="ti ti-layers" aria-hidden="true"></i>
-      Regiões e Filtros
-    </div>
-
-    <div class="fp-secao">Regiões</div>
-    <div class="fp-item on" style="--fc:#c9a84c" onclick="toggleRegiao(this,'reinado')">
-      <div class="fp-dot"></div>
-      <span class="fp-label">O Reinado</span>
-      <div class="fp-check on"></div>
-    </div>
-    <div class="fp-item on" style="--fc:#cc6644" onclick="toggleRegiao(this,'tauron')">
-      <div class="fp-dot"></div>
-      <span class="fp-label">Império de Tauron</span>
-      <div class="fp-check on"></div>
-    </div>
-    <div class="fp-item on" style="--fc:#8B0000" onclick="toggleRegiao(this,'supremacia')">
-      <div class="fp-dot"></div>
-      <span class="fp-label">Supremacia Purista</span>
-      <div class="fp-check on"></div>
-    </div>
-    <div class="fp-item on" style="--fc:#6688cc" onclick="toggleRegiao(this,'namalkah')">
-      <div class="fp-dot"></div>
-      <span class="fp-label">Namalkah</span>
-      <div class="fp-check on"></div>
-    </div>
-    <div class="fp-item on" style="--fc:#664466" onclick="toggleRegiao(this,'aslothia')">
-      <div class="fp-dot"></div>
-      <span class="fp-label">Aslothia</span>
-      <div class="fp-check on"></div>
-    </div>
-    <div class="fp-item on" style="--fc:#44aa66" onclick="toggleRegiao(this,'lamnor')">
-      <div class="fp-dot"></div>
-      <span class="fp-label">Lamnor</span>
-      <div class="fp-check on"></div>
-    </div>
-    <div class="fp-item on" style="--fc:#aa8844" onclick="toggleRegiao(this,'ubani')">
-      <div class="fp-dot"></div>
-      <span class="fp-label">Ubani</span>
-      <div class="fp-check on"></div>
-    </div>
-    <div class="fp-item on" style="--fc:#8B0000" onclick="toggleRegiao(this,'tormenta-zona')">
-      <div class="fp-dot"></div>
-      <span class="fp-label">Zona da Tormenta</span>
-      <div class="fp-check on"></div>
-    </div>
-
-    <div class="fp-secao">Tipos de Ponto</div>
-    <div class="fp-item on" style="--fc:#c9a84c" onclick="toggleTipo(this,'capital')">
-      <div class="fp-dot"></div>
-      <span class="fp-label">Capitais</span>
-      <div class="fp-check on"></div>
-    </div>
-    <div class="fp-item on" style="--fc:#cc8844" onclick="toggleTipo(this,'cidade')">
-      <div class="fp-dot"></div>
-      <span class="fp-label">Cidades</span>
-      <div class="fp-check on"></div>
-    </div>
-    <div class="fp-item on" style="--fc:#8888ff" onclick="toggleTipo(this,'magico')">
-      <div class="fp-dot"></div>
-      <span class="fp-label">Locais Mágicos</span>
-      <div class="fp-check on"></div>
-    </div>
-    <div class="fp-item on" style="--fc:#664466" onclick="toggleTipo(this,'masmorra')">
-      <div class="fp-dot"></div>
-      <span class="fp-label">Masmorras</span>
-      <div class="fp-check on"></div>
-    </div>
-    <div class="fp-item on" style="--fc:#cc2222" onclick="toggleTipo(this,'perigo')">
-      <div class="fp-dot"></div>
-      <span class="fp-label">Zonas de Perigo</span>
-      <div class="fp-check on"></div>
-    </div>
-    <div class="fp-item on" style="--fc:#886644" onclick="toggleTipo(this,'ruinas')">
-      <div class="fp-dot"></div>
-      <span class="fp-label">Ruínas</span>
-      <div class="fp-check on"></div>
-    </div>
-    <div class="fp-item" style="--fc:#ffaa44" onclick="toggleTipo(this,'custom')">
-      <div class="fp-dot"></div>
-      <span class="fp-label">Meus Pontos</span>
-      <div class="fp-check"></div>
-    </div>
-  </div>
-
-  <!-- MAPA PRINCIPAL -->
-  <main class="map-wrap" id="mapWrap">
-    <div class="map-container" id="mapContainer">
-
-      <!-- IMAGEM DO MAPA -->
-      <!--
-        ╔══════════════════════════════════════════════════════╗
-        ║  ATENÇÃO — SUBSTITUIR A IMAGEM DO MAPA              ║
-        ║  Coloque o arquivo "30b-Poster-mapa-limpo.jpg"      ║
-        ║  na pasta  images/  e atualize o src abaixo.        ║
-        ╚══════════════════════════════════════════════════════╝
-      -->
-      <img
-        class="map-img"
-        id="mapImg"
-        src="../images/mapa-arton.jpg"
-        alt="Mapa de Arton — Tormenta 20"
-        draggable="false"
-      />
-
-      <!-- SVG DAS REGIÕES (gerado pelo atlas.js via REGIOES) -->
-      <!--
-        ╔══════════════════════════════════════════════════════╗
-        ║  AJUSTAR POLÍGONOS                                   ║
-        ║  Os polígonos são gerados automaticamente a partir   ║
-        ║  dos dados em js/data/locais.js (array REGIOES).     ║
-        ║  Para ajustá-los:                                    ║
-        ║  1. Acesse https://www.image-map.net                 ║
-        ║  2. Carregue o mapa limpo                            ║
-        ║  3. Desenhe cada região com a ferramenta Poly        ║
-        ║  4. Copie as coordenadas e cole em locais.js         ║
-        ╚══════════════════════════════════════════════════════╝
-      -->
-      <svg
-        class="regions-svg"
-        id="regionsSvg"
-        viewBox="0 0 100 100"
-        preserveAspectRatio="xMidYMid slice"
-      ></svg>
-
-      <!-- LABELS DAS REGIÕES -->
-      <div class="regiao-label" id="lbl-reinado"     style="left:44%;top:57%">O Reinado</div>
-      <div class="regiao-label" id="lbl-tauron"      style="left:22%;top:44%">Império de Tauron</div>
-      <div class="regiao-label" id="lbl-supremacia"  style="left:43%;top:49%">Supremacia Purista</div>
-      <div class="regiao-label" id="lbl-namalkah"    style="left:46%;top:32%">Namalkah</div>
-      <div class="regiao-label" id="lbl-aslothia"    style="left:67%;top:56%">Aslothia</div>
-      <div class="regiao-label" id="lbl-lamnor"      style="left:22%;top:73%">Lamnor</div>
-      <div class="regiao-label" id="lbl-ubani"       style="left:38%;top:19%">Ubani</div>
-      <div class="regiao-label" id="lbl-tormenta-zona" style="left:40%;top:47%">⚠ Tormenta</div>
-
-      <!-- NUVENS -->
-      <canvas class="clouds-canvas" id="cloudsCanvas"></canvas>
-
-      <!-- NÉVOA -->
-      <div class="map-vignette"></div>
-
-      <!-- OS PONTOS SÃO INSERIDOS AQUI PELO atlas.js -->
-
-    </div><!-- /map-container -->
-  </main>
-
-  <!-- CONTROLES DE ZOOM -->
-  <div class="zoom-ctrl">
-    <button class="z-btn" onclick="zmIn()"    title="Aproximar"><i class="ti ti-plus"             aria-hidden="true"></i></button>
-    <button class="z-btn" onclick="zmOut()"   title="Afastar">  <i class="ti ti-minus"            aria-hidden="true"></i></button>
-    <button class="z-btn" onclick="zmReset()" title="Centralizar"><i class="ti ti-focus-centered" aria-hidden="true"></i></button>
-  </div>
-
-  <!-- COORDENADAS -->
-  <div class="map-coords" id="mapCoords">Arton · Atlas</div>
-
-  <!-- BOTÃO NOVO PONTO -->
-  <button class="btn-novo-ponto" onclick="abrirModal()">
-    <i class="ti ti-map-pin-plus" aria-hidden="true"></i>
-    Novo Ponto
+  <button class="sb-btn" onclick="toggleFiltros(this)">
+    <i class="ti ti-layers" aria-hidden="true"></i>
+    <span class="sb-tooltip">Regiões e Filtros</span>
   </button>
 
-  <!-- PAINEL LATERAL DIREITO -->
-  <aside class="painel" id="painel">
-    <div class="painel-header">
-      <div class="p-tipo" id="pTipo">
-        <i class="ti ti-map-pin" aria-hidden="true"></i> Local
-      </div>
-      <div class="p-nome" id="pNome">—</div>
-      <div class="p-sub"  id="pSub">—</div>
-      <div id="pPerigo" class="p-perigo perigo-medio"></div>
-      <button class="p-fechar" onclick="fecharPainel()">
-        <i class="ti ti-x" aria-hidden="true"></i>
-      </button>
-    </div>
+  <button class="sb-btn" id="btnDistancia" onclick="toggleDistancia()">
+    <i class="ti ti-ruler" aria-hidden="true"></i>
+    <span class="sb-tooltip">Medir Distância</span>
+  </button>
 
-    <div class="painel-body">
-      <div class="p-linha"></div>
-      <p class="p-desc" id="pDesc">—</p>
-      <div class="p-tags" id="pTags"></div>
+  <div class="sb-sep"></div>
 
-      <div class="p-stats">
-        <div class="p-stat">
-          <div class="p-stat-label">Região</div>
-          <div class="p-stat-value" id="pRegiao">—</div>
-        </div>
-        <div class="p-stat">
-          <div class="p-stat-label">Tipo</div>
-          <div class="p-stat-value" id="pTipoVal">—</div>
-        </div>
-        <div class="p-stat">
-          <div class="p-stat-label">Governante</div>
-          <div class="p-stat-value" id="pGovern">—</div>
-        </div>
-        <div class="p-stat">
-          <div class="p-stat-label">Referência</div>
-          <div class="p-stat-value" id="pPagina">—</div>
-        </div>
-      </div>
+  <button class="sb-btn" onclick="toggleTipoSb(this,'capital')">
+    <i class="ti ti-crown" aria-hidden="true"></i>
+    <span class="sb-tooltip">Capitais</span>
+  </button>
+  <button class="sb-btn" onclick="toggleTipoSb(this,'cidade')">
+    <i class="ti ti-building" aria-hidden="true"></i>
+    <span class="sb-tooltip">Cidades</span>
+  </button>
+  <button class="sb-btn" onclick="toggleTipoSb(this,'magico')">
+    <i class="ti ti-sparkles" aria-hidden="true"></i>
+    <span class="sb-tooltip">Locais Mágicos</span>
+  </button>
+  <button class="sb-btn" onclick="toggleTipoSb(this,'masmorra')">
+    <i class="ti ti-flame" aria-hidden="true"></i>
+    <span class="sb-tooltip">Masmorras</span>
+  </button>
+  <button class="sb-btn perigo" onclick="toggleTipoSb(this,'perigo')">
+    <i class="ti ti-skull" aria-hidden="true"></i>
+    <span class="sb-tooltip">Zonas de Perigo</span>
+  </button>
+  <button class="sb-btn perigo" onclick="toggleTipoSb(this,'tormenta')">
+    <i class="ti ti-storm" aria-hidden="true"></i>
+    <span class="sb-tooltip">A Tormenta</span>
+  </button>
 
-      <div class="p-secao-titulo">Sobre o Local</div>
-      <div class="p-nota" id="pNota">
-        Clique em um ponto ou região no mapa para ver as informações detalhadas aqui.
-      </div>
+  <div class="sb-sep"></div>
 
-      <button class="btn-wiki">
-        <i class="ti ti-book" aria-hidden="true"></i>
-        Ver na Wiki
-      </button>
-      <button class="btn-notas">
-        <i class="ti ti-notes" aria-hidden="true"></i>
-        Notas do Mestre
-      </button>
-    </div>
-  </aside>
+  <button class="sb-btn" id="btnNovoPonto" onclick="toggleModoCriacao()">
+    <i class="ti ti-map-pin-plus" aria-hidden="true"></i>
+    <span class="sb-tooltip">Novo Ponto (clique no mapa)</span>
+  </button>
+  <button class="sb-btn" onclick="exportarPontos()">
+    <i class="ti ti-download" aria-hidden="true"></i>
+    <span class="sb-tooltip">Exportar Meus Pontos</span>
+  </button>
+</aside>
 
-  <!-- MODAL NOVO PONTO -->
-  <div class="modal-overlay" id="modalOverlay">
-    <div class="modal">
-      <p class="modal-titulo">✦ Novo Ponto de Interesse</p>
-
-      <div class="campo">
-        <label>Nome do Local</label>
-        <input type="text" id="novoPontoNome" placeholder="Ex: Taverna do Dragão Adormecido" />
-      </div>
-
-      <div class="campo">
-        <label>Tipo</label>
-        <div class="tipos-grid">
-          <div class="tipo-opt sel" data-tipo="cidade"    style="--tc:#c9a84c;--tb:rgba(201,168,76,0.08)" onclick="selTipo(this)">
-            <i class="ti ti-building"  aria-hidden="true"></i><span>Cidade</span>
-          </div>
-          <div class="tipo-opt" data-tipo="masmorra"  style="--tc:#8888ff;--tb:rgba(136,136,255,0.08)" onclick="selTipo(this)">
-            <i class="ti ti-flame"     aria-hidden="true"></i><span>Masmorra</span>
-          </div>
-          <div class="tipo-opt" data-tipo="taverna"   style="--tc:#44aa66;--tb:rgba(68,170,102,0.08)" onclick="selTipo(this)">
-            <i class="ti ti-home"      aria-hidden="true"></i><span>Taverna</span>
-          </div>
-          <div class="tipo-opt" data-tipo="perigo"    style="--tc:#8B0000;--tb:rgba(139,0,0,0.08)" onclick="selTipo(this)">
-            <i class="ti ti-skull"     aria-hidden="true"></i><span>Perigo</span>
-          </div>
-          <div class="tipo-opt" data-tipo="segredo"   style="--tc:#ffaa44;--tb:rgba(255,170,68,0.08)" onclick="selTipo(this)">
-            <i class="ti ti-eye"       aria-hidden="true"></i><span>Segredo</span>
-          </div>
-          <div class="tipo-opt" data-tipo="outro"     style="--tc:#aaa;--tb:rgba(170,170,170,0.08)" onclick="selTipo(this)">
-            <i class="ti ti-map-pin"   aria-hidden="true"></i><span>Outro</span>
-          </div>
-        </div>
-      </div>
-
-      <div class="campo">
-        <label>Descrição / Notas do Mestre</label>
-        <textarea id="novoPontoDesc" placeholder="Descrição, segredos, NPCs importantes…"></textarea>
-      </div>
-
-      <div class="modal-btns">
-        <button class="btn-cancelar" onclick="fecharModal()">Cancelar</button>
-        <button class="btn-salvar" id="btnSalvarPonto">
-          <i class="ti ti-check" aria-hidden="true"></i> Salvar Ponto
-        </button>
-      </div>
-    </div>
+<!-- TOPBAR -->
+<header class="atlas-topbar">
+  <a class="topbar-logo" href="../index.html">
+    <div class="topbar-emblema"></div>
+    <span class="topbar-system">Tormenta 20</span>
+  </a>
+  <div class="topbar-div"></div>
+  <div class="topbar-title">
+    <i class="ti ti-map" aria-hidden="true"></i>
+    Atlas de Arton
   </div>
 
-  <!-- SCRIPTS -->
-  <script src="../js/data/locais.js"></script>
-  <script src="../js/atlas.js"></script>
-  <script>
-    // Toggle tipo pela sidebar (com estado visual)
-    function toggleTipoSb(btn, tipo) {
-      btn.classList.toggle('ativo');
-      const ativo = btn.classList.contains('ativo');
-      document.querySelectorAll(`.map-point[data-tipo="${tipo}"]`).forEach(p => {
-        p.style.opacity = ativo ? '0.08' : '1';
-        p.style.pointerEvents = ativo ? 'none' : 'all';
-      });
-    }
+  <!-- SELETOR DE CAMADAS -->
+  <div class="camadas-seletor">
+    <button class="camada-btn ativo" data-mapa="arton"    style="--cc:#c9a84c" onclick="trocarMapa('arton')">
+      <div class="camada-dot"></div>Arton Norte
+    </button>
+    <button class="camada-btn" data-mapa="lamnor"   style="--cc:#44aa66" onclick="trocarMapa('lamnor')">
+      <div class="camada-dot"></div>Lamnor
+    </button>
+    <button class="camada-btn" data-mapa="tamura"   style="--cc:#44aaaa" onclick="trocarMapa('tamura')">
+      <div class="camada-dot"></div>Ta-mura
+    </button>
+    <button class="camada-btn" data-mapa="moreania" style="--cc:#8888ff" onclick="trocarMapa('moreania')">
+      <div class="camada-dot"></div>Moreania
+    </button>
+    <button class="camada-btn" data-mapa="doherimm" style="--cc:#cc8844" onclick="trocarMapa('doherimm')">
+      <div class="camada-dot"></div>Doherimm
+    </button>
+  </div>
 
-    // Exportar pontos salvos
-    function exportarPontos() {
-      const pontos = localStorage.getItem('tormenta20-pontos') || '[]';
-      const blob = new Blob([pontos], { type: 'application/json' });
-      const a = document.createElement('a');
-      a.href = URL.createObjectURL(blob);
-      a.download = 'meus-pontos-arton.json';
-      a.click();
+  <!-- BUSCA -->
+  <div class="topbar-busca" style="margin-left:1rem">
+    <div class="topbar-search">
+      <i class="ti ti-search" aria-hidden="true"></i>
+      <input type="text" id="searchInput" placeholder="Buscar local… (Ctrl+K)" />
+    </div>
+    <div class="search-results" id="searchResults"></div>
+  </div>
+</header>
+
+<!-- PAINEL DE FILTROS -->
+<div class="filtros-panel" id="filtrosPanel">
+  <div class="fp-titulo"><i class="ti ti-layers" aria-hidden="true"></i>Regiões e Filtros</div>
+
+  <div class="fp-secao">Regiões — Arton Norte</div>
+  <div class="fp-item on" style="--fc:#c9a84c" onclick="toggleRegiao(this,'reinado')">
+    <div class="fp-dot"></div><span class="fp-label">O Reinado</span><div class="fp-check on"></div>
+  </div>
+  <div class="fp-item on" style="--fc:#cc6644" onclick="toggleRegiao(this,'tauron')">
+    <div class="fp-dot"></div><span class="fp-label">Império de Tauron</span><div class="fp-check on"></div>
+  </div>
+  <div class="fp-item on" style="--fc:#8B0000" onclick="toggleRegiao(this,'supremacia')">
+    <div class="fp-dot"></div><span class="fp-label">Supremacia Purista</span><div class="fp-check on"></div>
+  </div>
+  <div class="fp-item on" style="--fc:#6688cc" onclick="toggleRegiao(this,'namalkah')">
+    <div class="fp-dot"></div><span class="fp-label">Namalkah</span><div class="fp-check on"></div>
+  </div>
+  <div class="fp-item on" style="--fc:#664466" onclick="toggleRegiao(this,'aslothia')">
+    <div class="fp-dot"></div><span class="fp-label">Aslothia</span><div class="fp-check on"></div>
+  </div>
+  <div class="fp-item on" style="--fc:#44aa66" onclick="toggleRegiao(this,'lamnor-reg')">
+    <div class="fp-dot"></div><span class="fp-label">Lamnor (Sul)</span><div class="fp-check on"></div>
+  </div>
+  <div class="fp-item on" style="--fc:#aa8844" onclick="toggleRegiao(this,'ubani')">
+    <div class="fp-dot"></div><span class="fp-label">Ubani</span><div class="fp-check on"></div>
+  </div>
+  <div class="fp-item on" style="--fc:#8B0000" onclick="toggleRegiao(this,'zona-tormenta')">
+    <div class="fp-dot"></div><span class="fp-label">Zona da Tormenta</span><div class="fp-check on"></div>
+  </div>
+
+  <div class="fp-secao">Tipos de Ponto</div>
+  <div class="fp-item on" style="--fc:#c9a84c" onclick="toggleTipo(this,'capital')">
+    <div class="fp-dot"></div><span class="fp-label">Capitais</span><div class="fp-check on"></div>
+  </div>
+  <div class="fp-item on" style="--fc:#cc8844" onclick="toggleTipo(this,'cidade')">
+    <div class="fp-dot"></div><span class="fp-label">Cidades</span><div class="fp-check on"></div>
+  </div>
+  <div class="fp-item on" style="--fc:#8888ff" onclick="toggleTipo(this,'magico')">
+    <div class="fp-dot"></div><span class="fp-label">Locais Mágicos</span><div class="fp-check on"></div>
+  </div>
+  <div class="fp-item on" style="--fc:#5588aa" onclick="toggleTipo(this,'fortaleza')">
+    <div class="fp-dot"></div><span class="fp-label">Fortalezas</span><div class="fp-check on"></div>
+  </div>
+  <div class="fp-item on" style="--fc:#664466" onclick="toggleTipo(this,'masmorra')">
+    <div class="fp-dot"></div><span class="fp-label">Masmorras</span><div class="fp-check on"></div>
+  </div>
+  <div class="fp-item on" style="--fc:#cc2222" onclick="toggleTipo(this,'perigo')">
+    <div class="fp-dot"></div><span class="fp-label">Zonas de Perigo</span><div class="fp-check on"></div>
+  </div>
+  <div class="fp-item on" style="--fc:#8B0000" onclick="toggleTipo(this,'tormenta')">
+    <div class="fp-dot"></div><span class="fp-label">A Tormenta</span><div class="fp-check on"></div>
+  </div>
+  <div class="fp-item on" style="--fc:#886644" onclick="toggleTipo(this,'ruinas')">
+    <div class="fp-dot"></div><span class="fp-label">Ruínas</span><div class="fp-check on"></div>
+  </div>
+  <div class="fp-item" style="--fc:#ffaa44" onclick="toggleTipo(this,'custom')">
+    <div class="fp-dot"></div><span class="fp-label">Meus Pontos</span><div class="fp-check"></div>
+  </div>
+</div>
+
+<!-- MAPA PRINCIPAL -->
+<main class="map-wrap" id="mapWrap">
+  <div class="map-container" id="mapContainer">
+
+    <!-- IMAGEM DO MAPA
+         Renomeie seus arquivos e coloque na pasta images/:
+         30b-Poster-mapa-limpo.jpg  →  images/mapa-arton.jpg
+         22-Lamnor.jpg              →  images/mapa-lamnor.jpg
+         27-Tamu-ra.jpg             →  images/mapa-tamura.jpg
+         28-Moreania.jpg            →  images/mapa-moreania.jpg
+         29-Doherimm.jpg            →  images/mapa-doherimm.jpg
+    -->
+    <img class="map-img" id="mapImg"
+         src="../images/mapa-arton.jpg"
+         alt="Mapa de Arton"
+         draggable="false" />
+
+    <!-- SVG DAS REGIÕES — preenchido pelo atlas.js -->
+    <svg class="regions-svg" id="regionsSvg"
+         viewBox="0 0 100 100"
+         preserveAspectRatio="xMidYMid slice"></svg>
+
+    <!-- LABELS DAS REGIÕES — Arton Norte -->
+    <div class="regiao-label" id="lbl-reinado"      style="left:44%;top:57%">O Reinado</div>
+    <div class="regiao-label" id="lbl-tauron"       style="left:20%;top:43%">Império de Tauron</div>
+    <div class="regiao-label" id="lbl-supremacia"   style="left:43%;top:50%">Supremacia Purista</div>
+    <div class="regiao-label" id="lbl-namalkah"     style="left:46%;top:31%">Namalkah</div>
+    <div class="regiao-label" id="lbl-aslothia"     style="left:67%;top:56%">Aslothia</div>
+    <div class="regiao-label" id="lbl-lamnor-reg"   style="left:22%;top:73%">Lamnor</div>
+    <div class="regiao-label" id="lbl-ubani"        style="left:37%;top:18%">Ubani</div>
+    <div class="regiao-label" id="lbl-zona-tormenta" style="left:39%;top:46%">⚠ Tormenta</div>
+
+    <!-- CANVAS NUVENS — fixo, não transforma com o mapa -->
+    <canvas id="cloudsCanvas" class="clouds-canvas"></canvas>
+
+    <!-- CANVAS PARTÍCULAS (Tormenta / Bioluminescência) -->
+    <canvas id="particlesCanvas" class="particles-canvas"></canvas>
+
+    <!-- CANVAS DISTÂNCIA -->
+    <canvas id="distanciaCanvas" class="distancia-canvas"></canvas>
+
+    <!-- ROTA SVG DA VECTORA -->
+    <svg class="vectora-rota" id="vectoraRota" viewBox="0 0 100 100" preserveAspectRatio="xMidYMid slice">
+      <path id="vectoraCaminho"
+        d="M 52,37 C 55,40 60,43 62,46 C 59,51 54,56 52,58 C 48,55 45,50 44,46 C 46,42 49,39 52,37"
+        fill="none" stroke="rgba(136,136,255,0.2)" stroke-width="0.3" stroke-dasharray="1.5,1"/>
+    </svg>
+
+  </div><!-- /map-container -->
+
+  <!-- NÉVOA NAS BORDAS DO JPG — fora do container, não transforma -->
+  <div class="map-vignette-fixed"></div>
+
+</main><!-- /map-wrap -->
+
+<!-- BANNER MODO CRIAÇÃO -->
+<div class="modo-criacao-banner" id="modocriacaoBanner">
+  <i class="ti ti-map-pin-plus" aria-hidden="true"></i>
+  Modo Criação · Clique no mapa para posicionar o ponto · Esc para cancelar
+</div>
+
+<!-- MEDIDOR DE DISTÂNCIA -->
+<div class="distancia-ui" id="distanciaUI"></div>
+
+<!-- CONTROLES DE ZOOM -->
+<div class="zoom-ctrl">
+  <button class="z-btn" onclick="zmIn()"    title="Aproximar">  <i class="ti ti-plus"             aria-hidden="true"></i></button>
+  <button class="z-btn" onclick="zmOut()"   title="Afastar">    <i class="ti ti-minus"            aria-hidden="true"></i></button>
+  <button class="z-btn" onclick="zmReset()" title="Centralizar"><i class="ti ti-focus-centered"   aria-hidden="true"></i></button>
+</div>
+
+<!-- COORDENADAS -->
+<div class="map-coords" id="mapCoords">Arton · Atlas</div>
+
+<!-- BOTÃO NOVO PONTO -->
+<button class="btn-novo-ponto" id="btnNovoPontoFixed" onclick="toggleModoCriacao()">
+  <i class="ti ti-map-pin-plus" aria-hidden="true"></i>
+  Novo Ponto
+</button>
+
+<!-- PAINEL LATERAL DIREITO -->
+<aside class="painel" id="painel">
+
+  <!-- Cabeçalho compartilhado -->
+  <div class="painel-hero" id="painelHero">
+    <div class="painel-hero-bg"></div>
+    <div class="painel-hero-brasao" id="pHeroBrasao">
+      <i class="ti ti-map-pin" aria-hidden="true"></i>
+    </div>
+    <div class="painel-hero-content">
+      <div class="p-tipo" id="pTipo"><i class="ti ti-map-pin" aria-hidden="true"></i> Local</div>
+      <div class="p-nome" id="pNome">—</div>
+      <div class="p-lema" id="pLema"></div>
+    </div>
+    <button class="p-fechar" onclick="fecharPainel()"><i class="ti ti-x" aria-hidden="true"></i></button>
+  </div>
+
+  <div class="painel-body">
+    <div class="p-linha"></div>
+    <div id="pPerigo" class="p-perigo perigo-medio"></div>
+
+    <!-- PAINEL RICO — capitais e regiões principais -->
+    <div id="painelRico">
+      <div class="p-attrs">
+        <div class="p-attr"><div class="p-attr-l">Governo</div><div class="p-attr-v" id="pGoverno">—</div></div>
+        <div class="p-attr"><div class="p-attr-l">Gentílico</div><div class="p-attr-v" id="pGentilico">—</div></div>
+        <div class="p-attr"><div class="p-attr-l">Capital</div><div class="p-attr-v" id="pCapital">—</div></div>
+        <div class="p-attr"><div class="p-attr-l">População</div><div class="p-attr-v" id="pPopulacao">—</div></div>
+      </div>
+      <div class="p-campos">
+        <div class="p-campo"><span class="p-campo-l">Regente</span>  <span class="p-campo-v" id="pRegente">—</span></div>
+        <div class="p-campo"><span class="p-campo-l">Raças</span>    <span class="p-campo-v" id="pRacas">—</span></div>
+        <div class="p-campo"><span class="p-campo-l">Divindades</span><span class="p-campo-v" id="pDivindades">—</span></div>
+      </div>
+      <p class="p-desc" id="pDesc">—</p>
+      <div class="p-divider"></div>
+      <!-- Personagens do lore -->
+      <div id="pSecaoPersonagens">
+        <div class="p-secao-titulo">Personagens do Lore</div>
+        <div class="p-personagens" id="pPersonagens"></div>
+        <div class="p-divider"></div>
+      </div>
+    </div>
+
+    <!-- PAINEL GENÉRICO — outros locais -->
+    <div id="painelGenerico" style="display:none">
+      <div class="p-nota" id="pNota">—</div>
+    </div>
+
+    <!-- Compartilhado: tags, stats, botões -->
+    <div class="p-tags" id="pTags"></div>
+    <div class="p-stats">
+      <div class="p-stat"><div class="p-stat-l">Região</div>    <div class="p-stat-v" id="pRegiao">—</div></div>
+      <div class="p-stat"><div class="p-stat-l">Referência</div><div class="p-stat-v" id="pPagina">—</div></div>
+    </div>
+    <button class="btn-wiki" id="btnWiki">
+      <i class="ti ti-book" aria-hidden="true"></i> Ver no Atlas
+    </button>
+    <button class="btn-ghost">
+      <i class="ti ti-notes" aria-hidden="true"></i> Notas do Mestre
+    </button>
+  </div>
+</aside>
+
+<!-- MODAL NOVO PONTO -->
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal">
+    <p class="modal-titulo">✦ Novo Ponto de Interesse</p>
+    <div class="modal-coords-info" id="novoCoordsInfo">Clique no mapa para posicionar</div>
+
+    <div class="campo">
+      <label>Nome do Local</label>
+      <input type="text" id="novoPontoNome" placeholder="Ex: Taverna do Dragão Adormecido" />
+    </div>
+
+    <div class="campo">
+      <label>Tipo</label>
+      <div class="tipos-grid">
+        <div class="tipo-opt sel" data-tipo="cidade"   style="--tc:#c9a84c;--tb:rgba(201,168,76,0.08)" onclick="selTipo(this)">
+          <i class="ti ti-building"  aria-hidden="true"></i><span>Cidade</span>
+        </div>
+        <div class="tipo-opt" data-tipo="masmorra"  style="--tc:#8888ff;--tb:rgba(136,136,255,0.08)" onclick="selTipo(this)">
+          <i class="ti ti-flame"     aria-hidden="true"></i><span>Masmorra</span>
+        </div>
+        <div class="tipo-opt" data-tipo="taverna"   style="--tc:#44aa66;--tb:rgba(68,170,102,0.08)" onclick="selTipo(this)">
+          <i class="ti ti-home"      aria-hidden="true"></i><span>Taverna</span>
+        </div>
+        <div class="tipo-opt" data-tipo="perigo"    style="--tc:#cc2222;--tb:rgba(204,34,34,0.08)" onclick="selTipo(this)">
+          <i class="ti ti-skull"     aria-hidden="true"></i><span>Perigo</span>
+        </div>
+        <div class="tipo-opt" data-tipo="segredo"   style="--tc:#ffaa44;--tb:rgba(255,170,68,0.08)" onclick="selTipo(this)">
+          <i class="ti ti-eye"       aria-hidden="true"></i><span>Segredo</span>
+        </div>
+        <div class="tipo-opt" data-tipo="outro"     style="--tc:#aaa;--tb:rgba(170,170,170,0.08)" onclick="selTipo(this)">
+          <i class="ti ti-map-pin"   aria-hidden="true"></i><span>Outro</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="campo">
+      <label>Descrição / Notas do Mestre</label>
+      <textarea id="novoPontoDesc" placeholder="Descrição, segredos, NPCs importantes…"></textarea>
+    </div>
+
+    <div class="modal-btns">
+      <button class="btn-cancelar" onclick="fecharModal()">Cancelar</button>
+      <button class="btn-salvar" id="btnSalvarPonto">
+        <i class="ti ti-check" aria-hidden="true"></i> Salvar Ponto
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- SCRIPTS -->
+<script src="../js/data/locais.js"></script>
+<script src="../js/atlas.js"></script>
+<script>
+  // Toggle tipo pela sidebar (com estado visual do botão)
+  function toggleTipoSb(btn, tipo) {
+    btn.classList.toggle('ativo');
+    const esconder = !btn.classList.contains('ativo');
+    document.querySelectorAll(`.map-point[data-tipo="${tipo}"]`).forEach(p => {
+      p.style.opacity = esconder ? '0.06' : '1';
+      p.style.pointerEvents = esconder ? 'none' : 'all';
+    });
+  }
+
+  // Esc cancela modo criação
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') {
+      if (typeof modoCriacao !== 'undefined' && modoCriacao) toggleModoCriacao();
+      fecharModal();
+      fecharPainel();
     }
-  </script>
+  });
+</script>
 
 </body>
 </html>

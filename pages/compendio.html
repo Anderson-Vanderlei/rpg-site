@@ -1,0 +1,533 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Compêndio — Tormenta 20</title>
+  <meta name="description" content="Compêndio completo do Tormenta 20. Raças, classes, magias, poderes e muito mais." />
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><circle cx='16' cy='16' r='14' fill='none' stroke='%238B0000' stroke-width='2'/><circle cx='16' cy='16' r='5' fill='%238B0000'/></svg>" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;600&family=Crimson+Text:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/dist/tabler-icons.min.css" />
+  <link rel="stylesheet" href="../css/variables.css" />
+  <link rel="stylesheet" href="../css/compendio.css" />
+</head>
+<body>
+
+<!-- CURSOR -->
+<div class="cursor-dot"></div>
+<div class="cursor-ring"></div>
+
+<!-- TOPBAR -->
+<header class="topbar">
+  <a class="topbar-logo" href="../index.html">
+    <div class="topbar-emblema"></div>
+    <span class="topbar-system">Tormenta 20</span>
+  </a>
+  <div class="topbar-div"></div>
+  <span class="topbar-secao">Compêndio</span>
+
+  <div class="topbar-search">
+    <i class="ti ti-search" aria-hidden="true"></i>
+    <input type="text" id="buscaGlobal" placeholder="Buscar no compêndio… (Ctrl+K)" />
+  </div>
+</header>
+
+<!-- LAYOUT PRINCIPAL -->
+<div class="layout">
+
+  <!-- ══════════════════════════════════════════════════════
+       SIDEBAR NAV HIERÁRQUICA
+  ══════════════════════════════════════════════════════ -->
+  <nav class="sidebar">
+
+    <!-- ── PERSONAGEM ── -->
+    <div class="nav-grupo" data-grupo="personagem">
+      <div class="nav-grupo-header" onclick="toggleGrupo(this)">
+        <i class="ti ti-user grupo-icone" aria-hidden="true"></i>
+        <span class="grupo-label">Personagem</span>
+        <i class="ti ti-chevron-right seta" aria-hidden="true"></i>
+      </div>
+      <div class="nav-sub">
+
+        <!-- Atributos Básicos -->
+        <div class="nav-sub-item" data-secao="atributos"
+             onclick="toggleSubItem(this,'atributos')">
+          <i class="ti ti-list" aria-hidden="true"></i>
+          <span class="sub-label">Atributos Básicos</span>
+        </div>
+
+        <!-- Raças → expande lista -->
+        <div class="nav-sub-item tem-filhos" data-secao="racas"
+             onclick="toggleSubItem(this,'racas')">
+          <i class="ti ti-users" aria-hidden="true"></i>
+          <span class="sub-label">Raças</span>
+          <i class="ti ti-chevron-right seta" style="margin-left:auto;font-size:10px" aria-hidden="true"></i>
+        </div>
+        <!-- Lista de raças gerada pelo JS -->
+        <div class="nav-sub-sub" id="navListaRacas" style="display:none"></div>
+
+        <!-- Classes -->
+        <div class="nav-sub-item" data-secao="classes"
+             onclick="toggleSubItem(this,'classes')">
+          <i class="ti ti-sword" aria-hidden="true"></i>
+          <span class="sub-label">Classes</span>
+        </div>
+
+        <!-- Distinções -->
+        <div class="nav-sub-item" data-secao="distincoes"
+             onclick="toggleSubItem(this,'distincoes')">
+          <i class="ti ti-medal" aria-hidden="true"></i>
+          <span class="sub-label">Distinções</span>
+        </div>
+
+        <!-- Origens -->
+        <div class="nav-sub-item" data-secao="origens"
+             onclick="toggleSubItem(this,'origens')">
+          <i class="ti ti-map-pin" aria-hidden="true"></i>
+          <span class="sub-label">Origens</span>
+        </div>
+
+        <!-- Deuses -->
+        <div class="nav-sub-item" data-secao="deuses"
+             onclick="toggleSubItem(this,'deuses')">
+          <i class="ti ti-sun" aria-hidden="true"></i>
+          <span class="sub-label">Deuses</span>
+        </div>
+
+        <!-- Toques Finais -->
+        <div class="nav-sub-item" data-secao="toques"
+             onclick="toggleSubItem(this,'toques')">
+          <i class="ti ti-wand" aria-hidden="true"></i>
+          <span class="sub-label">Toques Finais</span>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ── PERÍCIAS ── -->
+    <div class="nav-grupo" data-grupo="pericias">
+      <div class="nav-grupo-header" onclick="toggleGrupo(this)">
+        <i class="ti ti-brain grupo-icone" aria-hidden="true"></i>
+        <span class="grupo-label">Perícias</span>
+        <i class="ti ti-chevron-right seta" aria-hidden="true"></i>
+      </div>
+      <div class="nav-sub">
+        <div class="nav-sub-item" data-secao="pericias"
+             onclick="toggleSubItem(this,'pericias')">
+          <i class="ti ti-list" aria-hidden="true"></i>
+          <span class="sub-label">Lista de Perícias</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── PODERES ── -->
+    <div class="nav-grupo" data-grupo="poderes">
+      <div class="nav-grupo-header" onclick="toggleGrupo(this)">
+        <i class="ti ti-shield grupo-icone" aria-hidden="true"></i>
+        <span class="grupo-label">Poderes</span>
+        <i class="ti ti-chevron-right seta" aria-hidden="true"></i>
+      </div>
+      <div class="nav-sub">
+        <div class="nav-sub-item" data-secao="poderes-combate"
+             onclick="toggleSubItem(this,'poderes-combate')">
+          <i class="ti ti-sword" aria-hidden="true"></i>
+          <span class="sub-label">Poderes de Combate</span>
+        </div>
+        <div class="nav-sub-item" data-secao="poderes-destino"
+             onclick="toggleSubItem(this,'poderes-destino')">
+          <i class="ti ti-star" aria-hidden="true"></i>
+          <span class="sub-label">Poderes de Destino</span>
+        </div>
+        <div class="nav-sub-item" data-secao="poderes-magia"
+             onclick="toggleSubItem(this,'poderes-magia')">
+          <i class="ti ti-sparkles" aria-hidden="true"></i>
+          <span class="sub-label">Poderes de Magia</span>
+        </div>
+        <div class="nav-sub-item" data-secao="poderes-concedidos"
+             onclick="toggleSubItem(this,'poderes-concedidos')">
+          <i class="ti ti-sun" aria-hidden="true"></i>
+          <span class="sub-label">Poderes Concedidos</span>
+        </div>
+        <div class="nav-sub-item" data-secao="poderes-tormenta"
+             onclick="toggleSubItem(this,'poderes-tormenta')">
+          <i class="ti ti-storm" aria-hidden="true"></i>
+          <span class="sub-label">Poderes da Tormenta</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── EQUIPAMENTOS ── -->
+    <div class="nav-grupo" data-grupo="equipamentos">
+      <div class="nav-grupo-header" onclick="toggleGrupo(this)">
+        <i class="ti ti-diamond grupo-icone" aria-hidden="true"></i>
+        <span class="grupo-label">Equipamentos</span>
+        <i class="ti ti-chevron-right seta" aria-hidden="true"></i>
+      </div>
+      <div class="nav-sub">
+        <div class="nav-sub-item" data-secao="armas"
+             onclick="toggleSubItem(this,'armas')">
+          <i class="ti ti-sword" aria-hidden="true"></i>
+          <span class="sub-label">Armas</span>
+        </div>
+        <div class="nav-sub-item" data-secao="armaduras"
+             onclick="toggleSubItem(this,'armaduras')">
+          <i class="ti ti-shield" aria-hidden="true"></i>
+          <span class="sub-label">Armaduras</span>
+        </div>
+        <div class="nav-sub-item" data-secao="escudos"
+             onclick="toggleSubItem(this,'escudos')">
+          <i class="ti ti-shield-half" aria-hidden="true"></i>
+          <span class="sub-label">Escudos</span>
+        </div>
+        <div class="nav-sub-item" data-secao="acessorios"
+             onclick="toggleSubItem(this,'acessorios')">
+          <i class="ti ti-crown" aria-hidden="true"></i>
+          <span class="sub-label">Acessórios</span>
+        </div>
+        <div class="nav-sub-item" data-secao="itens-gerais"
+             onclick="toggleSubItem(this,'itens-gerais')">
+          <i class="ti ti-backpack" aria-hidden="true"></i>
+          <span class="sub-label">Itens Gerais</span>
+        </div>
+        <div class="nav-sub-item tem-filhos" data-secao="itens-superiores"
+             onclick="toggleSubItem(this,'itens-superiores')">
+          <i class="ti ti-star" aria-hidden="true"></i>
+          <span class="sub-label">Itens Superiores</span>
+          <i class="ti ti-chevron-right seta" style="margin-left:auto;font-size:10px" aria-hidden="true"></i>
+        </div>
+        <div class="nav-sub-sub" style="display:none">
+          <div class="nav-sub-sub-item" onclick="mostrarSecao('modificadores')">
+            <span>Modificadores</span>
+          </div>
+        </div>
+        <div class="nav-sub-item tem-filhos" data-secao="itens-magicos"
+             onclick="toggleSubItem(this,'itens-magicos')">
+          <i class="ti ti-wand" aria-hidden="true"></i>
+          <span class="sub-label">Itens Mágicos</span>
+          <i class="ti ti-chevron-right seta" style="margin-left:auto;font-size:10px" aria-hidden="true"></i>
+        </div>
+        <div class="nav-sub-sub" style="display:none">
+          <div class="nav-sub-sub-item" onclick="mostrarSecao('encantamentos')">
+            <span>Encantamentos</span>
+          </div>
+        </div>
+        <div class="nav-sub-item" data-secao="artefatos"
+             onclick="toggleSubItem(this,'artefatos')">
+          <i class="ti ti-flame" aria-hidden="true"></i>
+          <span class="sub-label">Artefatos</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── MAGIAS ── -->
+    <div class="nav-grupo" data-grupo="magias">
+      <div class="nav-grupo-header" onclick="toggleGrupo(this)">
+        <i class="ti ti-sparkles grupo-icone" aria-hidden="true"></i>
+        <span class="grupo-label">Magias</span>
+        <i class="ti ti-chevron-right seta" aria-hidden="true"></i>
+      </div>
+      <div class="nav-sub">
+        <div class="nav-sub-item" data-secao="magias-arcanas"
+             onclick="toggleSubItem(this,'magias-arcanas')">
+          <i class="ti ti-moon" aria-hidden="true"></i>
+          <span class="sub-label">Magias Arcanas</span>
+        </div>
+        <div class="nav-sub-item" data-secao="magias-divinas"
+             onclick="toggleSubItem(this,'magias-divinas')">
+          <i class="ti ti-sun" aria-hidden="true"></i>
+          <span class="sub-label">Magias Divinas</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── AMEAÇAS ── -->
+    <div class="nav-grupo" data-grupo="ameacas">
+      <div class="nav-grupo-header" onclick="toggleGrupo(this)">
+        <i class="ti ti-skull grupo-icone" aria-hidden="true"></i>
+        <span class="grupo-label">Ameaças</span>
+        <i class="ti ti-chevron-right seta" aria-hidden="true"></i>
+      </div>
+      <div class="nav-sub">
+        <div class="nav-sub-item" data-secao="criaturas"
+             onclick="toggleSubItem(this,'criaturas')">
+          <i class="ti ti-paw" aria-hidden="true"></i>
+          <span class="sub-label">Criaturas</span>
+        </div>
+        <div class="nav-sub-item" data-secao="perigos"
+             onclick="toggleSubItem(this,'perigos')">
+          <i class="ti ti-alert-triangle" aria-hidden="true"></i>
+          <span class="sub-label">Perigos Complexos</span>
+        </div>
+        <div class="nav-sub-item tem-filhos" data-secao="ambiente"
+             onclick="toggleSubItem(this,'ambiente')">
+          <i class="ti ti-cloud" aria-hidden="true"></i>
+          <span class="sub-label">Ambiente</span>
+          <i class="ti ti-chevron-right seta" style="margin-left:auto;font-size:10px" aria-hidden="true"></i>
+        </div>
+        <div class="nav-sub-sub" style="display:none">
+          <div class="nav-sub-sub-item" onclick="mostrarSecao('clima')"><span>Clima</span></div>
+          <div class="nav-sub-sub-item" onclick="mostrarSecao('terrenos')"><span>Terrenos</span></div>
+        </div>
+        <div class="nav-sub-item" data-secao="complicacoes"
+             onclick="toggleSubItem(this,'complicacoes')">
+          <i class="ti ti-help" aria-hidden="true"></i>
+          <span class="sub-label">Complicações</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── PERSONAGENS ── -->
+    <div class="nav-grupo" data-grupo="personagens-lore">
+      <div class="nav-grupo-header" onclick="toggleGrupo(this)">
+        <i class="ti ti-book grupo-icone" aria-hidden="true"></i>
+        <span class="grupo-label">Personagens</span>
+        <i class="ti ti-chevron-right seta" aria-hidden="true"></i>
+      </div>
+      <div class="nav-sub">
+        <div class="nav-sub-item" data-secao="lendas"
+             onclick="toggleSubItem(this,'lendas')">
+          <i class="ti ti-crown" aria-hidden="true"></i>
+          <span class="sub-label">Lendas</span>
+        </div>
+        <div class="nav-sub-item" data-secao="povo"
+             onclick="toggleSubItem(this,'povo')">
+          <i class="ti ti-users" aria-hidden="true"></i>
+          <span class="sub-label">Povo</span>
+        </div>
+        <div class="nav-sub-item" data-secao="parceiros"
+             onclick="toggleSubItem(this,'parceiros')">
+          <i class="ti ti-heart" aria-hidden="true"></i>
+          <span class="sub-label">Parceiros</span>
+        </div>
+        <div class="nav-sub-item" data-secao="montarias"
+             onclick="toggleSubItem(this,'montarias')">
+          <i class="ti ti-horse" aria-hidden="true"></i>
+          <span class="sub-label">Montarias</span>
+        </div>
+      </div>
+    </div>
+
+  </nav><!-- /sidebar -->
+
+  <!-- ══════════════════════════════════════════════════════
+       ÁREA DE CONTEÚDO
+  ══════════════════════════════════════════════════════ -->
+  <div class="main">
+
+    <!-- ── SEÇÃO: RAÇAS ── -->
+    <div id="secao-racas" class="secao-conteudo" style="display:flex;flex-direction:column;flex:1;overflow:hidden;">
+
+      <div class="section-hero">
+        <div class="section-hero-bg"></div>
+        <h1>Raças</h1>
+        <p>Todo personagem pertence a uma raça — um dos vários povos fantásticos que habitam o mundo de Arton. Cada raça oferece bônus de atributos e habilidades únicas que moldam seu aventureiro desde o primeiro nível.</p>
+      </div>
+
+      <div class="toolbar">
+        <div class="search-inline">
+          <i class="ti ti-search" aria-hidden="true"></i>
+          <input type="text" id="buscaRacas" placeholder="Buscar raça…" />
+        </div>
+        <div id="racasFiltros" style="display:flex;gap:8px;flex-wrap:wrap;">
+          <button class="filtro-btn a" onclick="setFiltroRaca(this,'todos')">Todos</button>
+          <button class="filtro-btn" onclick="setFiltroRaca(this,'humanoide')">Humanoide</button>
+          <button class="filtro-btn" onclick="setFiltroRaca(this,'espírito')">Espírito</button>
+          <button class="filtro-btn" onclick="setFiltroRaca(this,'monstro')">Monstro</button>
+          <button class="filtro-btn" onclick="setFiltroRaca(this,'construto')">Construto</button>
+          <button class="filtro-btn" onclick="setFiltroRaca(this,'morto-vivo')">Morto-vivo</button>
+          <button class="filtro-btn" onclick="setFiltroRaca(this,'comum')">Comuns</button>
+          <button class="filtro-btn" onclick="setFiltroRaca(this,'raro')">Raras</button>
+        </div>
+        <span class="filtro-count" id="racasCount">17 raças</span>
+      </div>
+
+      <div class="cards-area">
+        <div class="cards-grid" id="racasGrid"></div>
+      </div>
+
+      <!-- Painel de detalhe da raça -->
+      <div class="detalhe-painel" id="detalhePainel">
+        <div class="dp-hero" id="dpHero">
+          <div class="dp-hero-bg" id="dpHeroBg"></div>
+          <i class="ti ti-user dp-hero-icon" id="dpHeroIcon" aria-hidden="true"></i>
+          <div class="dp-hero-content">
+            <div class="dp-tipo" id="dpTipo">Raça</div>
+            <div class="dp-nome" id="dpNome">—</div>
+            <div class="dp-sub"  id="dpSub">—</div>
+          </div>
+          <button class="dp-fechar" onclick="fecharDetalhe()">
+            <i class="ti ti-x" aria-hidden="true"></i>
+          </button>
+        </div>
+
+        <div class="dp-body">
+          <div class="dp-linha"></div>
+          <div class="dp-badges" id="dpBadges"></div>
+          <div class="dp-atribs" id="dpAtribs"></div>
+
+          <div class="dp-secao">Descrição</div>
+          <p class="dp-desc" id="dpDesc">—</p>
+
+          <div class="dp-secao">História em Arton</div>
+          <p class="dp-historia" id="dpHistoria">—</p>
+
+          <div class="dp-secao">Habilidades Raciais</div>
+          <div id="dpHabilidades"></div>
+
+          <div class="dp-secao">Classes Recomendadas</div>
+          <div class="dp-classes" id="dpClasses"></div>
+
+          <div class="dp-btns">
+            <button class="btn-pdf" id="dpBtnPdf">
+              <i class="ti ti-book" aria-hidden="true"></i>
+              Ver no Livro
+            </button>
+            <button class="btn-ghost">
+              <i class="ti ti-notes" aria-hidden="true"></i>
+              Adicionar à Ficha
+            </button>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /secao-racas -->
+
+    <!-- ── SEÇÕES EM CONSTRUÇÃO (placeholder) ── -->
+    <div id="secao-atributos"       class="secao-conteudo placeholder-area" style="display:none">
+      <i class="ti ti-list" aria-hidden="true"></i>
+      <h2>Atributos Básicos</h2>
+      <p>Em breve — p. 17 do livro de regras</p>
+    </div>
+    <div id="secao-classes"         class="secao-conteudo placeholder-area" style="display:none">
+      <i class="ti ti-sword" aria-hidden="true"></i>
+      <h2>Classes</h2>
+      <p>Em breve — 14 classes disponíveis</p>
+    </div>
+    <div id="secao-distincoes"      class="secao-conteudo placeholder-area" style="display:none">
+      <i class="ti ti-medal" aria-hidden="true"></i>
+      <h2>Distinções</h2>
+      <p>Em breve — será complementado com livro adicional</p>
+    </div>
+    <div id="secao-origens"         class="secao-conteudo placeholder-area" style="display:none">
+      <i class="ti ti-map-pin" aria-hidden="true"></i>
+      <h2>Origens</h2>
+      <p>Em breve — 20+ origens disponíveis</p>
+    </div>
+    <div id="secao-deuses"          class="secao-conteudo placeholder-area" style="display:none">
+      <i class="ti ti-sun" aria-hidden="true"></i>
+      <h2>Deuses</h2>
+      <p>Em breve — O Panteão com 20 divindades</p>
+    </div>
+    <div id="secao-toques"          class="secao-conteudo placeholder-area" style="display:none">
+      <i class="ti ti-wand" aria-hidden="true"></i>
+      <h2>Toques Finais</h2>
+      <p>Em breve — p. 106 do livro de regras</p>
+    </div>
+    <div id="secao-pericias"        class="secao-conteudo placeholder-area" style="display:none">
+      <i class="ti ti-brain" aria-hidden="true"></i>
+      <h2>Perícias</h2>
+      <p>Em breve — 26 perícias com descrições completas</p>
+    </div>
+    <div id="secao-poderes-combate" class="secao-conteudo placeholder-area" style="display:none">
+      <i class="ti ti-sword" aria-hidden="true"></i><h2>Poderes de Combate</h2><p>Em breve</p>
+    </div>
+    <div id="secao-poderes-destino" class="secao-conteudo placeholder-area" style="display:none">
+      <i class="ti ti-star" aria-hidden="true"></i><h2>Poderes de Destino</h2><p>Em breve</p>
+    </div>
+    <div id="secao-poderes-magia"   class="secao-conteudo placeholder-area" style="display:none">
+      <i class="ti ti-sparkles" aria-hidden="true"></i><h2>Poderes de Magia</h2><p>Em breve</p>
+    </div>
+    <div id="secao-poderes-concedidos" class="secao-conteudo placeholder-area" style="display:none">
+      <i class="ti ti-sun" aria-hidden="true"></i><h2>Poderes Concedidos</h2><p>Em breve</p>
+    </div>
+    <div id="secao-poderes-tormenta" class="secao-conteudo placeholder-area" style="display:none">
+      <i class="ti ti-storm" aria-hidden="true"></i><h2>Poderes da Tormenta</h2><p>Em breve</p>
+    </div>
+    <div id="secao-armas"           class="secao-conteudo placeholder-area" style="display:none">
+      <i class="ti ti-sword" aria-hidden="true"></i><h2>Armas</h2><p>Em breve</p>
+    </div>
+    <div id="secao-armaduras"       class="secao-conteudo placeholder-area" style="display:none">
+      <i class="ti ti-shield" aria-hidden="true"></i><h2>Armaduras</h2><p>Em breve</p>
+    </div>
+    <div id="secao-escudos"         class="secao-conteudo placeholder-area" style="display:none">
+      <i class="ti ti-shield-half" aria-hidden="true"></i><h2>Escudos</h2><p>Em breve</p>
+    </div>
+    <div id="secao-acessorios"      class="secao-conteudo placeholder-area" style="display:none">
+      <i class="ti ti-crown" aria-hidden="true"></i><h2>Acessórios</h2><p>Em breve</p>
+    </div>
+    <div id="secao-itens-gerais"    class="secao-conteudo placeholder-area" style="display:none">
+      <i class="ti ti-backpack" aria-hidden="true"></i><h2>Itens Gerais</h2><p>Em breve</p>
+    </div>
+    <div id="secao-itens-superiores" class="secao-conteudo placeholder-area" style="display:none">
+      <i class="ti ti-star" aria-hidden="true"></i><h2>Itens Superiores</h2><p>Em breve</p>
+    </div>
+    <div id="secao-modificadores"   class="secao-conteudo placeholder-area" style="display:none">
+      <i class="ti ti-settings" aria-hidden="true"></i><h2>Modificadores</h2><p>Em breve</p>
+    </div>
+    <div id="secao-itens-magicos"   class="secao-conteudo placeholder-area" style="display:none">
+      <i class="ti ti-wand" aria-hidden="true"></i><h2>Itens Mágicos</h2><p>Em breve</p>
+    </div>
+    <div id="secao-encantamentos"   class="secao-conteudo placeholder-area" style="display:none">
+      <i class="ti ti-sparkles" aria-hidden="true"></i><h2>Encantamentos</h2><p>Em breve</p>
+    </div>
+    <div id="secao-artefatos"       class="secao-conteudo placeholder-area" style="display:none">
+      <i class="ti ti-flame" aria-hidden="true"></i><h2>Artefatos</h2><p>Em breve</p>
+    </div>
+    <div id="secao-magias-arcanas"  class="secao-conteudo placeholder-area" style="display:none">
+      <i class="ti ti-moon" aria-hidden="true"></i><h2>Magias Arcanas</h2><p>Em breve — ~80 magias</p>
+    </div>
+    <div id="secao-magias-divinas"  class="secao-conteudo placeholder-area" style="display:none">
+      <i class="ti ti-sun" aria-hidden="true"></i><h2>Magias Divinas</h2><p>Em breve — ~40 magias</p>
+    </div>
+    <div id="secao-criaturas"       class="secao-conteudo placeholder-area" style="display:none">
+      <i class="ti ti-paw" aria-hidden="true"></i><h2>Criaturas</h2><p>Em breve — aguardando livro de criaturas</p>
+    </div>
+    <div id="secao-perigos"         class="secao-conteudo placeholder-area" style="display:none">
+      <i class="ti ti-alert-triangle" aria-hidden="true"></i><h2>Perigos Complexos</h2><p>Em breve</p>
+    </div>
+    <div id="secao-ambiente"        class="secao-conteudo placeholder-area" style="display:none">
+      <i class="ti ti-cloud" aria-hidden="true"></i><h2>Ambiente</h2><p>Em breve</p>
+    </div>
+    <div id="secao-clima"           class="secao-conteudo placeholder-area" style="display:none">
+      <i class="ti ti-cloud-rain" aria-hidden="true"></i><h2>Clima</h2><p>Em breve</p>
+    </div>
+    <div id="secao-terrenos"        class="secao-conteudo placeholder-area" style="display:none">
+      <i class="ti ti-mountain" aria-hidden="true"></i><h2>Terrenos</h2><p>Em breve</p>
+    </div>
+    <div id="secao-complicacoes"    class="secao-conteudo placeholder-area" style="display:none">
+      <i class="ti ti-help" aria-hidden="true"></i><h2>Complicações</h2><p>Em breve</p>
+    </div>
+    <div id="secao-lendas"          class="secao-conteudo placeholder-area" style="display:none">
+      <i class="ti ti-crown" aria-hidden="true"></i><h2>Lendas</h2><p>Em breve</p>
+    </div>
+    <div id="secao-povo"            class="secao-conteudo placeholder-area" style="display:none">
+      <i class="ti ti-users" aria-hidden="true"></i><h2>Povo</h2><p>Em breve</p>
+    </div>
+    <div id="secao-parceiros"       class="secao-conteudo placeholder-area" style="display:none">
+      <i class="ti ti-heart" aria-hidden="true"></i><h2>Parceiros</h2><p>Em breve</p>
+    </div>
+    <div id="secao-montarias"       class="secao-conteudo placeholder-area" style="display:none">
+      <i class="ti ti-horse" aria-hidden="true"></i><h2>Montarias</h2><p>Em breve</p>
+    </div>
+
+  </div><!-- /main -->
+
+</div><!-- /layout -->
+
+<!-- SCRIPTS -->
+<script src="../js/data/racas.js"></script>
+<script src="../js/compendio.js"></script>
+<script>
+  // Expõe mostrarSecao globalmente para os nav-sub-sub-items
+  function mostrarSecao(nome) {
+    document.querySelectorAll('.secao-conteudo').forEach(s => s.style.display = 'none');
+    const el = document.getElementById('secao-' + nome);
+    if (el) el.style.display = el.id === 'secao-racas' ? 'flex' : 'flex';
+    if (typeof fecharDetalhe === 'function') fecharDetalhe();
+  }
+</script>
+
+</body>
+</html>

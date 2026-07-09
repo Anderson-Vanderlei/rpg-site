@@ -288,6 +288,44 @@ button {
 
 .btn-sessao i { font-size: 14px; }
 
+/* Hambúrguer (mobile) */
+.nav-hamburguer {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  background: transparent;
+  border: 0.5px solid var(--cor-borda-forte);
+  border-radius: var(--raio);
+  color: var(--cor-texto-suave);
+  font-size: 16px;
+  cursor: none;
+  transition: color var(--transicao), border-color var(--transicao);
+  flex-shrink: 0;
+}
+
+.nav-hamburguer:hover { color: var(--cor-texto); border-color: var(--cor-primaria); }
+.nav-hamburguer.ativo { color: var(--cor-dourado); border-color: rgba(201, 168, 76, 0.4); }
+
+/* Drawer — em telas largas os filhos (nav-links, nav-right) participam
+   do flex da navbar normalmente; em mobile vira painel deslizante */
+.nav-drawer { display: contents; }
+.nav-drawer-fechar { display: none; }
+
+/* Overlay escuro atrás do drawer (mobile) */
+.nav-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  z-index: 999;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.nav-overlay.visivel { opacity: 1; }
+
 /* ============================================================
    HERO
 ============================================================ */
@@ -957,6 +995,41 @@ footer {
 }
 
 /* ============================================================
+   BOTTOM BAR (mobile)
+============================================================ */
+.bottombar {
+  display: none;
+  position: fixed;
+  left: 0; right: 0; bottom: 0;
+  height: 58px;
+  background: rgba(8, 8, 8, 0.97);
+  border-top: 1px solid var(--cor-borda);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  z-index: 900;
+}
+
+.bb-item {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  font-family: var(--fonte-titulo);
+  font-size: 8px;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--cor-texto-mudo);
+  cursor: none;
+  transition: color var(--transicao);
+}
+
+.bb-item i { font-size: 17px; }
+.bb-item:hover,
+.bb-item.ativo { color: var(--cor-dourado); }
+
+/* ============================================================
    ANIMAÇÕES DE ENTRADA (SCROLL REVEAL)
 ============================================================ */
 .reveal {
@@ -978,9 +1051,9 @@ footer {
 /* ============================================================
    RESPONSIVO
 ============================================================ */
+
+/* Tablet — ajustes intermediários (768–900px) */
 @media (max-width: 900px) {
-  .nav-links .nav-link:nth-child(n+4) { display: none; }
-  .nav-search { display: none; }
   .grid-destaque { grid-template-columns: 1fr 1fr; }
   .card-item.destaque { grid-column: 1 / 3; grid-row: auto; }
   .recente-grid { grid-template-columns: repeat(2, 1fr); }
@@ -988,16 +1061,115 @@ footer {
   .footer-bottom { flex-direction: column; text-align: center; padding: 1rem 2rem; }
 }
 
-@media (max-width: 600px) {
-  .hero-titulo { font-size: 28px; }
-  .hero-botoes { flex-direction: column; align-items: center; }
+/* Mobile (<768px) */
+@media (max-width: 767px) {
+  /* Navbar: só logo + hambúrguer */
+  .nav-divider { display: none; }
+  .nav-hamburguer { display: flex; margin-left: auto; }
+
+  /* Drawer lateral direito */
+  .nav-drawer {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 1.5rem;
+    position: fixed;
+    top: 0; right: 0; bottom: 0;
+    width: min(300px, 82vw);
+    padding: 4.5rem 1.5rem 2rem;
+    background: rgba(6, 3, 3, 0.98);
+    border-left: 1px solid var(--cor-borda-forte);
+    box-shadow: -12px 0 32px rgba(0, 0, 0, 0.6);
+    transform: translateX(100%);
+    transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+    z-index: 1100;
+    overflow-y: auto;
+  }
+  .nav-drawer.aberto { transform: translateX(0); }
+
+  .nav-drawer-fechar {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: absolute;
+    top: 1rem; right: 1rem;
+    width: 30px; height: 30px;
+    background: transparent;
+    border: 0.5px solid var(--cor-borda-forte);
+    border-radius: var(--raio);
+    color: var(--cor-texto-mudo);
+    cursor: pointer;
+    transition: color var(--transicao), border-color var(--transicao);
+  }
+  .nav-drawer-fechar:hover { color: var(--cor-texto); border-color: var(--cor-texto-mudo); }
+
+  .nav-overlay.visivel { display: block; }
+
+  .nav-links {
+    flex-direction: column;
+    align-items: stretch;
+    flex: none;
+    gap: 0.25rem;
+  }
+  .nav-link { height: auto; padding: 0.85rem 0; }
+  .nav-link::after { display: none; }
+
+  .nav-search { margin-left: 0; margin-top: 0.75rem; width: 100%; }
+  .nav-search input { width: 100%; }
+
+  .nav-right { margin-left: 0; width: 100%; }
+  .btn-sessao { width: 100%; justify-content: center; }
+
+  /* Hero: título menor, botões empilhados, imagem reposicionada */
+  .hero-titulo { font-size: clamp(26px, 9vw, 40px); }
+  .hero-bg { background-position: 25% top; }
+  .hero-botoes { flex-direction: column; align-items: stretch; width: 100%; max-width: 320px; }
+  .btn-primario, .btn-contorno { width: 100%; justify-content: center; }
+
+  /* Abas: rolagem horizontal em vez de quebrar linha */
+  .abas {
+    flex-wrap: nowrap;
+    justify-content: flex-start;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+  .abas::-webkit-scrollbar { display: none; }
+
+  /* Grids em 1 coluna */
   .grid-destaque { grid-template-columns: 1fr; }
-  .card-item.destaque { grid-column: 1; }
+  .card-item.destaque { grid-column: 1; grid-row: auto; }
   .recente-grid { grid-template-columns: 1fr; }
   .footer-top { grid-template-columns: 1fr; }
-  .abas { gap: 0; justify-content: flex-start; overflow-x: auto; padding-bottom: 0; }
+
+  /* Bottom bar fixa */
+  .bottombar { display: flex; }
+  body { padding-bottom: 58px; }
+
+  /* Cursor customizado não faz sentido em touch */
   body { cursor: auto; }
   .cursor-dot, .cursor-ring { display: none; }
+}
+
+/* Ultrawide (>1440px) — conteúdo centralizado num wrapper de 1440px */
+@media (min-width: 1441px) {
+  .navbar,
+  .secao,
+  .secao-recente,
+  .footer-top,
+  .footer-bottom {
+    max-width: 1440px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  .footer-divisor {
+    max-width: calc(1440px - 6rem);
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  .secao-titulo { font-size: clamp(18px, 1.4vw, 24px); }
 }
 
 /* Respeita preferência de movimento reduzido */

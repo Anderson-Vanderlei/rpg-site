@@ -71,7 +71,30 @@ document.addEventListener('DOMContentLoaded', () => {
       link.addEventListener('click', () => {
         document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('ativo'));
         link.classList.add('ativo');
+        window.toggleDrawer?.(false);
       });
+    });
+  }
+
+  // ============================================================
+  // 2B. DRAWER MOBILE (hambúrguer)
+  // ============================================================
+  const navDrawer  = document.getElementById('navDrawer');
+  const navOverlay = document.getElementById('navOverlay');
+  const btnHamburguer = document.getElementById('btnHamburguer');
+
+  if (navDrawer && navOverlay && btnHamburguer) {
+    window.toggleDrawer = (forcar) => {
+      const abrir = typeof forcar === 'boolean' ? forcar : !navDrawer.classList.contains('aberto');
+      navDrawer.classList.toggle('aberto', abrir);
+      navOverlay.classList.toggle('visivel', abrir);
+      btnHamburguer.classList.toggle('ativo', abrir);
+    };
+
+    document.querySelector('.btn-sessao')?.addEventListener('click', () => toggleDrawer(false));
+
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') toggleDrawer(false);
     });
   }
 

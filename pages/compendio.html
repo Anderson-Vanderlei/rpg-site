@@ -21,12 +21,18 @@
 
 <!-- TOPBAR -->
 <header class="topbar">
+  <button class="topbar-hamburguer" id="btnHamburguer" onclick="toggleSidebarMobile()" aria-label="Abrir menu">
+    <i class="ti ti-menu-2" aria-hidden="true"></i>
+  </button>
+
   <a class="topbar-logo" href="../index.html">
     <div class="topbar-emblema"></div>
     <span class="topbar-system">Tormenta 20</span>
   </a>
   <div class="topbar-div"></div>
-  <span class="topbar-secao">Compêndio</span>
+  <nav class="breadcrumb" id="breadcrumb" aria-label="breadcrumb">
+    <span class="bc-item bc-atual">Compêndio</span>
+  </nav>
 
   <div class="topbar-search">
     <i class="ti ti-search" aria-hidden="true"></i>
@@ -37,10 +43,16 @@
 <!-- LAYOUT PRINCIPAL -->
 <div class="layout">
 
+  <!-- Overlay escuro (mobile) — clicar fora fecha a sidebar -->
+  <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebarMobile(false)"></div>
+
   <!-- ══════════════════════════════════════════════════════
        SIDEBAR NAV HIERÁRQUICA
   ══════════════════════════════════════════════════════ -->
-  <nav class="sidebar">
+  <nav class="sidebar" id="sidebar">
+    <button class="sidebar-fechar" id="btnFecharSidebar" onclick="toggleSidebarMobile(false)" aria-label="Fechar menu">
+      <i class="ti ti-x" aria-hidden="true"></i>
+    </button>
 
     <!-- ── PERSONAGEM ── -->
     <div class="nav-grupo" data-grupo="personagem">
@@ -198,7 +210,7 @@
           <i class="ti ti-chevron-right seta" style="margin-left:auto;font-size:10px" aria-hidden="true"></i>
         </div>
         <div class="nav-sub-sub" style="display:none">
-          <div class="nav-sub-sub-item" onclick="mostrarSecao('modificadores')">
+          <div class="nav-sub-sub-item" data-secao="modificadores" onclick="mostrarSecao('modificadores')">
             <span>Modificadores</span>
           </div>
         </div>
@@ -209,7 +221,7 @@
           <i class="ti ti-chevron-right seta" style="margin-left:auto;font-size:10px" aria-hidden="true"></i>
         </div>
         <div class="nav-sub-sub" style="display:none">
-          <div class="nav-sub-sub-item" onclick="mostrarSecao('encantamentos')">
+          <div class="nav-sub-sub-item" data-secao="encantamentos" onclick="mostrarSecao('encantamentos')">
             <span>Encantamentos</span>
           </div>
         </div>
@@ -267,8 +279,8 @@
           <i class="ti ti-chevron-right seta" style="margin-left:auto;font-size:10px" aria-hidden="true"></i>
         </div>
         <div class="nav-sub-sub" style="display:none">
-          <div class="nav-sub-sub-item" onclick="mostrarSecao('clima')"><span>Clima</span></div>
-          <div class="nav-sub-sub-item" onclick="mostrarSecao('terrenos')"><span>Terrenos</span></div>
+          <div class="nav-sub-sub-item" data-secao="clima" onclick="mostrarSecao('clima')"><span>Clima</span></div>
+          <div class="nav-sub-sub-item" data-secao="terrenos" onclick="mostrarSecao('terrenos')"><span>Terrenos</span></div>
         </div>
         <div class="nav-sub-item" data-secao="complicacoes"
              onclick="toggleSubItem(this,'complicacoes')">
@@ -519,15 +531,6 @@
 <!-- SCRIPTS -->
 <script src="../js/data/racas.js"></script>
 <script src="../js/compendio.js"></script>
-<script>
-  // Expõe mostrarSecao globalmente para os nav-sub-sub-items
-  function mostrarSecao(nome) {
-    document.querySelectorAll('.secao-conteudo').forEach(s => s.style.display = 'none');
-    const el = document.getElementById('secao-' + nome);
-    if (el) el.style.display = el.id === 'secao-racas' ? 'flex' : 'flex';
-    if (typeof fecharDetalhe === 'function') fecharDetalhe();
-  }
-</script>
 
 </body>
 </html>

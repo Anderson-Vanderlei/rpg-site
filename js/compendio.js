@@ -26,6 +26,18 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
+  // ── 1B. SIDEBAR MOBILE (hambúrguer + overlay) ──────────────
+  const sidebarEl     = document.getElementById('sidebar');
+  const sidebarOverlay = document.getElementById('sidebarOverlay');
+  const btnHamburguer  = document.getElementById('btnHamburguer');
+
+  window.toggleSidebarMobile = (forcar) => {
+    const abrir = typeof forcar === 'boolean' ? forcar : !sidebarEl.classList.contains('mobile-aberta');
+    sidebarEl.classList.toggle('mobile-aberta', abrir);
+    sidebarOverlay?.classList.toggle('visivel', abrir);
+    btnHamburguer?.classList.toggle('ativo', abrir);
+  };
+
   // ── 2. NAV HIERÁRQUICO ─────────────────────────────────────
   // Toggle grupo principal
   window.toggleGrupo = (el) => {
@@ -78,6 +90,38 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // ── 3. SEÇÕES ──────────────────────────────────────────────
   const secaoAtual = { nome: '' };
+  const LS_SECAO = 't20-compendio-ultima-secao';
+
+  // Monta o breadcrumb (Compêndio › Grupo › Seção[ › Sub-seção]) a partir
+  // do próprio item de nav clicado, sem duplicar os rótulos em outro lugar.
+  function atualizarBreadcrumb(nome) {
+    const bcEl = document.getElementById('breadcrumb');
+    if (!bcEl) return;
+
+    const partes = ['Compêndio'];
+    const alvo = document.querySelector(`[data-secao="${nome}"]`);
+
+    if (alvo) {
+      const grupo = alvo.closest('.nav-grupo');
+      const grupoLabel = grupo?.querySelector('.grupo-label')?.textContent.trim();
+      if (grupoLabel) partes.push(grupoLabel);
+
+      const ehSubSub = alvo.classList.contains('nav-sub-sub-item');
+      if (ehSubSub) {
+        const subItemPai = alvo.closest('.nav-sub-sub')?.previousElementSibling;
+        const subLabel = subItemPai?.querySelector('.sub-label')?.textContent.trim();
+        if (subLabel) partes.push(subLabel);
+      }
+
+      const label = alvo.querySelector('.sub-label, span')?.textContent.trim();
+      if (label) partes.push(label);
+    }
+
+    bcEl.innerHTML = partes.map((p, i) => `
+      ${i > 0 ? '<i class="ti ti-chevron-right bc-sep" aria-hidden="true"></i>' : ''}
+      <span class="bc-item${i === partes.length - 1 ? ' bc-atual' : ''}">${p}</span>
+    `).join('');
+  }
 
   function mostrarSecao(nome) {
     secaoAtual.nome = nome;
@@ -85,6 +129,42 @@ document.addEventListener('DOMContentLoaded', () => {
     const el = document.getElementById('secao-' + nome);
     if (el) el.style.display = 'flex';
     fecharDetalhe();
+    atualizarBreadcrumb(nome);
+    localStorage.setItem(LS_SECAO, nome);
+    if (window.innerWidth <= 768) toggleSidebarMobile(false);
+  }
+  window.mostrarSecao = mostrarSecao;
+
+  // Reproduz o clique num item de nav (grupo + sub-item + seção) a partir
+  // de um id de seção salvo — usado para restaurar a última seção visitada.
+  function ativarSecaoNav(nome) {
+    const alvo = document.querySelector(`[data-secao="${nome}"]`);
+    if (!alvo) { mostrarSecao('racas'); return; }
+
+    const ehSubSub = alvo.classList.contains('nav-sub-sub-item');
+    const subItem = ehSubSub ? alvo.closest('.nav-sub-sub')?.previousElementSibling : alvo;
+    const grupo = alvo.closest('.nav-grupo');
+
+    document.querySelectorAll('.nav-grupo').forEach(g => {
+      g.classList.remove('expandido');
+      g.querySelector('.nav-grupo-header').classList.remove('ativo');
+    });
+    if (grupo) {
+      grupo.classList.add('expandido');
+      grupo.querySelector('.nav-grupo-header').classList.add('ativo');
+    }
+
+    document.querySelectorAll('.nav-sub-item').forEach(i => i.classList.remove('ativo'));
+    if (subItem) {
+      subItem.classList.add('ativo');
+      if (subItem.classList.contains('tem-filhos')) {
+        subItem.classList.add('expandido');
+        const sub = subItem.nextElementSibling;
+        if (sub) sub.style.display = 'block';
+      }
+    }
+
+    mostrarSecao(nome);
   }
 
   // ── 4. RENDERIZAR CARDS DE RAÇAS ───────────────────────────
@@ -232,10 +312,12 @@ document.addEventListener('DOMContentLoaded', () => {
     document.querySelector(`.nav-raca-item[data-raca="${r.id}"]`)?.classList.add('ativo');
 
     painelEl.classList.add('aberto');
+    document.querySelector('.cards-area')?.classList.add('encolhido');
   };
 
   window.fecharDetalhe = () => {
     painelEl.classList.remove('aberto');
+    document.querySelector('.cards-area')?.classList.remove('encolhido');
     document.querySelectorAll('.race-card').forEach(c => c.classList.remove('selecionado'));
   };
 
@@ -294,7 +376,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
     document.addEventListener('keydown', e => {
       if ((e.ctrlKey||e.metaKey) && e.key==='k') { e.preventDefault(); buscaGlobal.focus(); }
-      if (e.key==='Escape') { fecharDetalhe(); buscaGlobal.blur(); }
+      if (e.key==='Escape') { fecharDetalhe(); toggleSidebarMobile(false); buscaGlobal.blur(); }
     });
   }
 
@@ -319,21 +401,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
-  // Mostra raças por padrão
-  mostrarSecao('racas');
-
-  // Expande grupo Personagem por padrão
-  const grupoPersonagem = document.querySelector('.nav-grupo[data-grupo="personagem"]');
-  if (grupoPersonagem) {
-    grupoPersonagem.classList.add('expandido');
-    grupoPersonagem.querySelector('.nav-grupo-header').classList.add('ativo');
-    // Expande subitem Raças
-    const subRacas = grupoPersonagem.querySelector('.nav-sub-item[data-secao="racas"]');
-    if (subRacas) {
-      subRacas.classList.add('ativo', 'expandido');
-      const subSub = subRacas.nextElementSibling;
-      if (subSub) subSub.style.display = 'block';
-    }
-  }
+  // Restaura a última seção visitada (ou Raças, na primeira visita)
+  ativarSecaoNav(localStorage.getItem(LS_SECAO) || 'racas');
 
 });

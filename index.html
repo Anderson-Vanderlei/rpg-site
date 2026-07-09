@@ -51,26 +51,38 @@
 
     <div class="nav-divider"></div>
 
-    <div class="nav-links">
-      <a class="nav-link ativo" href="#">Fichas</a>
-      <a class="nav-link" href="#">Wiki</a>
-      <a class="nav-link" href="pages/atlas.html">Atlas</a>
-      <a class="nav-link" href="pages/compendio.html">Compêndio</a>
-      <a class="nav-link" href="#">Livros</a>
+    <button class="nav-hamburguer" id="btnHamburguer" onclick="toggleDrawer()" aria-label="Abrir menu">
+      <i class="ti ti-menu-2" aria-hidden="true"></i>
+    </button>
 
-      <div class="nav-search">
-        <i class="ti ti-search" aria-hidden="true"></i>
-        <input type="text" placeholder="Buscar em Arton… (Ctrl+K)" aria-label="Buscar" />
+    <div class="nav-drawer" id="navDrawer">
+      <button class="nav-drawer-fechar" id="btnFecharDrawer" onclick="toggleDrawer(false)" aria-label="Fechar menu">
+        <i class="ti ti-x" aria-hidden="true"></i>
+      </button>
+
+      <div class="nav-links">
+        <a class="nav-link ativo" href="#">Fichas</a>
+        <a class="nav-link" href="#">Wiki</a>
+        <a class="nav-link" href="pages/atlas.html">Atlas</a>
+        <a class="nav-link" href="pages/compendio.html">Compêndio</a>
+        <a class="nav-link" href="#">Livros</a>
+
+        <div class="nav-search">
+          <i class="ti ti-search" aria-hidden="true"></i>
+          <input type="text" placeholder="Buscar em Arton… (Ctrl+K)" aria-label="Buscar" />
+        </div>
+      </div>
+
+      <div class="nav-right">
+        <button class="btn-sessao">
+          <i class="ti ti-sword" aria-hidden="true"></i>
+          Sessão
+        </button>
       </div>
     </div>
-
-    <div class="nav-right">
-      <button class="btn-sessao">
-        <i class="ti ti-sword" aria-hidden="true"></i>
-        Sessão
-      </button>
-    </div>
   </nav>
+
+  <div class="nav-overlay" id="navOverlay" onclick="toggleDrawer(false)"></div>
 
   <!-- ============================================================
        HERO
@@ -360,6 +372,32 @@
 
     <div class="footer-ornamento">— ✦ —</div>
   </footer>
+
+  <!-- ============================================================
+       BOTTOM BAR (mobile)
+  ============================================================ -->
+  <nav class="bottombar" aria-label="Navegação mobile">
+    <a class="bb-item ativo" href="index.html">
+      <i class="ti ti-home" aria-hidden="true"></i>
+      <span>Home</span>
+    </a>
+    <a class="bb-item" href="#">
+      <i class="ti ti-book" aria-hidden="true"></i>
+      <span>Wiki</span>
+    </a>
+    <a class="bb-item" href="pages/atlas.html">
+      <i class="ti ti-map" aria-hidden="true"></i>
+      <span>Atlas</span>
+    </a>
+    <a class="bb-item" href="pages/compendio.html">
+      <i class="ti ti-notebook" aria-hidden="true"></i>
+      <span>Compêndio</span>
+    </a>
+    <a class="bb-item" href="#">
+      <i class="ti ti-sword" aria-hidden="true"></i>
+      <span>Sessão</span>
+    </a>
+  </nav>
 
   <!-- JavaScript -->
   <script src="js/main.js"></script>

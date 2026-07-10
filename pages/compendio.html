@@ -15,6 +15,16 @@
 </head>
 <body>
 
+<div id="tooltip-kw" role="tooltip" aria-hidden="true">
+  <div class="tooltip-kw-inner">
+    <div class="tooltip-kw-header">
+      <span class="tooltip-kw-tipo"></span>
+      <span class="tooltip-kw-nome"></span>
+    </div>
+    <div class="tooltip-kw-desc"></div>
+  </div>
+</div>
+
 <!-- CURSOR -->
 <div class="cursor-dot"></div>
 <div class="cursor-ring"></div>
@@ -80,12 +90,15 @@
         <!-- Lista de raças gerada pelo JS -->
         <div class="nav-sub-sub" id="navListaRacas" style="display:none"></div>
 
-        <!-- Classes -->
-        <div class="nav-sub-item" data-secao="classes"
+        <!-- Classes → expande lista -->
+        <div class="nav-sub-item tem-filhos" data-secao="classes"
              onclick="toggleSubItem(this,'classes')">
           <i class="ti ti-sword" aria-hidden="true"></i>
           <span class="sub-label">Classes</span>
+          <i class="ti ti-chevron-right seta" style="margin-left:auto;font-size:10px" aria-hidden="true"></i>
         </div>
+        <!-- Lista de classes gerada pelo JS -->
+        <div class="nav-sub-sub" id="navListaClasses" style="display:none"></div>
 
         <!-- Distinções -->
         <div class="nav-sub-item" data-secao="distincoes"
@@ -412,11 +425,61 @@
       <h2>Atributos Básicos</h2>
       <p>Em breve — p. 17 do livro de regras</p>
     </div>
-    <div id="secao-classes"         class="secao-conteudo placeholder-area" style="display:none">
-      <i class="ti ti-sword" aria-hidden="true"></i>
-      <h2>Classes</h2>
-      <p>Em breve — 14 classes disponíveis</p>
-    </div>
+    <div id="secao-classes" class="secao-conteudo" style="display:none;flex-direction:column;flex:1;overflow:hidden;">
+
+      <div class="section-hero">
+        <div class="section-hero-bg"></div>
+        <h1>Classes</h1>
+        <p>A classe define o papel do seu personagem na aventura — suas habilidades, estilo de combate e progressão ao longo dos 20 níveis de jogo.</p>
+      </div>
+
+      <div class="toolbar">
+        <div class="search-inline">
+          <i class="ti ti-search" aria-hidden="true"></i>
+          <input type="text" id="buscaClasses" placeholder="Buscar classe…" />
+        </div>
+        <div id="classesFiltros" style="display:flex;gap:8px;flex-wrap:wrap;">
+          <button class="filtro-btn a" onclick="setFiltroClasse(this,'todos')">Todos</button>
+          <button class="filtro-btn" onclick="setFiltroClasse(this,'Dano')">Dano</button>
+          <button class="filtro-btn" onclick="setFiltroClasse(this,'Magia')">Magia</button>
+          <button class="filtro-btn" onclick="setFiltroClasse(this,'Tanque')">Tanque</button>
+          <button class="filtro-btn" onclick="setFiltroClasse(this,'Suporte')">Suporte</button>
+          <button class="filtro-btn" onclick="setFiltroClasse(this,'Simples')">Simples</button>
+          <button class="filtro-btn" onclick="setFiltroClasse(this,'Complexa')">Complexa</button>
+        </div>
+        <span class="filtro-count" id="classesCount">14 classes</span>
+      </div>
+
+      <div class="cards-area" id="classesArea">
+        <div class="cards-grid" id="classesGrid"></div>
+      </div>
+
+      <!-- Painel de detalhe da classe (mais largo que o de raças: 420px) -->
+      <div class="classe-painel" id="classePainel">
+        <div class="cp-hero" id="cpHero">
+          <div class="cp-hero-bg" id="cpHeroBg"></div>
+          <div class="cp-hero-img-wrap" id="cpHeroImgWrap">
+            <i class="ti cp-hero-icon" id="cpHeroIcon" aria-hidden="true"></i>
+          </div>
+          <div class="cp-hero-content">
+            <div class="cp-tipo" id="cpTipo"></div>
+            <div class="cp-nome" id="cpNome">—</div>
+            <div class="cp-sub"  id="cpSub">—</div>
+            <div class="cp-badges" id="cpBadges"></div>
+          </div>
+          <button class="dp-fechar" onclick="fecharDetalheClasse()">
+            <i class="ti ti-x" aria-hidden="true"></i>
+          </button>
+        </div>
+
+        <div class="cp-stats-bar" id="cpStatsBar"></div>
+
+        <div class="cp-body" id="cpBody">
+          <!-- preenchido pelo JS -->
+        </div>
+      </div>
+
+    </div><!-- /secao-classes -->
     <div id="secao-distincoes"      class="secao-conteudo placeholder-area" style="display:none">
       <i class="ti ti-medal" aria-hidden="true"></i>
       <h2>Distinções</h2>
@@ -530,6 +593,8 @@
 
 <!-- SCRIPTS -->
 <script src="../js/data/racas.js"></script>
+<script src="../js/data/classes.js"></script>
+<script src="../js/keywords.js"></script>
 <script src="../js/compendio.js"></script>
 
 </body>

@@ -129,6 +129,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const el = document.getElementById('secao-' + nome);
     if (el) el.style.display = 'flex';
     fecharDetalhe();
+    fecharDetalheClasse();
     atualizarBreadcrumb(nome);
     localStorage.setItem(LS_SECAO, nome);
     if (window.innerWidth <= 768) toggleSidebarMobile(false);
@@ -233,6 +234,404 @@ document.addEventListener('DOMContentLoaded', () => {
       grid.appendChild(card);
     });
   }
+
+  // ── 4B. RENDERIZAR CARDS DE CLASSES ────────────────────────
+
+  function cmplxDots(n) {
+    return [1,2,3].map(i =>
+      `<div class="cc-dot ${i<=n?'on':'off'}"></div>`
+    ).join('');
+  }
+
+  function renderClasses(lista) {
+    const grid = document.getElementById('classesGrid');
+    if (!grid) return;
+    document.getElementById('classesCount').textContent =
+      lista.length + ' classe' + (lista.length !== 1 ? 's' : '');
+    grid.innerHTML = '';
+
+    // Popula lista na sidebar (igual ao de raças)
+    const navLista = document.getElementById('navListaClasses');
+    if (navLista) {
+      navLista.innerHTML = lista.map(c => `
+        <div class="nav-sub-sub-item nav-classe-item" data-classe="${c.id}"
+             onclick="irParaClasse('${c.id}')">
+          <i class="ti ${c.icone}" aria-hidden="true" style="color:${c.cor};font-size:11px"></i>
+          <span>${c.nome}</span>
+        </div>`).join('');
+    }
+
+    lista.forEach(c => {
+      const papeisTags = (c.papeis||[]).map(p =>
+        `<span class="cc-papel papel-${p.toLowerCase()}">${p}</span>`
+      ).join('');
+
+      const imgHtml = c.imagem
+        ? `<img src="../${c.imagem}" alt="${c.nome}" class="cc-img-foto" loading="lazy">`
+        : `<i class="ti ${c.icone} cc-img-icon" style="color:${c.cor}" aria-hidden="true"></i>`;
+
+      const card = document.createElement('div');
+      card.className = 'class-card';
+      card.dataset.id = c.id;
+      card.innerHTML = `
+        <div class="cc-img" style="background:linear-gradient(160deg,${c.cor}18,#0a0707 70%)">
+          ${imgHtml}
+          <div class="cc-img-accent" style="background:${c.cor}"></div>
+          <div class="cc-img-badges">
+            <span class="rc-badge badge-fonte">${c.fonte}</span>
+          </div>
+          <div class="cc-papeis">${papeisTags}</div>
+          <div class="cc-cmplx">${cmplxDots(c.complexidade||1)}</div>
+        </div>
+        <div class="cc-body">
+          <div class="cc-nome">${c.nome}</div>
+          <div class="cc-subtitulo">${c.subtitulo||''}</div>
+          <div class="cc-campo">
+            <div class="cc-campo-l">
+              <i class="ti ti-heart" style="font-size:14px;color:#e02020" aria-hidden="true"></i>
+              <strong class="pv-texto">Pontos de Vida</strong>
+            </div>
+            <div class="cc-campo-v">
+              Começa com <strong class="pv-texto">${c.pvInicial}</strong> PV
+              + <strong class="pv-texto">${c.pvPorNivel > 0 ? '+' : ''}${c.pvPorNivel} PV</strong> por nível
+            </div>
+          </div>
+          <div class="cc-campo">
+            <div class="cc-campo-l">
+              <i class="ti ti-sparkles" style="font-size:14px;color:#44aaee" aria-hidden="true"></i>
+              <strong class="pm-texto">Pontos de Mana</strong>
+            </div>
+            <div class="cc-campo-v">
+              <strong class="pm-texto">${c.pmBase} PM</strong> por nível
+            </div>
+          </div>
+          <div class="cc-campo">
+            <div class="cc-campo-l">Perícias</div>
+            <div class="cc-campo-v">
+              ${(c.periciasFixas||[]).join(', ')}${c.periciasEscolher ? ` · +${c.periciasEscolher} a escolher` : ''}
+            </div>
+          </div>
+          <div class="cc-campo">
+            <div class="cc-campo-l">Proficiências</div>
+            <div class="cc-profs">
+              ${(c.proficiencias||[]).map(p => `<span class="cc-prof-tag">${p}</span>`).join('')}
+            </div>
+          </div>
+          <div class="cc-desc">${c.descricao||''}</div>
+          <div class="cc-footer">
+            <button class="btn-ver" onclick="abrirDetalheClasse(window.CLASSES.find(x=>x.id==='${c.id}'))">
+              <i class="ti ti-eye" aria-hidden="true"></i> Ver Classe
+            </button>
+          </div>
+        </div>`;
+      card.addEventListener('click', e => {
+        if (e.target.closest('.btn-ver')) return;
+        abrirDetalheClasse(c);
+      });
+      grid.appendChild(card);
+    });
+  }
+
+  // ── 4C. PAINEL DE DETALHES DE CLASSE ───────────────────────
+  const classePainelEl = document.getElementById('classePainel');
+  const classesAreaEl  = document.getElementById('classesArea');
+
+  window.abrirDetalheClasse = (c) => {
+    if (!c) return;
+
+    // Hero
+    document.getElementById('cpHeroBg').style.background =
+      `linear-gradient(135deg, ${c.cor}30, #080505 70%)`;
+    const iconEl = document.getElementById('cpHeroIcon');
+    iconEl.className = `ti ${c.icone} cp-hero-icon`;
+    iconEl.style.color = c.cor;
+
+    // Se tiver imagem substitui o ícone pela foto
+    const imgWrap = document.getElementById('cpHeroImgWrap');
+    if (c.imagem) {
+      imgWrap.innerHTML = `<img src="../${c.imagem}" alt="${c.nome}" style="width:100%;height:100%;object-fit:cover;object-position:top center;position:absolute;inset:0;opacity:.3;">`;
+    }
+
+    document.getElementById('cpTipo').innerHTML =
+      `<i class="ti ti-sword" aria-hidden="true"></i> Classe`;
+    document.getElementById('cpNome').textContent = c.nome;
+    document.getElementById('cpSub').textContent  = c.subtitulo || '';
+
+    // Badges: papeis + complexidade
+    const cmplxLabel = ['','Simples','Moderada','Complexa'][c.complexidade||1];
+    document.getElementById('cpBadges').innerHTML =
+      (c.papeis||[]).map(p =>
+        `<span class="cc-papel papel-${p.toLowerCase()}">${p}</span>`
+      ).join('') +
+      `<span style="font-family:'Cinzel',serif;font-size:7px;padding:2px 6px;border-radius:2px;border:.5px solid #2a2a2a;color:#555">${cmplxLabel}</span>` +
+      `<span style="font-family:'Cinzel',serif;font-size:7px;padding:2px 6px;border-radius:2px;border:.5px solid rgba(139,0,0,.3);color:#cc4444;background:rgba(139,0,0,.08)">T20 p.${c.pagina||'?'}</span>`;
+
+    // Stats bar
+    document.getElementById('cpStatsBar').innerHTML = `
+      <div class="cp-stat">
+        <div class="cp-stat-val">
+          <i class="ti ti-heart pv-icon" aria-hidden="true"></i>
+          <strong class="pv-texto">${c.pvInicial}</strong>
+        </div>
+        <div class="cp-stat-lbl">PV Iniciais</div>
+      </div>
+      <div class="cp-stat">
+        <div class="cp-stat-val">
+          <i class="ti ti-heart pv-icon" aria-hidden="true"></i>
+          <strong class="pv-texto">+${c.pvPorNivel} PV</strong>
+        </div>
+        <div class="cp-stat-lbl">por nível</div>
+      </div>
+      <div class="cp-stat">
+        <div class="cp-stat-val">
+          <i class="ti ti-sparkles pm-icon" aria-hidden="true"></i>
+          <strong class="pm-texto">${c.pmBase} PM</strong>
+        </div>
+        <div class="cp-stat-lbl">por nível</div>
+      </div>
+      <div class="cp-stat">
+        <div class="cp-stat-val" style="font-size:11px">${c.atributoChave || '—'}</div>
+        <div class="cp-stat-lbl">Atributo-chave</div>
+      </div>`;
+
+    // Body
+    let html = '';
+
+    // Quote
+    if (c.quote) {
+      html += `<div class="cp-quote">${c.quote}</div>`;
+    }
+
+    // Descrição
+    if (c.descricao) {
+      html += `<div class="cp-secao">Descrição</div>
+        <p style="font-size:13px;color:#666;line-height:1.75;font-style:italic;margin-bottom:.9rem">${processarKeywords(c.descricao)}</p>`;
+    }
+
+    // Habilidades fixas
+    if ((c.habilidadesFixas||[]).length > 0) {
+      html += `<div class="cp-secao">Habilidades de Classe</div>`;
+      c.habilidadesFixas.forEach(h => {
+        html += `
+          <div class="cp-hab-row">
+            <div class="cp-lv-badge">${h.nivel}</div>
+            <div>
+              <div class="cp-hab-nome">${h.nome}</div>
+              <div class="cp-hab-desc">${processarKeywords(h.descricao)}</div>
+            </div>
+          </div>`;
+      });
+    }
+
+    // Variações (caminhos, linhagens...)
+    (c.variacoes||[]).forEach(v => {
+      const opcoesHtml = (v.opcoes||[]).map(op => `
+        <div class="cp-var-opt">
+          <div class="cp-var-opt-nome">${op.nome}</div>
+          <div class="cp-var-opt-desc">${op.descricao}</div>
+        </div>`).join('');
+
+      // Poderes do primeiro caminho como preview
+      const poderesVariacao = (c.poderes||[]).filter(p => p.variacaoId === (v.opcoes[0]||{}).id);
+      const branchHtml = poderesVariacao.length > 0 ? `
+        <div class="cp-var-branch">
+          <div class="cp-var-branch-title">
+            <i class="ti ti-chevrons-right" aria-hidden="true"></i>
+            Poderes de ${(v.opcoes[0]||{}).nome||''}
+          </div>
+          ${poderesVariacao.map(p => renderPoderHtml(p)).join('')}
+        </div>` : '';
+
+      html += `
+        <div class="cp-secao"><i class="ti ${v.icone||'ti-arrows-split-2'}" aria-hidden="true"></i> ${v.titulo}</div>
+        <div class="cp-variacao">
+          <div class="cp-var-hd">
+            <div class="cp-var-ic"><i class="ti ${v.icone||'ti-arrows-split-2'}" aria-hidden="true"></i></div>
+            <div>
+              <div class="cp-var-titulo">${v.titulo}</div>
+              <div class="cp-var-sub">${v.subtitulo||''}</div>
+            </div>
+          </div>
+          <div class="cp-var-opcoes">${opcoesHtml}</div>
+          ${branchHtml}
+        </div>`;
+    });
+
+    // Poderes gerais (sem variacaoId)
+    const poderesGerais = (c.poderes||[]).filter(p => !p.variacaoId);
+    if (poderesGerais.length > 0) {
+      html += `<div class="cp-secao">Poderes de ${c.nome}</div>`;
+      html += poderesGerais.map(p => renderPoderHtml(p)).join('');
+    }
+
+    // Painéis de escolha
+    (c.escolhas||[]).forEach(e => {
+      const optsHtml = (e.opcoes||[]).map(op => `
+        <div class="cp-esc-opt">
+          <div class="cp-esc-opt-nome">${op.nome}</div>
+          <div class="cp-esc-opt-desc">${processarKeywords(op.descricao)}</div>
+        </div>`).join('');
+      html += `
+        <div class="cp-escolha">
+          <div class="cp-esc-hd">
+            <div class="cp-esc-ic"><i class="ti ${e.icone||'ti-list'}" aria-hidden="true"></i></div>
+            <div>
+              <div class="cp-esc-titulo">${e.titulo}</div>
+              <div class="cp-esc-sub">${e.subtitulo||''}</div>
+            </div>
+          </div>
+          <div class="cp-esc-opcoes">${optsHtml}</div>
+        </div>`;
+    });
+
+    // Painéis de explicação
+    (c.explicacoes||[]).forEach(exp => {
+      const itensHtml = (exp.itens||[]).map(item =>
+        `<div class="cp-exp-item"><span class="cp-exp-bul">→</span><span>${processarKeywords(item)}</span></div>`
+      ).join('');
+      html += `
+        <div class="cp-explicacao">
+          <div class="cp-exp-hd">
+            <div class="cp-exp-ic"><i class="ti ${exp.icone||'ti-book'}" aria-hidden="true"></i></div>
+            <div>
+              <div class="cp-exp-titulo">${exp.titulo}</div>
+              <div class="cp-exp-sub">${exp.subtitulo||''}</div>
+            </div>
+          </div>
+          <div class="cp-exp-body">${itensHtml}</div>
+        </div>`;
+    });
+
+    // Raças recomendadas
+    if ((c.racasRecomendadas||[]).length > 0) {
+      html += `<div class="cp-secao">Raças Recomendadas</div>
+        <div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:.9rem">
+          ${c.racasRecomendadas.map(r =>
+            `<span class="dp-classe-tag">${r}</span>`
+          ).join('')}
+        </div>`;
+    }
+
+    // Tabela de progressão — sempre no final do painel
+    if ((c.tabela||[]).length > 0) {
+      html += `<div class="cp-secao"><i class="ti ti-table" aria-hidden="true"></i> Tabela de Progressão</div>
+        <div class="cp-tabela-wrap">
+          <table class="cp-tabela">
+            <thead>
+              <tr>
+                <th>Nível</th>
+                <th>Habilidades de Classe</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${c.tabela.map(row => `
+                <tr>
+                  <td>${row.nivel}º</td>
+                  <td style="font-size:11px;color:#888">${row.habilidades}</td>
+                </tr>`).join('')}
+            </tbody>
+          </table>
+        </div>`;
+    }
+
+    // Botões
+    html += `
+      <div class="dp-btns" style="margin-top:1rem">
+        <button class="btn-pdf">
+          <i class="ti ti-book" aria-hidden="true"></i>
+          Ver no Livro — p.${c.pagina||'?'}
+        </button>
+        <button class="btn-ghost">
+          <i class="ti ti-notes" aria-hidden="true"></i>
+          Adicionar à Ficha
+        </button>
+      </div>`;
+
+    // Legenda de keywords
+    html += `
+      <div class="cp-legenda">
+        <div class="cp-leg-item"><span class="kw-acao">ação</span><span>tipo de ação</span></div>
+        <div class="cp-leg-item"><span class="kw-pericia">perícia</span><span>perícia</span></div>
+        <div class="cp-leg-item"><span class="kw-poder">poder</span><span>poder/regra</span></div>
+        <div class="cp-leg-item"><span class="num-dano">+2d6</span><span>dano</span></div>
+        <div class="cp-leg-item"><span class="num-bonus">+2</span><span>bônus</span></div>
+        <div class="cp-leg-item"><span class="num-pm">3 PM</span><span>custo PM</span></div>
+      </div>`;
+
+    document.getElementById('cpBody').innerHTML = html;
+
+    // Abre o painel
+    classePainelEl.classList.add('aberto');
+    classesAreaEl.classList.add('encolhido');
+
+    // Marca card como selecionado
+    document.querySelectorAll('.class-card').forEach(c => c.classList.remove('selecionado'));
+    document.querySelector(`.class-card[data-id="${c.id}"]`)?.classList.add('selecionado');
+  };
+
+  function renderPoderHtml(p) {
+    const tipoTag = p.tipo === 'ativo'
+      ? `<span class="tag-ativo"><i class="ti ti-player-play" aria-hidden="true"></i> Ativo</span>`
+      : `<span class="tag-passivo"><i class="ti ti-circle-check" aria-hidden="true"></i> Passivo</span>`;
+    const pmTag = p.custoPM > 0
+      ? `<span class="tag-custo-pm"><span class="num-pm">${p.custoPM} PM</span></span>` : '';
+    const prereqHtml = p.prerequisito
+      ? `<div class="cp-prereq">
+          <i class="ti ti-sitemap" aria-hidden="true" style="font-size:9px;color:#2a2a2a"></i>
+          ${p.prerequisito.split(',').map(r =>
+            `<span class="cp-prereq-node">${r.trim()}</span>`
+          ).join('<span style="color:#222;font-size:10px">→</span>')}
+         </div>` : '';
+    return `
+      <div class="cp-poder">
+        <div class="cp-poder-head">
+          <span class="cp-poder-nome">${p.nome}</span>
+          ${tipoTag}${pmTag}
+        </div>
+        <div class="cp-poder-desc">${processarKeywords(p.descricao)}</div>
+        ${prereqHtml}
+      </div>`;
+  }
+
+  window.fecharDetalheClasse = () => {
+    classePainelEl?.classList.remove('aberto');
+    classesAreaEl?.classList.remove('encolhido');
+    document.querySelectorAll('.class-card').forEach(c => c.classList.remove('selecionado'));
+  };
+
+  window.irParaClasse = (id) => {
+    document.querySelectorAll('.nav-classe-item').forEach(i => i.classList.remove('ativo'));
+    document.querySelector(`.nav-classe-item[data-classe="${id}"]`)?.classList.add('ativo');
+    mostrarSecao('classes');
+    const classe = (window.CLASSES||[]).find(c => c.id === id);
+    if (classe) setTimeout(() => abrirDetalheClasse(classe), 100);
+  };
+
+  // Filtro e busca de classes
+  let filtroClasseAtivo = 'todos';
+  window.setFiltroClasse = (btn, val) => {
+    document.querySelectorAll('#classesFiltros .filtro-btn').forEach(b => b.classList.remove('a'));
+    btn.classList.add('a');
+    filtroClasseAtivo = val;
+    aplicarFiltroClasses();
+  };
+
+  function aplicarFiltroClasses() {
+    const busca = (document.getElementById('buscaClasses')?.value || '').toLowerCase();
+    const lista = (window.CLASSES||[]).filter(c => {
+      const matchFiltro = filtroClasseAtivo === 'todos'
+        || (filtroClasseAtivo === 'Simples'  && c.complexidade === 1)
+        || (filtroClasseAtivo === 'Complexa' && c.complexidade === 3)
+        || (c.papeis||[]).includes(filtroClasseAtivo);
+      const matchBusca = !busca
+        || c.nome.toLowerCase().includes(busca)
+        || (c.descricao||'').toLowerCase().includes(busca);
+      return matchFiltro && matchBusca;
+    });
+    renderClasses(lista);
+  }
+
+  document.getElementById('buscaClasses')?.addEventListener('input', aplicarFiltroClasses);
 
   // ── 5. PAINEL DE DETALHES ──────────────────────────────────
   const painelEl = document.getElementById('detalhePainel');
@@ -401,7 +800,69 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
+  if (window.CLASSES) renderClasses(window.CLASSES);
+
   // Restaura a última seção visitada (ou Raças, na primeira visita)
   ativarSecaoNav(localStorage.getItem(LS_SECAO) || 'racas');
+
+  // ── SISTEMA DE TOOLTIP DE KEYWORDS ─────────────────────────
+  (function iniciarTooltipKeywords() {
+    const tooltipEl = document.getElementById('tooltip-kw');
+    if (!tooltipEl) return;
+
+    const tipoLabel = {
+      acao:    'Ação',
+      alcance: 'Alcance',
+      pericia: 'Perícia',
+      cond:    'Condição',
+      regra:   'Poder / Regra',
+    };
+
+    // Mostrar ao entrar
+    document.addEventListener('mouseover', (e) => {
+      const kw = e.target.closest('.kw[data-tooltip]');
+      if (!kw) return;
+
+      const tipo  = kw.dataset.kwTipo  || '';
+      const nome  = kw.dataset.kwNome  || kw.textContent;
+      const desc  = kw.dataset.tooltip || '';
+
+      tooltipEl.dataset.tipo = tipo;
+      tooltipEl.querySelector('.tooltip-kw-tipo').textContent = tipoLabel[tipo] || tipo;
+      tooltipEl.querySelector('.tooltip-kw-nome').textContent = nome;
+      tooltipEl.querySelector('.tooltip-kw-desc').textContent = desc;
+      tooltipEl.classList.add('visivel');
+    });
+
+    // Esconder ao sair
+    document.addEventListener('mouseout', (e) => {
+      if (!e.target.closest('.kw[data-tooltip]')) return;
+      tooltipEl.classList.remove('visivel');
+    });
+
+    // Seguir o mouse com ajuste de borda de tela
+    document.addEventListener('mousemove', (e) => {
+      if (!tooltipEl.classList.contains('visivel')) return;
+
+      const pad = 14;
+      const tw  = tooltipEl.offsetWidth  || 280;
+      const th  = tooltipEl.offsetHeight || 80;
+      const vw  = window.innerWidth;
+      const vh  = window.innerHeight;
+
+      let x = e.clientX + pad;
+      let y = e.clientY - th - pad;
+
+      // Evita sair pela direita
+      if (x + tw > vw - pad) x = e.clientX - tw - pad;
+      // Evita sair pelo topo
+      if (y < pad) y = e.clientY + pad;
+      // Evita sair pelo rodapé
+      if (y + th > vh - pad) y = vh - th - pad;
+
+      tooltipEl.style.left = x + 'px';
+      tooltipEl.style.top  = y + 'px';
+    });
+  })();
 
 });

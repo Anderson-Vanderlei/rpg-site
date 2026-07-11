@@ -457,11 +457,50 @@ document.addEventListener('DOMContentLoaded', () => {
         </div>`;
     });
 
-    // Poderes gerais (sem variacaoId)
-    const poderesGerais = (c.poderes||[]).filter(p => !p.variacaoId);
-    if (poderesGerais.length > 0) {
-      html += `<div class="cp-secao">Poderes de ${c.nome}</div>`;
-      html += poderesGerais.map(p => renderPoderHtml(p)).join('');
+    // ── Poderes do arquivo poderes_classes.js (dados oficiais do livro)
+    const poderesOficiais = (window.PODERES_CLASSES && window.PODERES_CLASSES[c.id]) || [];
+    // Também inclui poderes que estejam no próprio objeto da classe
+    const poderesExtras = (c.poderes || []).filter(p => !p.variacaoId);
+    const todosPoderes = [...poderesOficiais, ...poderesExtras];
+
+    // Agrupa por categoriaEspecial
+    const categorias = {
+      null: { titulo: null, itens: [] },
+      musica: { titulo: 'Músicas de Bardo', icone: 'ti-music', itens: [] },
+      bravata: { titulo: 'Bravatas', icone: 'ti-speakerphone', itens: [] },
+      postura: { titulo: 'Posturas de Combate', icone: 'ti-shield', itens: [] },
+      armadilha: { titulo: 'Armadilhas', icone: 'ti-tools', itens: [] },
+      missa: { titulo: 'Missas', icone: 'ti-candle', itens: [] },
+      julgamento: { titulo: 'Julgamentos Divinos', icone: 'ti-gavel', itens: [] },
+      virtude: { titulo: 'Virtudes Paladinescas', icone: 'ti-star', itens: [] },
+    };
+
+    for (const p of todosPoderes) {
+      const cat = p.categoriaEspecial || null;
+      if (categorias[cat]) categorias[cat].itens.push(p);
+      else categorias[null].itens.push(p);
+    }
+
+    if (todosPoderes.length > 0) {
+      html += `<div class="cp-secao"><i class="ti ti-bolt" aria-hidden="true"></i> Poderes de ${c.nome}</div>`;
+
+      // Poderes gerais primeiro
+      for (const p of categorias[null].itens) {
+        html += renderPoderHtml(p);
+      }
+
+      // Poderes de categoria especial em sub-seções
+      for (const [cat, grupo] of Object.entries(categorias)) {
+        if (cat === 'null' || grupo.itens.length === 0) continue;
+        html += `
+          <div class="cp-secao-sub">
+            <i class="ti ${grupo.icone || 'ti-bookmark'}" aria-hidden="true"></i>
+            ${grupo.titulo}
+          </div>`;
+        for (const p of grupo.itens) {
+          html += renderPoderHtml(p);
+        }
+      }
     }
 
     // Painéis de escolha

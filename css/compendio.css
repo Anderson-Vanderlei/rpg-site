@@ -988,3 +988,34 @@ html, body {
   color: #888;
   line-height: 1.55;
 }
+
+/* Sub-seção de poderes (Músicas, Bravatas, Posturas, etc.) */
+.cp-secao-sub {
+  font-family: 'Cinzel', serif;
+  font-size: 8px;
+  color: #7b4ccc;
+  letter-spacing: .2em;
+  text-transform: uppercase;
+  margin: 12px 0 6px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.cp-secao-sub::after {
+  content: '';
+  flex: 1;
+  height: .5px;
+  background: rgba(123,76,204,.2);
+}
+
+/* Tags de categoria especial no card de poder */
+.tag-especial {
+  background: rgba(123,76,204,.12);
+  color: #9070c8;
+  border: .5px solid rgba(123,76,204,.3);
+  font-family: 'Cinzel', serif;
+  font-size: 7px;
+  padding: 1px 6px;
+  border-radius: 2px;
+  letter-spacing: .04em;
+}

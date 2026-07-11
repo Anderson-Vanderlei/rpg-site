@@ -3,6 +3,49 @@
    Nav hierárquico, cards de raças, painel de detalhes, busca
 ============================================================ */
 
+let _cpTodosPoderes  = [];
+let _cpPoderFiltro   = 'todos';
+let _cpPoderBusca    = '';
+
+// ── SELEÇÃO DE PODERES PARA O PERSONAGEM ───────────────────
+const T20_STORAGE_KEY = 't20_personagem_poderes';
+
+function _carregarPoderesSelecionados() {
+  try {
+    return JSON.parse(localStorage.getItem(T20_STORAGE_KEY) || '[]');
+  } catch { return []; }
+}
+
+function _salvarPoderesSelecionados(lista) {
+  try { localStorage.setItem(T20_STORAGE_KEY, JSON.stringify(lista)); }
+  catch (e) { console.warn('localStorage indisponível:', e); }
+}
+
+function _poderEstaSelecionado(classeId, poderId) {
+  return _carregarPoderesSelecionados()
+    .some(p => p.classeId === classeId && p.poderId === poderId);
+}
+
+window.togglePoderPersonagem = function(classeId, poderId, btn) {
+  let lista = _carregarPoderesSelecionados();
+  const idx = lista.findIndex(p => p.classeId === classeId && p.poderId === poderId);
+
+  if (idx >= 0) {
+    lista.splice(idx, 1);
+    if (btn) {
+      btn.classList.remove('selecionado');
+      btn.innerHTML = '<i class="ti ti-plus" aria-hidden="true"></i> Adicionar ao personagem';
+    }
+  } else {
+    lista.push({ classeId, poderId, nome: btn?.dataset.nome || poderId });
+    if (btn) {
+      btn.classList.add('selecionado');
+      btn.innerHTML = '<i class="ti ti-check" aria-hidden="true"></i> Selecionado';
+    }
+  }
+  _salvarPoderesSelecionados(lista);
+};
+
 document.addEventListener('DOMContentLoaded', () => {
 
   // ── 1. CURSOR ──────────────────────────────────────────────
@@ -339,6 +382,8 @@ document.addEventListener('DOMContentLoaded', () => {
   window.abrirDetalheClasse = (c) => {
     if (!c) return;
 
+    window._classeAtualId = c.id;
+
     // Hero
     document.getElementById('cpHeroBg').style.background =
       `linear-gradient(135deg, ${c.cor}30, #080505 70%)`;
@@ -409,15 +454,20 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // Habilidades fixas
-    if ((c.habilidadesFixas||[]).length > 0) {
-      html += `<div class="cp-secao">Habilidades de Classe</div>`;
+    const variacoesRenderizadas = new Set();
+
+    if ((c.habilidadesFixas || []).length > 0) {
+      html += `<div class="cp-secao"><i class="ti ti-list-check" aria-hidden="true"></i> Habilidades de Classe</div>`;
       c.habilidadesFixas.forEach(h => {
         html += `
           <div class="cp-hab-row">
             <div class="cp-lv-badge">${h.nivel}</div>
-            <div>
+            <div style="flex:1">
               <div class="cp-hab-nome">${h.nome}</div>
-              <div class="cp-hab-desc">${processarKeywords(h.descricao)}</div>
+              <div class="cp-hab-desc">${processarKeywords(h.descricao || '')}</div>
+              ${typeof h.variacaoIndex !== 'undefined' && c.variacoes?.[h.variacaoIndex]
+                ? renderVariacaoInline(c.variacoes[h.variacaoIndex], variacoesRenderizadas)
+                : ''}
             </div>
           </div>`;
       });
@@ -425,6 +475,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Variações (caminhos, linhagens...)
     (c.variacoes||[]).forEach(v => {
+      if (variacoesRenderizadas && variacoesRenderizadas.has(v.titulo)) return;
       const opcoesHtml = (v.opcoes||[]).map(op => `
         <div class="cp-var-opt">
           <div class="cp-var-opt-nome">${op.nome}</div>
@@ -457,50 +508,30 @@ document.addEventListener('DOMContentLoaded', () => {
         </div>`;
     });
 
-    // ── Poderes do arquivo poderes_classes.js (dados oficiais do livro)
+    // ── Poderes — armazena globalmente para filtro/busca
     const poderesOficiais = (window.PODERES_CLASSES && window.PODERES_CLASSES[c.id]) || [];
-    // Também inclui poderes que estejam no próprio objeto da classe
-    const poderesExtras = (c.poderes || []).filter(p => !p.variacaoId);
-    const todosPoderes = [...poderesOficiais, ...poderesExtras];
+    const poderesExtras   = (c.poderes || []).filter(p => !p.variacaoId);
+    _cpTodosPoderes  = [...poderesOficiais, ...poderesExtras];
+    _cpPoderFiltro   = 'todos';
+    _cpPoderBusca    = '';
 
-    // Agrupa por categoriaEspecial
-    const categorias = {
-      null: { titulo: null, itens: [] },
-      musica: { titulo: 'Músicas de Bardo', icone: 'ti-music', itens: [] },
-      bravata: { titulo: 'Bravatas', icone: 'ti-speakerphone', itens: [] },
-      postura: { titulo: 'Posturas de Combate', icone: 'ti-shield', itens: [] },
-      armadilha: { titulo: 'Armadilhas', icone: 'ti-tools', itens: [] },
-      missa: { titulo: 'Missas', icone: 'ti-candle', itens: [] },
-      julgamento: { titulo: 'Julgamentos Divinos', icone: 'ti-gavel', itens: [] },
-      virtude: { titulo: 'Virtudes Paladinescas', icone: 'ti-star', itens: [] },
-    };
-
-    for (const p of todosPoderes) {
-      const cat = p.categoriaEspecial || null;
-      if (categorias[cat]) categorias[cat].itens.push(p);
-      else categorias[null].itens.push(p);
-    }
-
-    if (todosPoderes.length > 0) {
-      html += `<div class="cp-secao"><i class="ti ti-bolt" aria-hidden="true"></i> Poderes de ${c.nome}</div>`;
-
-      // Poderes gerais primeiro
-      for (const p of categorias[null].itens) {
-        html += renderPoderHtml(p);
-      }
-
-      // Poderes de categoria especial em sub-seções
-      for (const [cat, grupo] of Object.entries(categorias)) {
-        if (cat === 'null' || grupo.itens.length === 0) continue;
-        html += `
-          <div class="cp-secao-sub">
-            <i class="ti ${grupo.icone || 'ti-bookmark'}" aria-hidden="true"></i>
-            ${grupo.titulo}
-          </div>`;
-        for (const p of grupo.itens) {
-          html += renderPoderHtml(p);
-        }
-      }
+    if (_cpTodosPoderes.length > 0) {
+      html += `
+        <div class="cp-secao"><i class="ti ti-bolt" aria-hidden="true"></i> Poderes de ${c.nome}</div>
+        <div class="cp-poderes-controles">
+          <span class="cp-poder-count" id="cpPoderCount"></span>
+          <div class="cp-filtros">
+            <button class="cp-filtro-btn on"
+              onclick="filtrarPoderesPainel('todos', this)">Todos</button>
+            <button class="cp-filtro-btn"
+              onclick="filtrarPoderesPainel('ativo', this)">Ativos</button>
+            <button class="cp-filtro-btn"
+              onclick="filtrarPoderesPainel('passivo', this)">Passivos</button>
+          </div>
+          <input type="text" class="cp-busca-poder" id="cpBuscaPoder"
+            placeholder="Buscar poder…" oninput="buscarPoderesPainel(this.value)">
+        </div>
+        <div id="cpPoderesContainer"></div>`;
     }
 
     // Painéis de escolha
@@ -508,7 +539,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const optsHtml = (e.opcoes||[]).map(op => `
         <div class="cp-esc-opt">
           <div class="cp-esc-opt-nome">${op.nome}</div>
-          <div class="cp-esc-opt-desc">${processarKeywords(op.descricao)}</div>
+          <div class="cp-esc-opt-desc">${processarKeywords(op.descricao || '')}</div>
         </div>`).join('');
       html += `
         <div class="cp-escolha">
@@ -526,7 +557,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Painéis de explicação
     (c.explicacoes||[]).forEach(exp => {
       const itensHtml = (exp.itens||[]).map(item =>
-        `<div class="cp-exp-item"><span class="cp-exp-bul">→</span><span>${processarKeywords(item)}</span></div>`
+        `<div class="cp-exp-item"><span class="cp-exp-bul">→</span><span>${processarKeywords(item || '')}</span></div>`
       ).join('');
       html += `
         <div class="cp-explicacao">
@@ -598,6 +629,7 @@ document.addEventListener('DOMContentLoaded', () => {
       </div>`;
 
     document.getElementById('cpBody').innerHTML = html;
+    if (_cpTodosPoderes.length > 0) renderPoderesNoPainel();
 
     // Abre o painel
     classePainelEl.classList.add('aberto');
@@ -608,29 +640,208 @@ document.addEventListener('DOMContentLoaded', () => {
     document.querySelector(`.class-card[data-id="${c.id}"]`)?.classList.add('selecionado');
   };
 
+  function extrairNivelMin(prerequisito) {
+    if (!prerequisito) return null;
+    const m = prerequisito.match(/(\d+)[oº°]\s*n[ií]vel/i);
+    return m ? parseInt(m[1]) : null;
+  }
+
   function renderPoderHtml(p) {
+    const kw = typeof processarKeywords === 'function' ? processarKeywords : (t) => t;
+
     const tipoTag = p.tipo === 'ativo'
       ? `<span class="tag-ativo"><i class="ti ti-player-play" aria-hidden="true"></i> Ativo</span>`
       : `<span class="tag-passivo"><i class="ti ti-circle-check" aria-hidden="true"></i> Passivo</span>`;
+
     const pmTag = p.custoPM > 0
-      ? `<span class="tag-custo-pm"><span class="num-pm">${p.custoPM} PM</span></span>` : '';
+      ? `<span class="tag-custo-pm"><strong class="pm-texto">${p.custoPM} PM</strong></span>` : '';
+
+    const nivelMin = extrairNivelMin(p.prerequisito);
+    const nivelTag = nivelMin
+      ? `<span class="cp-poder-nivel">Nív. ${nivelMin}+</span>` : '';
+
+    const duracaoInfo = typeof detectarDuracao === 'function'
+      ? detectarDuracao(p.descricao) : null;
+    const duracaoTag = duracaoInfo
+      ? `<span class="badge-dur ${duracaoInfo.classe}">${duracaoInfo.label}</span>`
+      : '';
+
     const prereqHtml = p.prerequisito
       ? `<div class="cp-prereq">
-          <i class="ti ti-sitemap" aria-hidden="true" style="font-size:9px;color:#2a2a2a"></i>
+          <span class="cp-prereq-label">Pré-req:</span>
           ${p.prerequisito.split(',').map(r =>
             `<span class="cp-prereq-node">${r.trim()}</span>`
-          ).join('<span style="color:#222;font-size:10px">→</span>')}
+          ).join('<span class="cp-prereq-arrow">→</span>')}
          </div>` : '';
+
+    const opcoesHtml = (p.opcoes && p.opcoes.length > 0)
+      ? `<div class="cp-escolha" style="margin-top:10px">
+          <div class="cp-esc-hd">
+            <div class="cp-esc-ic">
+              <i class="ti ti-list-check" aria-hidden="true"></i>
+            </div>
+            <div>
+              <div class="cp-esc-titulo">Escolha um ${p.nome}</div>
+              <div class="cp-esc-sub">${p.opcoes.length} opções disponíveis</div>
+            </div>
+          </div>
+          <div class="cp-esc-opcoes">
+            ${p.opcoes.map(op => `
+              <div class="cp-esc-opt">
+                <div class="cp-esc-opt-nome">${op.nome}</div>
+                <div class="cp-esc-opt-desc">${processarKeywords(op.descricao || '')}</div>
+              </div>`).join('')}
+          </div>
+        </div>`
+      : '';
+
+    const classeAtual = window._classeAtualId || '';
+    const jaSelecionado = classeAtual
+      ? _poderEstaSelecionado(classeAtual, p.id) : false;
+    const btnLabel = jaSelecionado
+      ? '<i class="ti ti-check" aria-hidden="true"></i> Selecionado'
+      : '<i class="ti ti-plus"  aria-hidden="true"></i> Adicionar ao personagem';
+    const addBtn = p.id ? `
+      <button
+        class="cp-poder-add-btn${jaSelecionado ? ' selecionado' : ''}"
+        data-nome="${_escapeHtml ? _escapeHtml(p.nome || '') : (p.nome || '')}"
+        onclick="togglePoderPersonagem('${classeAtual}', '${p.id}', this)"
+        aria-label="${jaSelecionado ? 'Remover' : 'Adicionar'} ${p.nome} ao personagem">
+        ${btnLabel}
+      </button>` : '';
+
     return `
-      <div class="cp-poder">
+      <div class="cp-poder"
+           data-tipo="${p.tipo}"
+           data-nome="${(p.nome || '').toLowerCase()}"
+           data-desc="${(p.descricao || '').toLowerCase().substring(0, 120)}">
         <div class="cp-poder-head">
           <span class="cp-poder-nome">${p.nome}</span>
-          ${tipoTag}${pmTag}
+          ${tipoTag}${pmTag}${nivelTag}${duracaoTag}
         </div>
-        <div class="cp-poder-desc">${processarKeywords(p.descricao)}</div>
+        <div class="cp-poder-desc">${kw(p.descricao || '')}</div>
         ${prereqHtml}
+        ${opcoesHtml}
+        ${addBtn}
       </div>`;
   }
+
+  function renderVariacaoInline(v, renderedSet) {
+    if (!v) return '';
+    if (renderedSet) renderedSet.add(v.titulo);
+    const optsHtml = (v.opcoes || []).map(op => `
+      <div class="cp-var-opt-row">
+        <div class="cp-var-opt-row-ic">
+          <i class="ti ${op.icone || 'ti-star'}" aria-hidden="true"></i>
+        </div>
+        <div>
+          <div class="cp-var-opt-row-nome">${op.nome}</div>
+          ${op.chave ? `<span class="cp-var-opt-row-chave">Atrib.-chave: ${op.chave}</span>` : ''}
+          <div class="cp-var-opt-row-desc">${processarKeywords(op.descricao || '')}</div>
+        </div>
+      </div>`).join('');
+    return `
+      <div class="cp-var-inline">
+        <div class="cp-var-inline-hd">
+          <div class="cp-var-inline-ic">
+            <i class="ti ${v.icone || 'ti-arrows-split-2'}" aria-hidden="true"></i>
+          </div>
+          <div>
+            <div class="cp-var-inline-titulo">Escolha seu ${v.titulo} — ${v.subtitulo || 'nível ' + (v.nivel || 1)}</div>
+          </div>
+        </div>
+        ${optsHtml}
+      </div>`;
+  }
+
+  function renderPoderesNoPainel() {
+    const container = document.getElementById('cpPoderesContainer');
+    if (!container) return;
+
+    const busca = _cpPoderBusca.toLowerCase();
+
+    const filtrados = _cpTodosPoderes.filter(p => {
+      const okTipo = _cpPoderFiltro === 'todos' || p.tipo === _cpPoderFiltro;
+      const okBusca = !busca
+        || (p.nome || '').toLowerCase().includes(busca)
+        || (p.descricao || '').toLowerCase().includes(busca);
+      return okTipo && okBusca;
+    });
+
+    const countEl = document.getElementById('cpPoderCount');
+    if (countEl) {
+      countEl.textContent = `${filtrados.length} poder${filtrados.length !== 1 ? 'es' : ''}`;
+    }
+
+    if (filtrados.length === 0) {
+      container.innerHTML = `<div class="cp-poderes-vazio">Nenhum poder encontrado.</div>`;
+      return;
+    }
+
+    const catLabels = {
+      musica:     { titulo: 'Músicas de Bardo',       icone: 'ti-music' },
+      bravata:    { titulo: 'Bravatas',               icone: 'ti-speakerphone' },
+      postura:    { titulo: 'Posturas de Combate',    icone: 'ti-shield' },
+      armadilha:  { titulo: 'Armadilhas',             icone: 'ti-tools' },
+      missa:      { titulo: 'Missas',                 icone: 'ti-candle' },
+      julgamento: { titulo: 'Julgamentos Divinos',    icone: 'ti-gavel' },
+      virtude:    { titulo: 'Virtudes Paladinescas',  icone: 'ti-star' },
+      linhagem:   { titulo: 'Linhagens Sobrenaturais',icone: 'ti-dna' },
+    };
+
+    const grupos = {};
+    const gerais = [];
+    for (const p of filtrados) {
+      const cat = p.categoriaEspecial;
+      if (cat && catLabels[cat]) {
+        if (!grupos[cat]) grupos[cat] = [];
+        grupos[cat].push(p);
+      } else {
+        gerais.push(p);
+      }
+    }
+
+    let html = '';
+
+    for (const p of gerais) html += renderPoderHtml(p);
+
+    for (const [cat, itens] of Object.entries(grupos)) {
+      const { titulo, icone } = catLabels[cat] || { titulo: cat, icone: 'ti-bookmark' };
+      const catId = `cat-${cat}`;
+      html += `
+        <div class="cp-secao-sub" id="${catId}-hd"
+             onclick="toggleCategoriaPoderes('${catId}')">
+          <i class="ti ${icone}" aria-hidden="true"></i>
+          ${titulo}
+          <i class="ti ti-chevron-down cp-collapse-icon" id="${catId}-icon" aria-hidden="true"></i>
+        </div>
+        <div class="cp-categoria-body" id="${catId}-body">
+          ${itens.map(p => renderPoderHtml(p)).join('')}
+        </div>`;
+    }
+
+    container.innerHTML = html;
+  }
+
+  window.filtrarPoderesPainel = (tipo, btn) => {
+    _cpPoderFiltro = tipo;
+    document.querySelectorAll('.cp-filtro-btn').forEach(b => b.classList.remove('on'));
+    if (btn) btn.classList.add('on');
+    renderPoderesNoPainel();
+  };
+
+  window.buscarPoderesPainel = (termo) => {
+    _cpPoderBusca = termo;
+    renderPoderesNoPainel();
+  };
+
+  window.toggleCategoriaPoderes = (catId) => {
+    const body = document.getElementById(catId + '-body');
+    const hd   = document.getElementById(catId + '-hd');
+    if (!body) return;
+    body.classList.toggle('collapsed');
+    hd.classList.toggle('collapsed');
+  };
 
   window.fecharDetalheClasse = () => {
     classePainelEl?.classList.remove('aberto');

@@ -723,7 +723,16 @@ html, body {
 .cp-poder-nome { font-family: 'Cinzel', serif; font-size: 10px; color: #ccc; letter-spacing: .05em; flex: 1; }
 .tag-ativo   { background: rgba(120,40,10,.2); color: #d07050; border: .5px solid rgba(120,40,10,.5); font-family: 'Cinzel', serif; font-size: 7px; padding: 1px 6px; border-radius: 2px; letter-spacing: .04em; display: inline-flex; align-items: center; gap: 3px; }
 .tag-passivo { background: rgba(20,80,30,.2);  color: #50a868; border: .5px solid rgba(20,80,30,.5);  font-family: 'Cinzel', serif; font-size: 7px; padding: 1px 6px; border-radius: 2px; letter-spacing: .04em; display: inline-flex; align-items: center; gap: 3px; }
-.tag-custo-pm { background: rgba(80,50,150,.2); color: #9080c8; border: .5px solid rgba(80,50,150,.5); font-family: 'Cinzel', serif; font-size: 7px; padding: 1px 6px; border-radius: 2px; }
+.tag-custo-pm {
+  background: rgba(68,170,238,.15);
+  color: #44aaee;
+  border: .5px solid rgba(68,170,238,.3);
+  font-family: 'Cinzel', serif;
+  font-size: 7px;
+  padding: 1px 6px;
+  border-radius: 2px;
+  font-weight: 500;
+}
 .cp-poder-desc { font-size: 12px; color: #666; line-height: 1.6; }
 .cp-prereq { display: flex; align-items: center; gap: 3px; font-size: 10px; color: #333; margin-top: 5px; flex-wrap: wrap; }
 .cp-prereq-node { background: #111; border: .5px solid #1e1e1e; border-radius: 2px; padding: 1px 5px; color: #555; font-size: 10px; }
@@ -856,6 +865,127 @@ html, body {
 }
 .cp-stat-val .pv-icon { color: #e02020 !important; }
 .cp-stat-val .pm-icon { color: #44aaee !important; }
+
+/* ── CONTROLES DE PODERES NO PAINEL ── */
+.cp-poderes-controles {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 0 12px;
+  flex-wrap: wrap;
+  border-bottom: .5px solid #111;
+  margin-bottom: 8px;
+}
+.cp-poder-count {
+  font-family: 'Cinzel', serif;
+  font-size: 9px;
+  color: #555;
+  letter-spacing: .06em;
+  flex-shrink: 0;
+  min-width: 60px;
+}
+.cp-filtros { display: flex; gap: 4px; }
+.cp-filtro-btn {
+  font-family: 'Cinzel', serif;
+  font-size: 8px;
+  padding: 3px 9px;
+  border-radius: 2px;
+  border: .5px solid #2a2a2a;
+  background: transparent;
+  color: #555;
+  cursor: pointer;
+  letter-spacing: .04em;
+  transition: color .15s, border-color .15s, background .15s;
+}
+.cp-filtro-btn:hover, .cp-filtro-btn.on {
+  border-color: rgba(139,0,0,.5);
+  color: #c9a84c;
+  background: rgba(139,0,0,.08);
+}
+.cp-busca-poder {
+  flex: 1;
+  min-width: 110px;
+  background: #0c0c0c;
+  border: .5px solid #1e1e1e;
+  border-radius: 4px;
+  padding: 4px 8px;
+  font-family: 'Crimson Text', serif;
+  font-size: 12px;
+  color: #aaa;
+  outline: none;
+  transition: border-color .15s;
+}
+.cp-busca-poder:focus { border-color: rgba(139,0,0,.3); }
+.cp-busca-poder::placeholder { color: #333; }
+
+/* ── Collapse / expand das sub-seções de poderes ── */
+.cp-secao-sub {
+  cursor: pointer;
+  user-select: none;
+}
+.cp-secao-sub:hover { opacity: .8; }
+.cp-collapse-icon {
+  margin-left: auto;
+  font-size: 10px;
+  color: #444;
+  transition: transform .2s;
+  flex-shrink: 0;
+}
+.cp-secao-sub.collapsed .cp-collapse-icon { transform: rotate(-90deg); }
+.cp-categoria-body.collapsed { display: none; }
+
+/* ── Badge de nível mínimo nos poderes ── */
+.cp-poder-nivel {
+  font-family: 'Cinzel', serif;
+  font-size: 7px;
+  color: #444;
+  border: .5px solid #1e1e1e;
+  border-radius: 2px;
+  padding: 1px 5px;
+  letter-spacing: .03em;
+  flex-shrink: 0;
+}
+
+/* ── Cadeia de pré-requisitos — refinada ── */
+.cp-prereq {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  margin-top: 7px;
+  padding-top: 6px;
+  border-top: .5px solid #111;
+  flex-wrap: wrap;
+}
+.cp-prereq-label {
+  font-size: 9px;
+  color: #333;
+  letter-spacing: .04em;
+  flex-shrink: 0;
+}
+.cp-prereq-node {
+  background: #111;
+  border: .5px solid #1e1e1e;
+  border-radius: 2px;
+  padding: 2px 7px;
+  font-family: 'Cinzel', serif;
+  font-size: 8px;
+  color: #555;
+  cursor: pointer;
+  letter-spacing: .03em;
+  transition: color .15s, border-color .15s;
+}
+.cp-prereq-node:hover { color: #c9a84c; border-color: rgba(201,168,76,.25); }
+.cp-prereq-arrow { color: #222; font-size: 9px; flex-shrink: 0; }
+
+/* ── Sem resultados de busca ── */
+.cp-poderes-vazio {
+  font-family: 'Crimson Text', serif;
+  font-size: 13px;
+  color: #444;
+  font-style: italic;
+  padding: 16px 0;
+  text-align: center;
+}
 
 /* ── RESPONSIVO ─────────────────────────────────────────── */
 @media (min-width: 901px) {
@@ -1018,4 +1148,102 @@ html, body {
   padding: 1px 6px;
   border-radius: 2px;
   letter-spacing: .04em;
+}
+
+/* ── Variação inline — dentro da habilidade fixa ── */
+.cp-var-inline {
+  background: rgba(30,20,60,.25);
+  border: .5px solid rgba(80,60,160,.2);
+  border-radius: 6px;
+  margin-top: 10px;
+  overflow: hidden;
+}
+.cp-var-inline-hd {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 14px 8px;
+  border-bottom: .5px solid rgba(80,60,160,.12);
+}
+.cp-var-inline-ic {
+  width: 22px; height: 22px;
+  border-radius: 4px;
+  background: rgba(40,20,80,.5);
+  border: .5px solid rgba(80,60,160,.3);
+  display: flex; align-items: center; justify-content: center;
+  color: #9080d8; font-size: 11px; flex-shrink: 0;
+}
+.cp-var-inline-titulo { font-family: 'Cinzel', serif; font-size: 10px; color: #9080d8; letter-spacing: .08em; }
+.cp-var-inline-sub    { font-size: 10px; color: #4a3878; margin-top: 1px; }
+
+.cp-var-opt-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 11px 14px;
+  border-bottom: .5px solid rgba(80,60,160,.08);
+}
+.cp-var-opt-row:last-child { border-bottom: none; }
+.cp-var-opt-row-ic {
+  width: 30px; height: 30px; flex-shrink: 0;
+  border-radius: 5px;
+  background: rgba(40,20,80,.4);
+  border: .5px solid rgba(80,60,160,.25);
+  display: flex; align-items: center; justify-content: center;
+  color: #9080d8; font-size: 14px;
+  margin-top: 1px;
+}
+.cp-var-opt-row-nome {
+  font-family: 'Cinzel', serif;
+  font-size: 11px; color: #b0a0e0;
+  letter-spacing: .04em; margin-bottom: 4px;
+}
+.cp-var-opt-row-chave {
+  display: inline-block;
+  font-family: 'Cinzel', serif;
+  font-size: 9px; letter-spacing: .03em;
+  padding: 1px 6px; border-radius: 2px;
+  background: rgba(80,60,160,.18);
+  color: #7060c0;
+  border: .5px solid rgba(80,60,160,.3);
+  margin-bottom: 5px;
+}
+.cp-var-opt-row-desc {
+  font-size: 12px; color: #5a4a90; line-height: 1.55;
+}
+
+/* Botão adicionar ao personagem */
+.cp-poder-add-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 9px;
+  font-family: 'Cinzel', serif;
+  font-size: 8px;
+  letter-spacing: .04em;
+  padding: 4px 10px;
+  border-radius: 2px;
+  border: .5px solid rgba(201,168,76,.25);
+  color: #c9a84c;
+  background: rgba(201,168,76,.06);
+  cursor: pointer;
+  transition: background .15s, border-color .15s, color .15s;
+}
+.cp-poder-add-btn i { font-size: 10px; }
+.cp-poder-add-btn:hover {
+  background: rgba(201,168,76,.12);
+  border-color: rgba(201,168,76,.4);
+}
+.cp-poder-add-btn.selecionado {
+  background: rgba(201,168,76,.15);
+  border-color: rgba(201,168,76,.5);
+  color: #e0c060;
+}
+.cp-poder-add-btn.selecionado:hover {
+  background: rgba(139,0,0,.12);
+  border-color: rgba(139,0,0,.4);
+  color: #cc6060;
+}
+.cp-poder-add-btn.selecionado:hover i::before {
+  content: '\ea77';
 }

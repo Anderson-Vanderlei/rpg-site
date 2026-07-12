@@ -52,7 +52,7 @@ const RACAS = [
   {
     id:'elfo', nome:'Elfo', subtitulo:'Os Filhos da Magia',
     tipo:'Humanoide', raridade:'comum', fonte:'Tormenta 20', pagina:22,
-    icone:'ti-bow-arrow', cor:'#66aacc',
+    icone:'ti-bow', cor:'#66aacc',
     atributos:'Inteligência +2, Destreza +1', penalidade:'Constituição –1',
     tamanho:'Médio', deslocamento:'12m', tags:['Humanoide','Mágico'],
     descricao:'Seres feitos para a beleza e para a guerra, tão habilidosos com magia quanto com espadas e arcos. Elegantes, astutos, de vidas quase eternas. Há sempre algo de mágico nos elfos.',
@@ -200,7 +200,7 @@ const RACAS = [
   {
     id:'sereia', nome:'Sereia/Tritão', subtitulo:'Filhos das Profundezas',
     tipo:'Humanoide', raridade:'rara', fonte:'Tormenta 20', pagina:32,
-    icone:'ti-waves', cor:'#4488cc',
+    icone:'ti-fish', cor:'#4488cc',
     atributos:'+1 em três atributos diferentes', penalidade:null,
     tamanho:'Médio', deslocamento:'9m (12m nadar)', tags:['Humanoide','Aquático','Raro'],
     descricao:'Sereias e tritões são seres do mar que optaram pela vida em terra. Com guelras que lhes permitem respirar embaixo d\'água, são igualmente à vontade nos dois ambientes.',

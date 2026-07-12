@@ -62,6 +62,58 @@ const KEYWORDS_T20 = {
       descricao: 'Alcance corpo a corpo / toque: até 1,5m — exige contato físico ou proximidade imediata.' },
   ],
 
+  // ── TIPOS DE PARCEIRO (Cap. 6, pp. 260–261) ──
+  parceiro: [
+    {
+      padroes: ['Adepto'],
+      descricao: 'Parceiro Adepto — Conjurador que reduz custo de magias. Iniciante: –1 PM em magias de 1º círculo. Veterano: também reduz magias de 2º círculo. Mestre: redução cumulativa com outras fontes.',
+    },
+    {
+      padroes: ['Ajudante'],
+      descricao: 'Parceiro Ajudante — Bardo, nobre ou sábio encorajador. Iniciante: +2 em 2 perícias. Veterano: +2 em 3 perícias. Mestre: +4 em 3 perícias. Não fornece bônus em Luta ou Pontaria.',
+    },
+    {
+      padroes: ['Assassino'],
+      descricao: 'Parceiro Assassino — Ladino furtivo e letal. Iniciante: você pode usar Ataque Furtivo +1d6. Veterano: +1d6 e bônus por flanquear. Mestre: Ataque Furtivo +2d6.',
+    },
+    {
+      padroes: ['Atirador'],
+      descricao: 'Parceiro Atirador — Arqueiro ou besteiro. Iniciante: +1d6 em uma rolagem de dano à distância por rodada. Veterano: +1d10. Mestre: +2d8.',
+    },
+    {
+      padroes: ['Combatente'],
+      descricao: 'Parceiro Combatente — Guerreiro, paladino ou animal de caça. Iniciante: +2 em testes de ataque. Veterano: +3. Mestre: +4 em testes de ataque e pode gastar 5 PM para um ataque extra por rodada.',
+    },
+    {
+      padroes: ['Destruidor'],
+      descricao: 'Parceiro Destruidor — Arcanista ou inventor explosivo. Iniciante: gaste 1 PM → 2d6 de dano elemental em alcance curto. Veterano: 2 PM → 4d6. Mestre: 4 PM → 6d6 em área de 6m.',
+    },
+    {
+      padroes: ['Fortão'],
+      descricao: 'Parceiro Fortão — Bárbaro, lutador ou bruto. Iniciante: +1d8 em uma rolagem de dano corpo a corpo por rodada. Veterano: +1d12. Mestre: +3d6.',
+    },
+    {
+      padroes: ['Guardião'],
+      descricao: 'Parceiro Guardião — Cavaleiro, cão de guarda ou protetor. Iniciante: +2 na Defesa. Veterano: +3. Mestre: +4 na Defesa e +2 em testes de resistência.',
+    },
+    {
+      padroes: ['Magivocador'],
+      descricao: 'Parceiro Magivocador — Conjurador ofensivo. Iniciante: +1 dado de dano do mesmo tipo em suas magias. Veterano: +1 na CD. Mestre: dobra ambos os bônus.',
+    },
+    {
+      padroes: ['Médico'],
+      descricao: 'Parceiro Médico — Clérigo, druida ou herbalista. Iniciante: gaste 1 PM → cura 1d8+1 PV adjacente. Veterano: 3 PM → 3d8+3 PV ou remove condição. Mestre: 5 PM → 6d8+6 PV.',
+    },
+    {
+      padroes: ['Perseguidor'],
+      descricao: 'Parceiro Perseguidor — Caçador ou animal farejador. Iniciante: +2 em Percepção e Sobrevivência. Veterano: pode usar Sentidos Aguçados. Mestre: pode usar Percepção às Cegas.',
+    },
+    {
+      padroes: ['Vigilante'],
+      descricao: 'Parceiro Vigilante — Vigia ou animal de guarda. Iniciante: +2 em Percepção e Iniciativa. Veterano: pode usar Esquiva Sobrenatural. Mestre: pode usar Olhos nas Costas.',
+    },
+  ],
+
   // ── DURAÇÃO DE EFEITOS (cap. 5) ──
   duracao: [
     { padroes: ['até o fim da aventura', 'até o final da aventura'],

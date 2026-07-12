@@ -6,6 +6,7 @@
 let _cpTodosPoderes  = [];
 let _cpPoderFiltro   = 'todos';
 let _cpPoderBusca    = '';
+let _cpNivelFiltro = 0; // 0 = sem filtro de nível
 
 // ── SELEÇÃO DE PODERES PARA O PERSONAGEM ───────────────────
 const T20_STORAGE_KEY = 't20_personagem_poderes';
@@ -517,7 +518,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (_cpTodosPoderes.length > 0) {
       html += `
-        <div class="cp-secao"><i class="ti ti-bolt" aria-hidden="true"></i> Poderes de ${c.nome}</div>
+        <div class="cp-secao">
+          <i class="ti ti-bolt" aria-hidden="true"></i>
+          Poderes de ${c.nome}
+          <span class="cp-selecionados-badge" id="cpSelecionadosBadge"></span>
+        </div>
         <div class="cp-poderes-controles">
           <span class="cp-poder-count" id="cpPoderCount"></span>
           <div class="cp-filtros">
@@ -529,7 +534,16 @@ document.addEventListener('DOMContentLoaded', () => {
               onclick="filtrarPoderesPainel('passivo', this)">Passivos</button>
           </div>
           <input type="text" class="cp-busca-poder" id="cpBuscaPoder"
-            placeholder="Buscar poder…" oninput="buscarPoderesPainel(this.value)">
+            placeholder="Buscar poder…"
+            oninput="buscarPoderesPainel(this.value)">
+        </div>
+        <div class="cp-nivel-filtro-wrap">
+          <i class="ti ti-trending-up" aria-hidden="true" style="font-size:12px;color:#555"></i>
+          <span class="cp-nivel-label">Nível do personagem</span>
+          <input type="range" min="0" max="20" value="0" step="1"
+            class="cp-nivel-slider" id="cpNivelSlider"
+            oninput="filtrarPoderesPorNivel(this.value)">
+          <span class="cp-nivel-valor" id="cpNivelLabel">Todos os níveis</span>
         </div>
         <div id="cpPoderesContainer"></div>`;
     }
@@ -630,6 +644,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     document.getElementById('cpBody').innerHTML = html;
     if (_cpTodosPoderes.length > 0) renderPoderesNoPainel();
+    _atualizarBadgeSelecionados(c.id);
 
     // Abre o painel
     classePainelEl.classList.add('aberto');
@@ -660,6 +675,24 @@ document.addEventListener('DOMContentLoaded', () => {
     const nivelTag = nivelMin
       ? `<span class="cp-poder-nivel">Nív. ${nivelMin}+</span>` : '';
 
+    const energiaIcons = {
+      positiva: 'ti-sun',
+      negativa: 'ti-moon',
+      dual:     'ti-yin-yang',
+    };
+    const energiaLabels = {
+      positiva: 'Energia Positiva',
+      negativa: 'Energia Negativa',
+      dual:     'Positiva / Negativa',
+    };
+    const energiaTag = p.energiaDivina
+      ? `<span class="e-divina e-${p.energiaDivina}">
+           <i class="ti ${energiaIcons[p.energiaDivina]}"
+              aria-hidden="true" style="font-size:9px"></i>
+           ${energiaLabels[p.energiaDivina]}
+         </span>`
+      : '';
+
     const duracaoInfo = typeof detectarDuracao === 'function'
       ? detectarDuracao(p.descricao) : null;
     const duracaoTag = duracaoInfo
@@ -675,24 +708,26 @@ document.addEventListener('DOMContentLoaded', () => {
          </div>` : '';
 
     const opcoesHtml = (p.opcoes && p.opcoes.length > 0)
-      ? `<div class="cp-escolha" style="margin-top:10px">
-          <div class="cp-esc-hd">
-            <div class="cp-esc-ic">
-              <i class="ti ti-list-check" aria-hidden="true"></i>
-            </div>
-            <div>
-              <div class="cp-esc-titulo">Escolha um ${p.nome}</div>
-              <div class="cp-esc-sub">${p.opcoes.length} opções disponíveis</div>
-            </div>
-          </div>
-          <div class="cp-esc-opcoes">
-            ${p.opcoes.map(op => `
-              <div class="cp-esc-opt">
-                <div class="cp-esc-opt-nome">${op.nome}</div>
-                <div class="cp-esc-opt-desc">${processarKeywords(op.descricao || '')}</div>
-              </div>`).join('')}
-          </div>
-        </div>`
+      ? p.opcoesModo === 'variacao'
+        ? renderOpcoesVariacaoNoPoder(p)
+        : `<div class="cp-escolha" style="margin-top:10px">
+             <div class="cp-esc-hd">
+               <div class="cp-esc-ic">
+                 <i class="ti ti-list-check" aria-hidden="true"></i>
+               </div>
+               <div>
+                 <div class="cp-esc-titulo">Escolha um ${p.nome}</div>
+                 <div class="cp-esc-sub">${p.opcoes.length} opções disponíveis</div>
+               </div>
+             </div>
+             <div class="cp-esc-opcoes">
+               ${p.opcoes.map(op => `
+                 <div class="cp-esc-opt">
+                   <div class="cp-esc-opt-nome">${op.nome}</div>
+                   <div class="cp-esc-opt-desc">${processarKeywords(op.descricao || '')}</div>
+                 </div>`).join('')}
+             </div>
+           </div>`
       : '';
 
     const classeAtual = window._classeAtualId || '';
@@ -717,12 +752,53 @@ document.addEventListener('DOMContentLoaded', () => {
            data-desc="${(p.descricao || '').toLowerCase().substring(0, 120)}">
         <div class="cp-poder-head">
           <span class="cp-poder-nome">${p.nome}</span>
-          ${tipoTag}${pmTag}${nivelTag}${duracaoTag}
+          ${tipoTag}${pmTag}${nivelTag}${energiaTag}${duracaoTag}
         </div>
         <div class="cp-poder-desc">${kw(p.descricao || '')}</div>
         ${prereqHtml}
         ${opcoesHtml}
         ${addBtn}
+      </div>`;
+  }
+
+  function renderOpcoesVariacaoNoPoder(p) {
+    const optsHtml = (p.opcoes || []).map(op => {
+      const conteudo = (op.niveis && op.niveis.length > 0)
+        ? op.niveis.map(n => `
+            <div class="cp-var-nivel">
+              <span class="cp-var-nivel-badge cp-var-nivel-${n.label.toLowerCase()}">${n.label}</span>
+              <span class="cp-var-nivel-desc">${processarKeywords(n.descricao || '')}</span>
+            </div>`).join('')
+        : `<div class="cp-var-nivel-desc" style="margin-top:2px">${processarKeywords(op.descricao || '')}</div>`;
+      return `
+        <div class="cp-var-opt-row">
+          <div class="cp-var-opt-row-ic">
+            <i class="ti ${op.icone || 'ti-star'}" aria-hidden="true"></i>
+          </div>
+          <div style="flex:1">
+            <div class="cp-var-opt-row-nome">${op.nome}</div>
+            ${conteudo}
+          </div>
+        </div>`;
+    }).join('');
+
+    return `
+      <div class="cp-var-inline" style="margin-top:10px">
+        <div class="cp-var-inline-hd">
+          <div class="cp-var-inline-ic">
+            <i class="ti ${p.opcoesTitulo?.icone || 'ti-list'}" aria-hidden="true"></i>
+          </div>
+          <div>
+            <div class="cp-var-inline-titulo">
+              ${p.opcoesTitulo?.titulo || 'Opções Disponíveis'}
+            </div>
+            ${p.opcoesTitulo?.subtitulo
+              ? `<div class="cp-var-sub" style="font-size:10px;color:#4a3878;margin-top:1px">
+                   ${p.opcoesTitulo.subtitulo}
+                 </div>` : ''}
+          </div>
+        </div>
+        ${optsHtml}
       </div>`;
   }
 
@@ -754,6 +830,55 @@ document.addEventListener('DOMContentLoaded', () => {
       </div>`;
   }
 
+  function renderExplicacaoInline(p) {
+    if (!p || !p.itens) return '';
+    const itensHtml = p.itens.map(item => `
+      <div class="cp-exp-item">
+        <span class="cp-exp-bul">→</span>
+        <span>${processarKeywords(item)}</span>
+      </div>`).join('');
+    return `
+      <div class="cp-explicacao" style="margin-bottom:10px">
+        <div class="cp-exp-hd">
+          <div class="cp-exp-ic">
+            <i class="ti ${p.icone || 'ti-book'}" aria-hidden="true"></i>
+          </div>
+          <div>
+            <div class="cp-exp-titulo">${p.nome}</div>
+            <div class="cp-exp-sub">${p.subtitulo || ''}</div>
+          </div>
+        </div>
+        <div class="cp-exp-body">${itensHtml}</div>
+      </div>`;
+  }
+
+  function renderVariacaoEmSecao(p) {
+    if (!p || !p.opcoes) return '';
+    const optsHtml = (p.opcoes || []).map(op => `
+      <div class="cp-var-opt-row">
+        <div class="cp-var-opt-row-ic">
+          <i class="ti ${op.icone || 'ti-star'}" aria-hidden="true"></i>
+        </div>
+        <div>
+          <div class="cp-var-opt-row-nome">${op.nome}</div>
+          <div class="cp-var-opt-row-desc">${processarKeywords(op.descricao || '')}</div>
+        </div>
+      </div>`).join('');
+    return `
+      <div class="cp-var-inline" style="margin-bottom:10px">
+        <div class="cp-var-inline-hd">
+          <div class="cp-var-inline-ic">
+            <i class="ti ${p.icone || 'ti-list'}" aria-hidden="true"></i>
+          </div>
+          <div>
+            <div class="cp-var-inline-titulo">${p.titulo || p.nome}</div>
+            ${p.subtitulo ? `<div class="cp-var-sub" style="font-size:10px;color:#4a3878;margin-top:1px">${p.subtitulo}</div>` : ''}
+          </div>
+        </div>
+        ${optsHtml}
+      </div>`;
+  }
+
   function renderPoderesNoPainel() {
     const container = document.getElementById('cpPoderesContainer');
     if (!container) return;
@@ -761,11 +886,15 @@ document.addEventListener('DOMContentLoaded', () => {
     const busca = _cpPoderBusca.toLowerCase();
 
     const filtrados = _cpTodosPoderes.filter(p => {
-      const okTipo = _cpPoderFiltro === 'todos' || p.tipo === _cpPoderFiltro;
-      const okBusca = !busca
-        || (p.nome || '').toLowerCase().includes(busca)
-        || (p.descricao || '').toLowerCase().includes(busca);
-      return okTipo && okBusca;
+      const okTipo  = _cpPoderFiltro === 'todos' || p.tipo === _cpPoderFiltro;
+      const okBusca = !_cpPoderBusca
+        || (p.nome || '').toLowerCase().includes(_cpPoderBusca)
+        || (p.descricao || '').toLowerCase().includes(_cpPoderBusca);
+      const nivelMin = extrairNivelMin(p.prerequisito);
+      const okNivel  = _cpNivelFiltro === 0
+        || !nivelMin
+        || nivelMin <= _cpNivelFiltro;
+      return okTipo && okBusca && okNivel;
     });
 
     const countEl = document.getElementById('cpPoderCount');
@@ -787,6 +916,14 @@ document.addEventListener('DOMContentLoaded', () => {
       julgamento: { titulo: 'Julgamentos Divinos',    icone: 'ti-gavel' },
       virtude:    { titulo: 'Virtudes Paladinescas',  icone: 'ti-star' },
       linhagem:   { titulo: 'Linhagens Sobrenaturais',icone: 'ti-dna' },
+      brado:      { titulo: 'Brados',                 icone: 'ti-speakerphone' },
+      companheiro: { titulo: 'Companheiro Animal', icone: 'ti-paw' },
+      forma:       { titulo: 'Forma Selvagem',      icone: 'ti-paw' },
+      'golpe-pessoal': { titulo: 'Golpe Pessoal', icone: 'ti-tool' },
+      engenhoca: { titulo: 'Engenhocas', icone: 'ti-tool' },
+      alquimia: { titulo: 'Alquimia & Livro de Fórmulas', icone: 'ti-flask' },
+      automato:  { titulo: 'Autômato',                    icone: 'ti-robot' },
+      aura: { titulo: 'Auras Sagradas', icone: 'ti-sun' },
     };
 
     const grupos = {};
@@ -816,7 +953,13 @@ document.addEventListener('DOMContentLoaded', () => {
           <i class="ti ti-chevron-down cp-collapse-icon" id="${catId}-icon" aria-hidden="true"></i>
         </div>
         <div class="cp-categoria-body" id="${catId}-body">
-          ${itens.map(p => renderPoderHtml(p)).join('')}
+          ${itens.map(p =>
+            p.tipo === 'explicacao'
+              ? renderExplicacaoInline(p)
+              : p.tipo === 'variacao'
+                ? renderVariacaoEmSecao(p)
+                : renderPoderHtml(p)
+          ).join('')}
         </div>`;
     }
 
@@ -835,6 +978,15 @@ document.addEventListener('DOMContentLoaded', () => {
     renderPoderesNoPainel();
   };
 
+  window.filtrarPoderesPorNivel = function(valor) {
+    _cpNivelFiltro = parseInt(valor) || 0;
+    const label = document.getElementById('cpNivelLabel');
+    if (label) label.textContent = _cpNivelFiltro > 0
+      ? `Nível ${_cpNivelFiltro}`
+      : 'Todos os níveis';
+    renderPoderesNoPainel();
+  };
+
   window.toggleCategoriaPoderes = (catId) => {
     const body = document.getElementById(catId + '-body');
     const hd   = document.getElementById(catId + '-hd');
@@ -843,7 +995,24 @@ document.addEventListener('DOMContentLoaded', () => {
     hd.classList.toggle('collapsed');
   };
 
+  function _atualizarBadgeSelecionados(classeId) {
+    const badge = document.getElementById('cpSelecionadosBadge');
+    if (!badge) return;
+    const total = _carregarPoderesSelecionados()
+      .filter(p => p.classeId === classeId).length;
+    badge.textContent = total > 0 ? `${total} selecionado${total > 1 ? 's' : ''}` : '';
+    badge.style.display = total > 0 ? 'inline-flex' : 'none';
+  }
+
+  // Atualiza o badge após toggle
+  const _toggleOriginal = window.togglePoderPersonagem;
+  window.togglePoderPersonagem = function(classeId, poderId, btn) {
+    _toggleOriginal(classeId, poderId, btn);
+    _atualizarBadgeSelecionados(classeId);
+  };
+
   window.fecharDetalheClasse = () => {
+    _cpNivelFiltro = 0;
     classePainelEl?.classList.remove('aberto');
     classesAreaEl?.classList.remove('encolhido');
     document.querySelectorAll('.class-card').forEach(c => c.classList.remove('selecionado'));
@@ -1066,6 +1235,7 @@ document.addEventListener('DOMContentLoaded', () => {
       pericia: 'Perícia',
       cond:    'Condição',
       regra:   'Poder / Regra',
+      parceiro: 'Tipo de Parceiro',
     };
 
     // Mostrar ao entrar

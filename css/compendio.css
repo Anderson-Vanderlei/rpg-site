@@ -1042,6 +1042,7 @@ html, body {
 .kw-pericia { color: #6090d0; border-color: #6090d0cc; }
 .kw-cond    { color: #d06060; border-color: #d06060cc; }
 .kw-regra   { color: #a080d8; border-color: #a080d8cc; }
+.kw-parceiro { color: #c07a30; border-color: #c07a30cc; }
 
 /* ── TOOLTIP GLOBAL ── */
 #tooltip-kw {
@@ -1091,6 +1092,11 @@ html, body {
 #tooltip-kw[data-tipo="pericia"] .tooltip-kw-tipo { color:#6090d0; border-color:#6090d055; background:rgba(96,144,208,.08); }
 #tooltip-kw[data-tipo="cond"]    .tooltip-kw-tipo { color:#d06060; border-color:#d0606055; background:rgba(208,96,96,.08); }
 #tooltip-kw[data-tipo="regra"]   .tooltip-kw-tipo { color:#a080d8; border-color:#a080d855; background:rgba(160,128,216,.08); }
+#tooltip-kw[data-tipo="parceiro"] .tooltip-kw-tipo {
+  color: #c07a30;
+  border-color: #c07a3055;
+  background: rgba(192,122,48,.08);
+}
 
 /* Barra colorida no topo */
 .tooltip-kw-inner::before {
@@ -1103,6 +1109,9 @@ html, body {
 #tooltip-kw[data-tipo="pericia"] .tooltip-kw-inner::before { background: #6090d0; }
 #tooltip-kw[data-tipo="cond"]    .tooltip-kw-inner::before { background: #d06060; }
 #tooltip-kw[data-tipo="regra"]   .tooltip-kw-inner::before { background: #a080d8; }
+#tooltip-kw[data-tipo="parceiro"] .tooltip-kw-inner::before {
+  background: #c07a30;
+}
 
 .tooltip-kw-nome {
   font-family: 'Cinzel', serif;
@@ -1246,4 +1255,126 @@ html, body {
 }
 .cp-poder-add-btn.selecionado:hover i::before {
   content: '\ea77';
+}
+
+/* ── Filtro de nível ── */
+.cp-nivel-filtro-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 0 12px;
+  border-bottom: .5px solid #111;
+  margin-bottom: 8px;
+}
+.cp-nivel-label {
+  font-family: 'Cinzel', serif;
+  font-size: 8px;
+  letter-spacing: .05em;
+  color: #444;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.cp-nivel-slider {
+  flex: 1;
+  accent-color: #8B0000;
+  height: 2px;
+  cursor: pointer;
+}
+.cp-nivel-valor {
+  font-family: 'Cinzel', serif;
+  font-size: 9px;
+  color: #c9a84c;
+  min-width: 90px;
+  text-align: right;
+  flex-shrink: 0;
+}
+
+/* ── Badge de poderes selecionados na seção ── */
+.cp-selecionados-badge {
+  display: none;
+  align-items: center;
+  font-family: 'Cinzel', serif;
+  font-size: 8px;
+  letter-spacing: .04em;
+  padding: 2px 8px;
+  border-radius: 10px;
+  background: rgba(201,168,76,.12);
+  border: .5px solid rgba(201,168,76,.3);
+  color: #c9a84c;
+  margin-left: 4px;
+}
+
+/* ── Badges de energia divina (Clérigo / Paladino / Deuses) ── */
+.e-divina {
+  font-family: 'Cinzel', serif;
+  font-size: 8px;
+  letter-spacing: .03em;
+  padding: 2px 7px;
+  border-radius: 2px;
+  border: .5px solid;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  flex-shrink: 0;
+}
+.e-positiva {
+  background: rgba(201,168,76,.1);
+  color: #c9943a;
+  border-color: rgba(201,168,76,.3);
+}
+.e-negativa {
+  background: rgba(80,30,120,.15);
+  color: #9060c8;
+  border-color: rgba(80,30,120,.35);
+}
+.e-dual {
+  background: rgba(120,80,60,.1);
+  color: #998060;
+  border-color: rgba(150,100,60,.25);
+}
+
+/* Texto colorido de energia dentro de descrições */
+.txt-energia-pos { color: #c9943a; font-weight: 500; }
+.txt-energia-neg { color: #9060c8; font-weight: 500; }
+
+/* ── Níveis de Forma Selvagem dentro do banner de variação ── */
+.cp-var-nivel {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  margin-bottom: 5px;
+  line-height: 1.45;
+}
+.cp-var-nivel:last-child { margin-bottom: 0; }
+
+.cp-var-nivel-badge {
+  font-family: 'Cinzel', serif;
+  font-size: 7px;
+  padding: 1px 6px;
+  border-radius: 2px;
+  border: .5px solid;
+  flex-shrink: 0;
+  margin-top: 2px;
+  letter-spacing: .04em;
+  white-space: nowrap;
+}
+.cp-var-nivel-base {
+  background: rgba(80,80,80,.1);
+  color: #666;
+  border-color: rgba(80,80,80,.25);
+}
+.cp-var-nivel-aprimorada {
+  background: rgba(201,168,76,.1);
+  color: #b8922a;
+  border-color: rgba(201,168,76,.28);
+}
+.cp-var-nivel-superior {
+  background: rgba(139,0,0,.1);
+  color: #b84040;
+  border-color: rgba(139,0,0,.28);
+}
+.cp-var-nivel-desc {
+  font-size: 11px;
+  color: #5a4a90;
+  line-height: 1.45;
 }

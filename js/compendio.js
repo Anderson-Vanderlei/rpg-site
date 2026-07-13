@@ -47,6 +47,38 @@ window.togglePoderPersonagem = function(classeId, poderId, btn) {
   _salvarPoderesSelecionados(lista);
 };
 
+// ── SELEÇÃO DE OPÇÃO DENTRO DE UM PODER (Familiar, Companheiro Animal, Autômato...) ──
+const T20_OPCAO_STORAGE_KEY = 't20_personagem_opcoes';
+
+function _carregarOpcoesSelecionadas() {
+  try { return JSON.parse(localStorage.getItem(T20_OPCAO_STORAGE_KEY) || '[]'); }
+  catch { return []; }
+}
+
+function _salvarOpcoesSelecionadas(lista) {
+  try { localStorage.setItem(T20_OPCAO_STORAGE_KEY, JSON.stringify(lista)); }
+  catch (e) { console.warn('localStorage indisponível:', e); }
+}
+
+function _opcaoEstaSelecionada(classeId, poderId, opcaoNome) {
+  return _carregarOpcoesSelecionadas()
+    .some(o => o.classeId === classeId && o.poderId === poderId && o.opcaoNome === opcaoNome);
+}
+
+window.selecionarOpcaoPoder = function(classeId, poderId, opcaoNome, el) {
+  let lista = _carregarOpcoesSelecionadas();
+  const idx = lista.findIndex(o => o.classeId === classeId && o.poderId === poderId);
+  const jaEra = idx >= 0 && lista[idx].opcaoNome === opcaoNome;
+
+  if (idx >= 0) lista.splice(idx, 1);
+  if (!jaEra) lista.push({ classeId, poderId, opcaoNome });
+  _salvarOpcoesSelecionadas(lista);
+
+  const painel = el.closest('.cp-esc-opcoes');
+  if (painel) painel.querySelectorAll('.cp-esc-opt').forEach(o => o.classList.remove('selecionado'));
+  if (!jaEra) el.classList.add('selecionado');
+};
+
 document.addEventListener('DOMContentLoaded', () => {
 
   // ── 1. CURSOR ──────────────────────────────────────────────
@@ -336,8 +368,8 @@ document.addEventListener('DOMContentLoaded', () => {
               <strong class="pv-texto">Pontos de Vida</strong>
             </div>
             <div class="cc-campo-v">
-              Começa com <strong class="pv-texto">${c.pvInicial}</strong> PV
-              + <strong class="pv-texto">${c.pvPorNivel > 0 ? '+' : ''}${c.pvPorNivel} PV</strong> por nível
+              Começa com <strong class="pv-texto">${c.pvInicial}</strong> PV + Con
+              e ganha <strong class="pv-texto">${c.pvPorNivel > 0 ? '+' : ''}${c.pvPorNivel} PV</strong> + Con por nível
             </div>
           </div>
           <div class="cc-campo">
@@ -631,17 +663,6 @@ document.addEventListener('DOMContentLoaded', () => {
         </button>
       </div>`;
 
-    // Legenda de keywords
-    html += `
-      <div class="cp-legenda">
-        <div class="cp-leg-item"><span class="kw-acao">ação</span><span>tipo de ação</span></div>
-        <div class="cp-leg-item"><span class="kw-pericia">perícia</span><span>perícia</span></div>
-        <div class="cp-leg-item"><span class="kw-poder">poder</span><span>poder/regra</span></div>
-        <div class="cp-leg-item"><span class="num-dano">+2d6</span><span>dano</span></div>
-        <div class="cp-leg-item"><span class="num-bonus">+2</span><span>bônus</span></div>
-        <div class="cp-leg-item"><span class="num-pm">3 PM</span><span>custo PM</span></div>
-      </div>`;
-
     document.getElementById('cpBody').innerHTML = html;
     if (_cpTodosPoderes.length > 0) renderPoderesNoPainel();
     _atualizarBadgeSelecionados(c.id);
@@ -659,6 +680,17 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!prerequisito) return null;
     const m = prerequisito.match(/(\d+)[oº°]\s*n[ií]vel/i);
     return m ? parseInt(m[1]) : null;
+  }
+
+  function poderEhBonus(p) {
+    if (!p.prerequisito || !_cpTodosPoderes.length) return false;
+    const nomes = _cpTodosPoderes
+      .filter(x => x.nome && x.id !== p.id)
+      .map(x => x.nome.toLowerCase());
+    return p.prerequisito.split(',').some(seg => {
+      const limpo = seg.trim().toLowerCase().replace(/\s*\([^)]*\)\s*/g, '').trim();
+      return nomes.includes(limpo);
+    });
   }
 
   function renderPoderHtml(p) {
@@ -699,6 +731,12 @@ document.addEventListener('DOMContentLoaded', () => {
       ? `<span class="badge-dur ${duracaoInfo.classe}">${duracaoInfo.label}</span>`
       : '';
 
+    const bonusTag = poderEhBonus(p)
+      ? `<span class="tag-bonus"><i class="ti ti-arrow-big-up-lines" aria-hidden="true"></i> Bônus</span>`
+      : '';
+
+    const fonteTag = `<span class="cp-tag-fonte">${p.fonte || 'Tormenta 20'}</span>`;
+
     const prereqHtml = p.prerequisito
       ? `<div class="cp-prereq">
           <span class="cp-prereq-label">Pré-req:</span>
@@ -710,7 +748,10 @@ document.addEventListener('DOMContentLoaded', () => {
     const opcoesHtml = (p.opcoes && p.opcoes.length > 0)
       ? p.opcoesModo === 'variacao'
         ? renderOpcoesVariacaoNoPoder(p)
-        : `<div class="cp-escolha" style="margin-top:10px">
+        : (() => {
+            const temNiveis = p.opcoes.some(op => op.niveis && op.niveis.length > 0);
+            const classeAtualOpc = window._classeAtualId || '';
+            return `<div class="cp-escolha" style="margin-top:10px">
              <div class="cp-esc-hd">
                <div class="cp-esc-ic">
                  <i class="ti ti-list-check" aria-hidden="true"></i>
@@ -720,14 +761,38 @@ document.addEventListener('DOMContentLoaded', () => {
                  <div class="cp-esc-sub">${p.opcoes.length} opções disponíveis</div>
                </div>
              </div>
-             <div class="cp-esc-opcoes">
-               ${p.opcoes.map(op => `
-                 <div class="cp-esc-opt">
-                   <div class="cp-esc-opt-nome">${op.nome}</div>
-                   <div class="cp-esc-opt-desc">${processarKeywords(op.descricao || '')}</div>
-                 </div>`).join('')}
+             <div class="cp-esc-opcoes"${temNiveis ? ' style="grid-template-columns:1fr"' : ''}>
+               ${p.opcoes.map(op => {
+                 const nivelDesbloqueio = { veterano: 'Nv. 7', mestre: 'Nv. 15' };
+                 const niveisHtml = (op.niveis && op.niveis.length > 0)
+                   ? op.niveis.map(n => {
+                       const suf = nivelDesbloqueio[n.label.toLowerCase()];
+                       return `
+                     <div class="cp-var-nivel">
+                       <span class="cp-var-nivel-badge cp-var-nivel-${n.label.toLowerCase()}">${n.label}${suf ? ' · ' + suf : ''}</span>
+                       <span class="cp-var-nivel-desc">${processarKeywords(n.descricao || '')}</span>
+                     </div>`;
+                     }).join('')
+                   : '';
+                 const opcaoSelecionada = classeAtualOpc
+                   ? _opcaoEstaSelecionada(classeAtualOpc, p.id, op.nome) : false;
+                 return `
+                 <div class="cp-esc-opt${opcaoSelecionada ? ' selecionado' : ''}"
+                      onclick="selecionarOpcaoPoder('${classeAtualOpc}', '${p.id}', '${(op.nome||'').replace(/'/g, "\\'")}', this)">
+                   <div class="cp-esc-opt-hd">
+                     <div class="cp-esc-ic"><i class="ti ${op.icone || 'ti-star'}" aria-hidden="true"></i></div>
+                     <div style="flex:1">
+                       <div class="cp-esc-opt-nome">${op.nome}</div>
+                       <div class="cp-esc-opt-desc">${processarKeywords(op.descricao || '')}</div>
+                     </div>
+                     <i class="ti ti-check cp-esc-opt-check" aria-hidden="true"></i>
+                   </div>
+                   ${niveisHtml}
+                 </div>`;
+               }).join('')}
              </div>
-           </div>`
+           </div>`;
+          })()
       : '';
 
     const classeAtual = window._classeAtualId || '';
@@ -752,12 +817,15 @@ document.addEventListener('DOMContentLoaded', () => {
            data-desc="${(p.descricao || '').toLowerCase().substring(0, 120)}">
         <div class="cp-poder-head">
           <span class="cp-poder-nome">${p.nome}</span>
-          ${tipoTag}${pmTag}${nivelTag}${energiaTag}${duracaoTag}
+          ${tipoTag}${pmTag}${nivelTag}${bonusTag}${energiaTag}${duracaoTag}
         </div>
         <div class="cp-poder-desc">${kw(p.descricao || '')}</div>
         ${prereqHtml}
         ${opcoesHtml}
-        ${addBtn}
+        <div class="cp-poder-footer">
+          ${addBtn}
+          ${fonteTag}
+        </div>
       </div>`;
   }
 
@@ -1184,6 +1252,230 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
+  // ── PERÍCIAS ────────────────────────────────────────────────
+  function renderTabelaUso(tabela) {
+    if (!tabela || !tabela.linhas || !tabela.linhas.length) return '';
+    const cols = tabela.colunas || [];
+    return `
+      <table class="per-uso-tabela">
+        ${cols.length ? `<thead><tr>${cols.map(c => `<th>${c}</th>`).join('')}</tr></thead>` : ''}
+        <tbody>
+          ${tabela.linhas.map(linha => `<tr>${linha.map(cel => `<td>${cel}</td>`).join('')}</tr>`).join('')}
+        </tbody>
+      </table>`;
+  }
+
+  function renderOpcoesPericia(p) {
+    const kw = typeof processarKeywords === 'function' ? processarKeywords : (t) => t;
+    if (!p.opcoes || !p.opcoes.length) return '';
+    return `
+      <div class="cp-escolha" style="margin:0 12px 10px 34px">
+        <div class="cp-esc-hd">
+          <div class="cp-esc-ic"><i class="ti ti-list-check" aria-hidden="true"></i></div>
+          <div>
+            <div class="cp-esc-titulo">Tipos de ${p.nome}</div>
+            <div class="cp-esc-sub">${p.opcoes.length} exemplos</div>
+          </div>
+        </div>
+        <div class="cp-esc-opcoes">
+          ${p.opcoes.map(op => `
+            <div class="cp-esc-opt">
+              <div class="cp-esc-opt-hd">
+                <div class="cp-esc-ic"><i class="ti ${op.icone || 'ti-star'}" aria-hidden="true"></i></div>
+                <div style="flex:1">
+                  <div class="cp-esc-opt-nome">${op.nome}</div>
+                  <div class="cp-esc-opt-desc">${kw(op.descricao || '')}</div>
+                </div>
+              </div>
+            </div>`).join('')}
+        </div>
+      </div>`;
+  }
+
+  function renderPericiaLinha(p) {
+    const kw = typeof processarKeywords === 'function' ? processarKeywords : (t) => t;
+    const temUsos = p.usos && p.usos.length > 0;
+    const temNota = !!p.notaGeral;
+    const temOpcoes = p.opcoes && p.opcoes.length > 0;
+    const temExpansao = temUsos || temNota || temOpcoes;
+
+    const tagTreinada = p.somenteTreinada
+      ? '<span class="per-tag per-tag-treinada">Treinada</span>' : '';
+    const tagArmadura = p.penalidadeArmadura
+      ? '<span class="per-tag per-tag-armadura">Armadura</span>' : '';
+
+    const notaHtml = temNota ? `
+      <div class="cp-explicacao" style="margin:0 12px 10px 34px">
+        <div class="cp-exp-hd">
+          <div class="cp-exp-ic"><i class="ti ${p.notaGeral.icone || 'ti-book'}" aria-hidden="true"></i></div>
+          <div>
+            <div class="cp-exp-titulo">${p.notaGeral.titulo}</div>
+            <div class="cp-exp-sub">${p.notaGeral.subtitulo || ''}</div>
+          </div>
+        </div>
+        <div class="cp-exp-body">
+          ${(p.notaGeral.itens || []).map(item =>
+            `<div class="cp-exp-item"><span class="cp-exp-bul">→</span><span>${kw(item || '')}</span></div>`
+          ).join('')}
+        </div>
+      </div>` : '';
+
+    const usosHtml = temUsos ? `
+      <div class="per-usos">
+        ${p.usos.map(u => `
+          <div class="per-uso">
+            <div class="per-uso-hd">
+              <span class="per-uso-nome">${u.nome}</span>
+              ${u.cd !== null && u.cd !== undefined ? `<span class="per-uso-cd">CD ${u.cd}</span>` : ''}
+              ${u.apenasTreinado ? `<span class="per-uso-treinado">Apenas treinado</span>` : ''}
+            </div>
+            <div class="per-uso-desc">${kw(u.descricao || '')}</div>
+            ${renderTabelaUso(u.tabela)}
+          </div>`).join('')}
+      </div>` : '';
+
+    return `
+      <div class="per-linha${temExpansao ? ' per-expandivel' : ''}" data-id="${p.id}"
+           onclick="${temExpansao ? `togglePericia('${p.id}')` : ''}">
+        <div class="per-linha-hd">
+          <i class="ti ${p.icone || 'ti-star'} per-icone" aria-hidden="true"></i>
+          <div class="per-txt">
+            <div class="per-nome">${p.nome}</div>
+            <div class="per-resumo">${kw(p.descricao || '')}</div>
+          </div>
+          ${tagTreinada}${tagArmadura}
+          ${temExpansao ? '<i class="ti ti-chevron-right per-chevron" aria-hidden="true"></i>' : ''}
+        </div>
+        ${notaHtml}
+        ${renderOpcoesPericia(p)}
+        ${usosHtml}
+      </div>`;
+  }
+
+  function renderPericias(lista) {
+    const cont = document.getElementById('periciasLista');
+    if (!cont) return;
+    const countEl = document.getElementById('periciasCount');
+    if (countEl) countEl.textContent = lista.length + ' perícia' + (lista.length !== 1 ? 's' : '');
+
+    const ordemAtributos = ['Força', 'Destreza', 'Constituição', 'Inteligência', 'Sabedoria', 'Carisma'];
+    const grupos = {};
+    lista.forEach(p => {
+      if (!grupos[p.atributoChave]) grupos[p.atributoChave] = [];
+      grupos[p.atributoChave].push(p);
+    });
+
+    let html = '';
+    ordemAtributos.forEach(atr => {
+      const itens = grupos[atr];
+      if (!itens || !itens.length) return;
+      html += `
+        <div class="per-grupo">
+          <div class="per-grupo-hd">
+            <span class="per-grupo-linha"></span>
+            <span class="per-grupo-titulo">${atr}</span>
+            <span class="per-grupo-count">${itens.length} perícia${itens.length !== 1 ? 's' : ''}</span>
+          </div>
+          <div class="per-lista">
+            ${itens.map(p => renderPericiaLinha(p)).join('')}
+          </div>
+        </div>`;
+    });
+
+    cont.innerHTML = html || '<p style="padding:2rem;color:#555;font-size:13px">Nenhuma perícia encontrada.</p>';
+  }
+
+  window.togglePericia = function(id) {
+    const el = document.querySelector(`.per-linha[data-id="${id}"]`);
+    if (el) el.classList.toggle('aberto');
+  };
+
+  let filtroAtributoPericia = 'todos';
+  let termoBuscaPericia = '';
+  let filtrosFlagPericia = { treinada: false, armadura: false };
+
+  function aplicarFiltrosPericias() {
+    let lista = window.PERICIAS || [];
+
+    if (filtroAtributoPericia !== 'todos') {
+      lista = lista.filter(p => p.atributoChave === filtroAtributoPericia);
+    }
+
+    if (filtrosFlagPericia.treinada) lista = lista.filter(p => p.somenteTreinada);
+    if (filtrosFlagPericia.armadura) lista = lista.filter(p => p.penalidadeArmadura);
+
+    // Perícias cujo termo de busca só bateu dentro de um uso nomeado
+    // (essas devem abrir automaticamente, senão o resultado fica escondido)
+    let idsParaExpandir = [];
+
+    if (termoBuscaPericia) {
+      const t = termoBuscaPericia.toLowerCase();
+      lista = lista.filter(p => {
+        const bateBase = p.nome.toLowerCase().includes(t) || p.descricao.toLowerCase().includes(t);
+        const bateUso = (p.usos || []).some(u =>
+          u.nome.toLowerCase().includes(t) || u.descricao.toLowerCase().includes(t));
+        if (bateUso) idsParaExpandir.push(p.id);
+        return bateBase || bateUso;
+      });
+    }
+
+    renderPericias(lista);
+
+    idsParaExpandir.forEach(id => {
+      const linha = document.querySelector(`.per-linha[data-id="${id}"]`);
+      if (linha) linha.classList.add('aberto');
+    });
+  }
+
+  window.setFiltroPericia = (btn, atributo) => {
+    document.querySelectorAll('#periciasFiltros .filtro-btn').forEach(b => b.classList.remove('a'));
+    btn.classList.add('a');
+    filtroAtributoPericia = atributo;
+    aplicarFiltrosPericias();
+  };
+
+  window.toggleFiltroFlagPericia = (flag, btn) => {
+    filtrosFlagPericia[flag] = !filtrosFlagPericia[flag];
+    btn.classList.toggle('a', filtrosFlagPericia[flag]);
+    aplicarFiltrosPericias();
+  };
+
+  // Clique num nome de perícia destacado (kw-pericia) em qualquer descrição
+  // de poder leva até a página de Perícias e abre a linha correspondente.
+  window.irParaPericia = function(nome) {
+    const alvo = (window.PERICIAS || []).find(p => p.nome.toLowerCase() === nome.toLowerCase());
+    if (!alvo) return;
+
+    filtroAtributoPericia = 'todos';
+    termoBuscaPericia = '';
+    filtrosFlagPericia = { treinada: false, armadura: false };
+    const buscaInputP = document.getElementById('buscaPericias');
+    if (buscaInputP) buscaInputP.value = '';
+    document.querySelectorAll('#periciasFiltros .filtro-btn, #periciasFiltrosFlags .filtro-btn')
+      .forEach(b => b.classList.remove('a'));
+    const btnTodos = document.querySelector('#periciasFiltros .filtro-btn');
+    if (btnTodos) btnTodos.classList.add('a');
+    renderPericias(window.PERICIAS || []);
+
+    mostrarSecao('pericias');
+
+    setTimeout(() => {
+      const linha = document.querySelector(`.per-linha[data-id="${alvo.id}"]`);
+      if (linha) {
+        linha.classList.add('aberto');
+        linha.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+    }, 50);
+  };
+
+  const buscaPericiasInline = document.getElementById('buscaPericias');
+  if (buscaPericiasInline) {
+    buscaPericiasInline.addEventListener('input', () => {
+      termoBuscaPericia = buscaPericiasInline.value.trim();
+      aplicarFiltrosPericias();
+    });
+  }
+
   // Busca global no topbar
   const buscaGlobal = document.getElementById('buscaGlobal');
   if (buscaGlobal) {
@@ -1220,6 +1512,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   if (window.CLASSES) renderClasses(window.CLASSES);
+  if (window.PERICIAS) renderPericias(window.PERICIAS);
 
   // Restaura a última seção visitada (ou Raças, na primeira visita)
   ativarSecaoNav(localStorage.getItem(LS_SECAO) || 'racas');

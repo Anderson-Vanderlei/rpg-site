@@ -598,7 +598,24 @@ html, body {
 .cc-campo-v .pm-val { color: #7b5acc; }
 
 .cc-profs     { display: flex; gap: 4px; flex-wrap: wrap; margin-bottom: .45rem; }
-.cc-prof-tag  { font-family: 'Cinzel', serif; font-size: 7px; padding: 1px 6px; border-radius: 2px; border: .5px solid; background: rgba(255,255,255,.02); color: #55555588; border-color: rgba(255,255,255,.08); letter-spacing: .04em; }
+
+/* Base compartilhada de todas as tags-pill (tipo, PM, nível, bônus, fonte, proficiência) */
+.tag-ativo, .tag-passivo, .tag-custo-pm, .tag-bonus, .cc-prof-tag, .cp-tag-fonte, .cp-poder-nivel {
+  font-family: 'Cinzel', serif;
+  font-size: 7px;
+  padding: 1px 6px;
+  border-radius: 2px;
+  border: .5px solid;
+  letter-spacing: .04em;
+  white-space: nowrap;
+}
+.tag-ativo, .tag-passivo, .tag-custo-pm, .tag-bonus {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+}
+
+.cc-prof-tag  { background: rgba(255,255,255,.02); color: #55555588; border-color: rgba(255,255,255,.08); }
 
 .cc-desc { font-size: 12px; color: #555; line-height: 1.65; font-style: italic; margin-top: .5rem; flex: 1; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
 .cc-footer { margin-top: .75rem; display: flex; gap: 6px; }
@@ -721,21 +738,19 @@ html, body {
 }
 .cp-poder-head { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin-bottom: 4px; }
 .cp-poder-nome { font-family: 'Cinzel', serif; font-size: 10px; color: #ccc; letter-spacing: .05em; flex: 1; }
-.tag-ativo   { background: rgba(120,40,10,.2); color: #d07050; border: .5px solid rgba(120,40,10,.5); font-family: 'Cinzel', serif; font-size: 7px; padding: 1px 6px; border-radius: 2px; letter-spacing: .04em; display: inline-flex; align-items: center; gap: 3px; }
-.tag-passivo { background: rgba(20,80,30,.2);  color: #50a868; border: .5px solid rgba(20,80,30,.5);  font-family: 'Cinzel', serif; font-size: 7px; padding: 1px 6px; border-radius: 2px; letter-spacing: .04em; display: inline-flex; align-items: center; gap: 3px; }
-.tag-custo-pm {
-  background: rgba(68,170,238,.15);
-  color: #44aaee;
-  border: .5px solid rgba(68,170,238,.3);
-  font-family: 'Cinzel', serif;
-  font-size: 7px;
-  padding: 1px 6px;
-  border-radius: 2px;
-  font-weight: 500;
-}
+.tag-ativo   { background: rgba(120,40,10,.2); color: #d07050; border-color: rgba(120,40,10,.5); }
+.tag-passivo { background: rgba(20,80,30,.2);  color: #50a868; border-color: rgba(20,80,30,.5); }
+.tag-custo-pm { background: rgba(68,170,238,.15); color: #44aaee; border-color: rgba(68,170,238,.3); font-weight: 500; }
 .cp-poder-desc { font-size: 12px; color: #666; line-height: 1.6; }
 .cp-prereq { display: flex; align-items: center; gap: 3px; font-size: 10px; color: #333; margin-top: 5px; flex-wrap: wrap; }
 .cp-prereq-node { background: #111; border: .5px solid #1e1e1e; border-radius: 2px; padding: 1px 5px; color: #555; font-size: 10px; }
+
+.tag-bonus { background: rgba(201,168,76,.15); color: #c9a84c; border-color: rgba(201,168,76,.4); }
+.tag-bonus i { font-size: 9px; }
+
+.cp-poder-footer { display: flex; align-items: center; margin-top: 9px; }
+.cp-poder-footer .cp-poder-add-btn { margin-top: 0; }
+.cp-tag-fonte { margin-left: auto; color: #8a1f1f; background: rgba(139,0,0,.10); border-color: rgba(139,0,0,.25); }
 
 /* Painel de variações (caminhos, linhagens...) */
 .cp-variacao {
@@ -767,10 +782,16 @@ html, body {
 .cp-esc-titulo { font-family: 'Cinzel', serif; font-size: 9px; color: #50a868; letter-spacing: .08em; }
 .cp-esc-sub    { font-size: 10px; color: #2a5530; margin-top: 1px; }
 .cp-esc-opcoes { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; }
-.cp-esc-opt { background: rgba(10,25,12,.4); border: .5px solid rgba(25,60,30,.3); border-radius: 3px; padding: 6px 8px; cursor: pointer; transition: border-color .15s; }
+.cp-esc-opt { background: rgba(10,25,12,.4); border: .5px solid rgba(25,60,30,.3); border-radius: 3px; padding: 6px 8px; cursor: pointer; transition: border-color .15s, background .15s; }
 .cp-esc-opt:hover { border-color: rgba(40,100,50,.5); }
+.cp-esc-opt.selecionado { background: rgba(20,80,30,.25); border-color: rgba(80,180,100,.6); }
+.cp-esc-opt-hd { display: flex; align-items: flex-start; gap: 8px; margin-bottom: 4px; }
+.cp-esc-opt-check { font-size: 13px; color: #50a868; flex-shrink: 0; margin-top: 1px; opacity: 0; }
+.cp-esc-opt.selecionado .cp-esc-opt-check { opacity: 1; }
 .cp-esc-opt-nome { font-family: 'Cinzel', serif; font-size: 9px; color: #50a868; letter-spacing: .04em; }
 .cp-esc-opt-desc { font-size: 10px; color: #2a5530; margin-top: 2px; line-height: 1.35; }
+.cp-esc-opt .cp-var-nivel { margin-top: 5px; }
+.cp-esc-opt .cp-var-nivel-desc { color: #2a5530; font-size: 10px; }
 
 /* Painel de explicação de subsistemas */
 .cp-explicacao {
@@ -785,8 +806,6 @@ html, body {
 .cp-exp-bul  { color: #c9a84c; flex-shrink: 0; margin-top: 1px; }
 
 /* Legenda de keywords */
-.cp-legenda { display: flex; flex-wrap: wrap; gap: 8px; padding: .8rem 1.1rem; border-top: .5px solid #111; background: #080808; flex-shrink: 0; }
-.cp-leg-item { display: flex; align-items: center; gap: 4px; font-size: 10px; color: #444; }
 
 /* Área expandida quando painel abre */
 @media (min-width: 901px) {
@@ -935,16 +954,7 @@ html, body {
 .cp-categoria-body.collapsed { display: none; }
 
 /* ── Badge de nível mínimo nos poderes ── */
-.cp-poder-nivel {
-  font-family: 'Cinzel', serif;
-  font-size: 7px;
-  color: #444;
-  border: .5px solid #1e1e1e;
-  border-radius: 2px;
-  padding: 1px 5px;
-  letter-spacing: .03em;
-  flex-shrink: 0;
-}
+.cp-poder-nivel { color: #444; border-color: #1e1e1e; padding: 1px 5px; letter-spacing: .03em; flex-shrink: 0; }
 
 /* ── Cadeia de pré-requisitos — refinada ── */
 .cp-prereq {
@@ -1373,8 +1383,95 @@ html, body {
   color: #b84040;
   border-color: rgba(139,0,0,.28);
 }
+.cp-var-nivel-iniciante {
+  background: rgba(80,80,80,.1);
+  color: #666;
+  border-color: rgba(80,80,80,.25);
+}
+.cp-var-nivel-veterano {
+  background: rgba(201,168,76,.1);
+  color: #b8922a;
+  border-color: rgba(201,168,76,.28);
+}
+.cp-var-nivel-mestre {
+  background: rgba(139,0,0,.1);
+  color: #b84040;
+  border-color: rgba(139,0,0,.28);
+}
 .cp-var-nivel-desc {
   font-size: 11px;
   color: #5a4a90;
   line-height: 1.45;
 }
+
+/* ── Perícias — lista compacta agrupada por atributo ── */
+#periciasLista {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+  gap: 4px 28px;
+  align-items: start;
+}
+.per-grupo { margin-bottom: 18px; }
+.per-grupo-hd { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; padding: 0 1.25rem; }
+.per-grupo-linha { width: 16px; height: 2px; background: #c9a84c; flex-shrink: 0; }
+.per-grupo-titulo { font-family: 'Cinzel', serif; font-size: 11px; color: #c9a84c; letter-spacing: .1em; text-transform: uppercase; }
+.per-grupo-count { font-size: 10px; color: #555; }
+
+.per-lista { border: .5px solid #1a1a1a; border-radius: 4px; overflow: hidden; margin: 0 1.25rem; }
+.per-linha { border-bottom: .5px solid #161616; transition: background .15s; }
+.per-linha:last-child { border-bottom: none; }
+.per-linha.per-expandivel { cursor: pointer; }
+.per-linha.per-expandivel:hover .per-linha-hd { background: rgba(201,168,76,.05); }
+.per-linha.aberto .per-linha-hd { background: rgba(201,168,76,.07); }
+
+.per-linha-hd { display: flex; align-items: center; gap: 9px; padding: 6px 12px; }
+.per-icone { color: #777; font-size: 13px; flex-shrink: 0; width: 13px; text-align: center; }
+.per-linha.aberto .per-icone { color: #c9a84c; }
+.per-txt { flex: 1; min-width: 0; }
+.per-nome { font-family: 'Cinzel', serif; font-size: 11px; color: #ccc; }
+.per-linha.aberto .per-nome { color: #e0c060; }
+.per-resumo { font-size: 9.5px; color: #555; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 1px; }
+
+.per-tag {
+  font-family: 'Cinzel', serif; font-size: 7px; padding: 1px 6px; border-radius: 2px;
+  border: .5px solid; letter-spacing: .04em; white-space: nowrap; flex-shrink: 0;
+}
+.per-tag-treinada { background: rgba(139,0,0,.12); color: #cc6666; border-color: rgba(139,0,0,.3); }
+.per-tag-armadura { background: rgba(80,80,80,.12); color: #999; border-color: rgba(80,80,80,.3); }
+
+.per-chevron { color: #444; font-size: 12px; flex-shrink: 0; transition: transform .15s; }
+.per-linha.aberto .per-chevron { transform: rotate(90deg); color: #c9a84c; }
+
+.per-usos { display: none; padding: 0 12px 9px 34px; }
+.per-linha.aberto .per-usos { display: block; }
+.per-uso { padding: 6px 0; border-top: .5px solid #161616; }
+.per-uso:first-child { border-top: none; }
+.per-uso-hd { display: flex; align-items: center; gap: 6px; margin-bottom: 2px; flex-wrap: wrap; }
+.per-uso-nome { font-family: 'Cinzel', serif; font-size: 9.5px; color: #b8922a; letter-spacing: .03em; }
+.per-uso-cd {
+  font-family: 'Cinzel', serif; font-size: 7px; padding: 1px 6px; border-radius: 2px;
+  background: rgba(201,168,76,.12); color: #c9a84c; border: .5px solid rgba(201,168,76,.3);
+}
+.per-uso-treinado {
+  font-family: 'Cinzel', serif; font-size: 7px; padding: 1px 6px; border-radius: 2px;
+  background: rgba(139,0,0,.1); color: #b86060; border: .5px solid rgba(139,0,0,.25);
+}
+.per-uso-desc { font-size: 10.5px; color: #666; line-height: 1.5; }
+
+/* Painel de explicação (cp-explicacao) e painel de escolha (cp-escolha)
+   reaproveitados dentro de uma linha de perícia — somem/aparecem junto
+   com os usos, ao expandir a linha */
+.per-linha .cp-explicacao,
+.per-linha .cp-escolha { display: none; }
+.per-linha.aberto .cp-explicacao,
+.per-linha.aberto .cp-escolha { display: block; }
+
+/* Tabela dentro de um uso (ex: Jogatina → Apostar) */
+.per-uso-tabela { width: 100%; border-collapse: collapse; margin-top: 6px; font-size: 10.5px; }
+.per-uso-tabela th {
+  font-family: 'Cinzel', serif; font-size: 8px; color: #c9a84c; letter-spacing: .05em;
+  text-align: left; padding: 4px 8px; border-bottom: .5px solid rgba(201,168,76,.3);
+}
+.per-uso-tabela td { padding: 4px 8px; color: #888; border-bottom: .5px solid #161616; }
+.per-uso-tabela tr:last-child td { border-bottom: none; }
+.per-uso-tabela td:first-child { color: #b8922a; white-space: nowrap; }

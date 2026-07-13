@@ -156,6 +156,10 @@ const KEYWORDS_T20 = {
       descricao: 'Golpe de misericórdia: ataque automático contra criatura indefesa. Causa dano máximo e força teste de Fortitude ou mata.' },
     { padroes: ['terreno difícil'],
       descricao: 'Terreno difícil: área que custa o dobro do deslocamento para atravessar (lama, escombros, água rasa etc.).' },
+    { padroes: ['flanquear', 'flanqueando', 'flanqueado'],
+      descricao: 'Flanquear: quando você e um aliado estão em lados opostos de um inimigo, ambos recebem +1 nos testes de ataque corpo a corpo contra ele.' },
+    { padroes: ['teste de resistência', 'testes de resistência'],
+      descricao: 'Teste de resistência: rolagem (Fortitude, Reflexos ou Vontade) para resistir a um efeito. A CD normalmente é definida por quem causa o efeito.' },
   ],
 
   // ── PERÍCIAS (cap. 2, pp. 114–123) ──
@@ -253,6 +257,18 @@ function _buildKeywordList() {
     }
   }
   lista.sort((a, b) => b.padrao.length - a.padrao.length);
+
+  // Pré-compila o regex e o HTML da descrição uma única vez por padrão aqui,
+  // em vez de refazer isso a cada chamada de processarKeywords() — antes,
+  // toda descrição de poder recompilava ~90 regex do zero.
+  for (const kw of lista) {
+    kw.regex = new RegExp(
+      `(?<=[\\s,;:.!?()"'\\-]|^)(${_escapeRegex(kw.padrao)})(?=[\\s,;:.!?()"'\\-]|$)`,
+      'g'
+    );
+    kw.descHtml = _escapeHtml(kw.descricao);
+  }
+
   return lista;
 }
 
@@ -308,18 +324,19 @@ function processarKeywords(texto) {
 
   // Passo 2: palavras-chave do dicionário
   for (const kw of _KEYWORD_LIST) {
-    const regex = new RegExp(
-      `(?<=[\\s,;:.!?()"'\\-]|^)(${_escapeRegex(kw.padrao)})(?=[\\s,;:.!?()"'\\-]|$)`,
-      'g'
-    );
-    resultado = resultado.replace(regex, (_, capture) => {
+    resultado = resultado.replace(kw.regex, (_, capture) => {
       const idx = placeholders.length;
-      const desc = _escapeHtml(kw.descricao);
+      const nomeEscapado = _escapeHtml(capture);
+      // Perícias linkam para a página de Perícias (abre e expande a linha)
+      const clickAttr = kw.tipo === 'pericia'
+        ? ` onclick="event.stopPropagation(); window.irParaPericia && window.irParaPericia('${nomeEscapado.replace(/'/g, "\\'")}')" style="cursor:pointer"`
+        : '';
       placeholders.push(
         `<span class="kw kw-${kw.tipo}"` +
-        ` data-kw-nome="${_escapeHtml(capture)}"` +
+        ` data-kw-nome="${nomeEscapado}"` +
         ` data-kw-tipo="${kw.tipo}"` +
-        ` data-tooltip="${desc}">${capture}</span>`
+        clickAttr +
+        ` data-tooltip="${kw.descHtml}">${capture}</span>`
       );
       return `\x00${idx}\x00`;
     });

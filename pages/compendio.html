@@ -500,11 +500,40 @@
       <h2>Toques Finais</h2>
       <p>Em breve — p. 106 do livro de regras</p>
     </div>
-    <div id="secao-pericias"        class="secao-conteudo placeholder-area" style="display:none">
-      <i class="ti ti-brain" aria-hidden="true"></i>
-      <h2>Perícias</h2>
-      <p>Em breve — 26 perícias com descrições completas</p>
-    </div>
+    <div id="secao-pericias" class="secao-conteudo" style="display:none;flex-direction:column;flex:1;overflow:hidden;">
+
+      <div class="section-hero">
+        <div class="section-hero-bg"></div>
+        <h1>Perícias</h1>
+        <p>Habilidades mundanas usadas para superar desafios físicos, mentais e sociais — de saltar um desfiladeiro a decifrar um pergaminho antigo.</p>
+      </div>
+
+      <div class="toolbar">
+        <div class="search-inline">
+          <i class="ti ti-search" aria-hidden="true"></i>
+          <input type="text" id="buscaPericias" placeholder="Buscar perícia…" />
+        </div>
+        <div id="periciasFiltros" style="display:flex;gap:8px;flex-wrap:wrap;">
+          <button class="filtro-btn a" onclick="setFiltroPericia(this,'todos')">Todos</button>
+          <button class="filtro-btn" onclick="setFiltroPericia(this,'Força')">Força</button>
+          <button class="filtro-btn" onclick="setFiltroPericia(this,'Destreza')">Destreza</button>
+          <button class="filtro-btn" onclick="setFiltroPericia(this,'Constituição')">Constituição</button>
+          <button class="filtro-btn" onclick="setFiltroPericia(this,'Inteligência')">Inteligência</button>
+          <button class="filtro-btn" onclick="setFiltroPericia(this,'Sabedoria')">Sabedoria</button>
+          <button class="filtro-btn" onclick="setFiltroPericia(this,'Carisma')">Carisma</button>
+        </div>
+        <div id="periciasFiltrosFlags" style="display:flex;gap:8px;flex-wrap:wrap;">
+          <button class="filtro-btn" onclick="toggleFiltroFlagPericia('treinada', this)">Treinada</button>
+          <button class="filtro-btn" onclick="toggleFiltroFlagPericia('armadura', this)">Armadura</button>
+        </div>
+        <span class="filtro-count" id="periciasCount">29 perícias</span>
+      </div>
+
+      <div class="cards-area">
+        <div id="periciasLista"></div>
+      </div>
+
+    </div><!-- /secao-pericias -->
     <div id="secao-poderes-combate" class="secao-conteudo placeholder-area" style="display:none">
       <i class="ti ti-sword" aria-hidden="true"></i><h2>Poderes de Combate</h2><p>Em breve</p>
     </div>
@@ -595,6 +624,7 @@
 <script src="../js/data/racas.js"></script>
 <script src="../js/data/classes.js"></script>
 <script src="../js/data/poderes_classes.js"></script>
+<script src="../js/data/pericias.js"></script>
 <script src="../js/keywords.js"></script>
 <script src="../js/compendio.js"></script>
 

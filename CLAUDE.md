@@ -78,13 +78,13 @@ rpg-site/
 │       ├── poderes_classes.js       ✅ poderes das 14 classes revisados
 │       ├── origens.js               ⏳ a criar
 │       ├── deuses.js                ⏳ a criar
-│       ├── pericias.js              ⏳ a criar
+│       ├── pericias.js              ✅ 29 perícias completas (Cap. 2, pp. 114–123)
 │       ├── magias.js                ⏳ a criar
 │       ├── equipamentos.js          ⏳ a criar
 │       └── criaturas.js             ⏳ a criar
 ├── pages/
 │   ├── atlas.html                   ✅ mapa interativo 5 camadas
-│   ├── compendio.html               ✅ raças + classes funcionando
+│   ├── compendio.html               ✅ raças + classes + perícias funcionando
 │   ├── ficha.html                   ⏳ a criar
 │   └── mestre.html                  ⏳ a criar
 └── images/
@@ -141,6 +141,36 @@ rpg-site/
   }],
 }
 ```
+
+### pericias.js — campos por objeto
+```js
+{
+  id, icone, nome, atributoChave,        // atributoChave: nome completo, ex: 'Destreza'
+  somenteTreinada, penalidadeArmadura,   // booleans — Tabela 2-1 do livro
+  descricao,                             // texto-base sempre visível (resumo de 1 linha no card)
+  opcoes: [{ nome, icone, descricao }],  // painel verde reaproveitado — categorias (Ofício), SEM niveis[]
+  notaGeral: {                           // painel dourado reaproveitado — regra de subsistema
+    titulo, subtitulo, icone, itens[],
+  },
+  usos: [{                               // sub-habilidades nomeadas com CD própria
+    nome, cd,                            // cd: number | 0 | null (null = "varia", não mostra badge)
+    apenasTreinado,                      // true → mostra tag "Apenas treinado"
+    descricao,
+    tabela: { colunas[], linhas[][] },   // OPCIONAL — renderiza <table> em vez de só prosa (ex: Jogatina)
+  }],
+}
+```
+Regra: uma perícia só fica clicável/expansível (`per-expandivel`) se tiver `usos.length > 0`,
+`opcoes.length > 0` OU `notaGeral` definido. Sem nenhum dos três, a linha é só informativa
+(ex: Luta, Pontaria, Iniciativa).
+
+**IMPORTANTE — todo arquivo de dados novo PRECISA terminar com:**
+```js
+if (typeof window !== 'undefined') window.NOME_DA_CONSTANTE = NOME_DA_CONSTANTE;
+```
+`const` no escopo global NÃO vira propriedade de `window` automaticamente — só `var` faz isso.
+Sem essa linha, `compendio.js` não enxerga os dados e falha silenciosamente (sem erro no console).
+*(Causou um bug real na primeira versão de pericias.js — vide histórico.)*
 
 ---
 
@@ -200,12 +230,25 @@ com o valor certo sem mudar o código.
 
 ## 6. Sistema de Painéis do Compêndio
 
-| Tipo | Cor | CSS | Quando usar |
-|---|---|---|---|
-| Variação inline | Roxo suave | .cp-var-inline | Caminho/Linhagem abaixo da habilidade fixa (variacaoIndex) |
-| Variação em seção | Roxo suave | renderVariacaoEmSecao | Banner informativo dentro de categoriaEspecial |
-| Escolha no poder | Verde suave | via opcoes[] | Familiares, Totens, Companheiro — escolha permanente |
-| Explicação | Dourado suave | .cp-explicacao | Regras de subsistemas |
+| Tipo | Cor | CSS | Quando usar | Usado em |
+|---|---|---|---|---|
+| Variação inline | Roxo suave | .cp-var-inline | Caminho/Linhagem abaixo da habilidade fixa (variacaoIndex) | Classes |
+| Variação em seção | Roxo suave | renderVariacaoEmSecao | Banner informativo dentro de categoriaEspecial | Classes |
+| Escolha no poder | Verde suave | .cp-escolha via opcoes[] | Familiares, Totens, Companheiro, categorias (Ofício) — escolha permanente ou lista de exemplos | Classes, Perícias |
+| Explicação | Dourado suave | .cp-explicacao | Regras de subsistemas (Músicas, Bravatas, Perícias de Resistência) | Classes, Perícias |
+
+**`.cp-escolha` e `.cp-explicacao` são componentes genéricos, não exclusivos do painel de classe.**
+Qualquer página nova pode reaproveitá-los — só precisa: (1) usar as mesmas classes CSS,
+(2) garantir que o container pai (`.per-linha`, `.cp-poder` etc.) tenha uma regra
+`display:none` → `.aberto .cp-escolha/.cp-explicacao { display:block }` pra sincronizar com o
+estado de expansão local da página. Ver `js/data/pericias.js` (Ofício usa `.cp-escolha`,
+as três perícias de resistência usam `.cp-explicacao` via `NOTA_RESISTENCIA` compartilhada).
+
+### Kw-pericia é clicável (cross-page link)
+Nomes de perícia destacados em qualquer descrição (`.kw-pericia`) chamam
+`window.irParaPericia(nome)` no clique — troca pra seção Perícias, reseta filtros,
+expande e rola até a linha correspondente. Modelo pra futuros links cruzados
+(ex: `.kw-poder` → abrir o poder direto, quando Magias/Origens existirem).
 
 ### Regra do variacaoIndex
 Habilidade fixa com `variacaoIndex: N` → banner renderizado inline abaixo da descrição.
@@ -255,7 +298,7 @@ Campo nos poderes do Clérigo e Paladino que identifica a polaridade energética
 **Paladino:** sempre energia positiva (sem exceção no livro básico).
 
 Poderes com energiaDivina no dado atual:
-- Clérigo: canalizar-energia (dual), expulsar-mortos-vivos (positiva), comandar-mortos-vivos (negativa), magia-sagrada-profana (dual), simbolo-sagrado-energizado (dual), canalizar-amplo (dual)
+- Clérigo: canalizar-energia (dual), expulsar-comandar-mortos-vivos (dual — poder único, efeito depende da energia canalizada), magia-sagrada-profana (dual), simbolo-sagrado-energizado (dual), canalizar-amplo (dual)
 - Paladino: aura-ardente (positiva), cura-pelas-maos (positiva)
 
 ---
@@ -407,11 +450,17 @@ Na ficha de personagem precisarão de componente de input PM compartilhado.
 - Sidebar hierárquica, hambúrguer mobile, breadcrumb, localStorage de navegação
 - 17 raças com dados oficiais (Cap. 1, pp. 18–31)
 - Atlas com 5 camadas de mapa
-- keywords.js v2 — auto-detecção numérica + 8 tipos + tipos de parceiro
+- keywords.js v2 — auto-detecção numérica + regex pré-compilados + 8 tipos + tipos de parceiro
 - **14 classes revisadas e completas** em classes.js + poderes_classes.js
 - Painel de classe: variação inline, filtros, busca, slider de nível,
   badge de duração, botão adicionar ao personagem, categorias colapsáveis,
-  badge de energiaDivina, badge de condicaoAtivacao visual
+  badge de energiaDivina, badge de condicaoAtivacao visual, tag Bônus (auto-detectada),
+  tag de fonte/suplemento, estado de seleção persistente em opcoes[] (localStorage)
+- **29 perícias completas** em pericias.js (Cap. 2, pp. 114–123) — lista compacta agrupada
+  por atributo, grid responsivo (auto-fit), filtros por atributo + Treinada/Armadura,
+  busca com auto-expansão de uso encontrado, painel de escolha (Ofício), painel de
+  explicação (Perícias de Resistência), tabela renderizada (Jogatina), link cross-page
+  poder → perícia via kw-pericia
 
 ### Revisão Final Pendente ⚠️
 Após inspeção do usuário, aplicar os ajustes apontados:
@@ -422,18 +471,26 @@ Após inspeção do usuário, aplicar os ajustes apontados:
 5. Verificar categoriaEspecial de todos os poderes expansíveis
 6. Verificar keywords em todas as descrições
 7. Preparar prerequisitoValidacao[] para as mecânicas da ficha
+8. **pericias.js não passou pelo ciclo normal de verificação** (IA rascunha → usuário
+   confere linha por linha contra o livro) — foi extraído e escrito direto do PDF.
+   Números (CD, dados) foram conferidos com cuidado; vale reler as descrições mais
+   longas (Acrobacia, Enganação, Misticismo) contra o livro quando houver tempo.
 
 ### Backlog 📋 (ordem)
 1. Revisão final das 14 classes (detalhes apontados pelo usuário)
 2. Magias (Cap. 4, pp. 168–211)
 3. Origens (Cap. 1, pp. 85–95)
 4. Deuses — panteão dos 20 + energiaDivina por divindade (Cap. 1, pp. 96–105)
-5. Perícias (Cap. 2, pp. 114–123)
-6. Equipamentos (Cap. 3, pp. 138–167)
-7. Criaturas / Bestiário (Cap. 7, pp. 282–316)
-8. Ficha de personagem (pages/ficha.html)
-9. Ferramentas do Mestre (pages/mestre.html)
-10. Firebase Auth + Firestore
+5. Equipamentos (Cap. 3, pp. 138–167)
+6. Criaturas / Bestiário (Cap. 7, pp. 282–316)
+7. Ficha de personagem (pages/ficha.html)
+8. Ferramentas do Mestre (pages/mestre.html)
+9. Firebase Auth + Firestore
+10. Link reverso perícia → classe/poder ("concedida por: Ladino, Cigano...") na própria
+    linha da perícia — hoje o link só existe de poder para perícia (kw-pericia), não o
+    contrário. Não é urgente; fica melhor depois que Classes e Origens estiverem fechadas.
+11. Botões "Ver no Livro" e "Adicionar à Ficha" no painel de classe ainda não têm ação
+    (decisão pendente: linkar PDF, remover, ou desabilitar com tooltip "em breve")
 
 ### Estratégia de Suplementos
 PDFs de suplementos serão anexados DEPOIS do livro básico completo.
@@ -496,6 +553,7 @@ prerequisitoValidacao: [
 - IDs e classes: kebab-case
 - Constantes de dados: SCREAMING_SNAKE_CASE
 - Ícones: Tabler outline webfont (ti-nome) — NUNCA sufixo -filled
+- Todo arquivo novo em js/data/ TERMINA com `if (typeof window !== 'undefined') window.X = X;` (ver §4)
 
 ---
 

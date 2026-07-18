@@ -311,7 +311,117 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // ── 4B. RENDERIZAR CARDS DE CLASSES ────────────────────────
+  // ── 4B. RENDERIZAR CARDS DE ORIGENS ─────────────────────────
+
+  function renderOrigens(lista) {
+    const grid = document.getElementById('origensGrid');
+    if (!grid) return;
+    const kw = typeof processarKeywords === 'function' ? processarKeywords : (t) => t;
+    document.getElementById('origensCount').textContent = lista.length + (lista.length !== 1 ? ' origens' : ' origem');
+    grid.innerHTML = '';
+
+    // Popula lista na sidebar (igual ao de raças/classes)
+    const navListaO = document.getElementById('navListaOrigens');
+    if (navListaO) {
+      navListaO.innerHTML = lista.map(o => `
+        <div class="nav-sub-sub-item nav-origem-item" data-origem="${o.id}"
+             onclick="irParaOrigem('${o.id}')">
+          <i class="ti ${o.icone}" aria-hidden="true" style="font-size:11px"></i>
+          <span>${o.nome}</span>
+        </div>`).join('');
+    }
+
+    lista.forEach(o => {
+      const card = document.createElement('div');
+      card.className = 'origem-card';
+      card.dataset.id = o.id;
+      card.innerHTML = `
+        <div class="oc-top">
+          <span class="badge-fonte">${o.fonte}</span>
+          <div class="oc-temas">
+            ${o.temas.slice(0, 2).map(t => `<span class="oc-tema-tag">${t}</span>`).join('')}
+          </div>
+        </div>
+        <div class="oc-icon-wrap">
+          <i class="ti ${o.icone} oc-icon" aria-hidden="true"></i>
+        </div>
+        <div class="oc-body">
+          <div class="oc-nome">${o.nome}</div>
+          <div class="oc-hook">${kw(o.descricao)}</div>
+          <div class="oc-campo">
+            <div class="oc-campo-l">Itens</div>
+            <div class="oc-campo-v">${o.itens.join(', ')}</div>
+          </div>
+          ${o.periciasOferecidas.length ? `<div class="oc-pericias">${kw(o.periciasOferecidas.join(', '))}</div>` : ''}
+          <div class="oc-poder-unico">
+            <i class="ti ti-award" aria-hidden="true"></i>
+            <span>Poder único: ${o.poderUnico.nome}</span>
+          </div>
+          <div class="oc-footer">
+            <button class="btn-ver" onclick="abrirDetalheOrigem(window.ORIGENS.find(x=>x.id==='${o.id}'))">
+              <i class="ti ti-eye" aria-hidden="true"></i> Ver Origem
+            </button>
+          </div>
+        </div>`;
+      card.addEventListener('click', (e) => {
+        if (e.target.closest('.btn-ver') || e.target.closest('.kw')) return;
+        abrirDetalheOrigem(o);
+      });
+      grid.appendChild(card);
+    });
+  }
+
+  // ── 4B2. RENDERIZAR CARDS DE DEUSES ─────────────────────────
+
+  const LABEL_ENERGIA = { positiva: 'Positiva', negativa: 'Negativa', dual: 'Qualquer' };
+
+  function renderDeuses(lista) {
+    const grid = document.getElementById('deusesGrid');
+    if (!grid) return;
+    const kw = typeof processarKeywords === 'function' ? processarKeywords : (t) => t;
+    document.getElementById('deusesCount').textContent = lista.length + (lista.length !== 1 ? ' divindades' : ' divindade');
+    grid.innerHTML = '';
+
+    const navListaD = document.getElementById('navListaDeuses');
+    if (navListaD) {
+      navListaD.innerHTML = lista.map(d => `
+        <div class="nav-sub-sub-item nav-deus-item" data-deus="${d.id}"
+             onclick="irParaDeus('${d.id}')">
+          <i class="ti ${d.icone}" aria-hidden="true" style="font-size:11px"></i>
+          <span>${d.nome}</span>
+        </div>`).join('');
+    }
+
+    lista.forEach(d => {
+      const card = document.createElement('div');
+      card.className = 'deus-card';
+      card.dataset.id = d.id;
+      card.innerHTML = `
+        <div class="dc-top">
+          <span class="rc-badge badge-fonte">${d.fonte}</span>
+          <span class="e-divina e-${d.energia}">${LABEL_ENERGIA[d.energia]}</span>
+        </div>
+        <div class="dc-icon-wrap dc-icon-wrap-${d.energia}">
+          <i class="ti ${d.icone} dc-icon" aria-hidden="true"></i>
+        </div>
+        <div class="dc-body">
+          <div class="dc-nome">${d.nome}</div>
+          <div class="dc-desc">${kw(d.descricao)}</div>
+          <div class="dc-footer">
+            <button class="btn-ver" onclick="abrirDetalheDeus(window.DEUSES.find(x=>x.id==='${d.id}'))">
+              <i class="ti ti-eye" aria-hidden="true"></i> Ver Divindade
+            </button>
+          </div>
+        </div>`;
+      card.addEventListener('click', (e) => {
+        if (e.target.closest('.btn-ver')) return;
+        abrirDetalheDeus(d);
+      });
+      grid.appendChild(card);
+    });
+  }
+
+  // ── 4C. RENDERIZAR CARDS DE CLASSES ────────────────────────
 
   function cmplxDots(n) {
     return [1,2,3].map(i =>
@@ -718,7 +828,7 @@ document.addEventListener('DOMContentLoaded', () => {
       dual:     'Positiva / Negativa',
     };
     const energiaTag = p.energiaDivina
-      ? `<span class="e-divina e-${p.energiaDivina}">
+      ? `<span class="e-divina e-${p.energiaDivina}" onclick="event.stopPropagation(); window.irParaDeusesPorEnergia && window.irParaDeusesPorEnergia('${p.energiaDivina}')" style="cursor:pointer">
            <i class="ti ${energiaIcons[p.energiaDivina]}"
               aria-hidden="true" style="font-size:9px"></i>
            ${energiaLabels[p.energiaDivina]}
@@ -736,6 +846,11 @@ document.addEventListener('DOMContentLoaded', () => {
       : '';
 
     const fonteTag = `<span class="cp-tag-fonte">${p.fonte || 'Tormenta 20'}</span>`;
+
+    const LABEL_CATEGORIA_PODER = { combate: 'Combate', destino: 'Destino', magia: 'Magia', concedidos: 'Concedidos', tormenta: 'Tormenta' };
+    const categoriaTag = p.categoria
+      ? `<span class="cp-tag-categoria">${LABEL_CATEGORIA_PODER[p.categoria] || p.categoria}</span>`
+      : '';
 
     const prereqHtml = p.prerequisito
       ? `<div class="cp-prereq">
@@ -820,11 +935,15 @@ document.addEventListener('DOMContentLoaded', () => {
           ${tipoTag}${pmTag}${nivelTag}${bonusTag}${energiaTag}${duracaoTag}
         </div>
         <div class="cp-poder-desc">${kw(p.descricao || '')}</div>
+        ${p.tabela ? renderTabelaUso(p.tabela) : ''}
         ${prereqHtml}
         ${opcoesHtml}
         <div class="cp-poder-footer">
           ${addBtn}
-          ${fonteTag}
+          <div class="cp-poder-footer-direita">
+            ${categoriaTag}
+            ${fonteTag}
+          </div>
         </div>
       </div>`;
   }
@@ -1034,6 +1153,133 @@ document.addEventListener('DOMContentLoaded', () => {
     container.innerHTML = html;
   }
 
+  // ── PODERES GERAIS (Combate/Destino/Magia/Concedidos/Tormenta) ─────
+  // Reaproveita renderPoderHtml() e togglePoderPersonagem() sem mudar nada
+  // neles — só usa um "classeId" fixo ('geral') pra persistência no
+  // localStorage, já que esses poderes não pertencem a nenhuma classe.
+  const _pgEstado = {
+    combate:    { tipo: 'todos', busca: '' },
+    destino:    { tipo: 'todos', busca: '' },
+    magia:      { tipo: 'todos', busca: '' },
+    concedidos: { tipo: 'todos', busca: '' },
+    tormenta:   { tipo: 'todos', busca: '' },
+    todos:      { tipo: 'todos', categoria: 'todos', busca: '' },
+  };
+
+  function renderPoderesGeraisNaSecao(categoria) {
+    const container = document.getElementById(`poderes${categoria.charAt(0).toUpperCase()}${categoria.slice(1)}Lista`);
+    if (!container) return;
+
+    const estado = _pgEstado[categoria];
+    const todosDaCategoria = (window.PODERES_GERAIS || []).filter(p => p.categoria === categoria);
+
+    // _cpTodosPoderes precisa estar pronto ANTES do filtro, porque o filtro
+    // "bonus" usa poderEhBonus(), que depende dela.
+    _cpTodosPoderes = todosDaCategoria;
+    window._classeAtualId = 'geral';
+
+    const filtrados = todosDaCategoria.filter(p => {
+      const okTipo = estado.tipo === 'todos'
+        || (estado.tipo === 'bonus' ? poderEhBonus(p) : p.tipo === estado.tipo);
+      const okBusca = !estado.busca
+        || (p.nome || '').toLowerCase().includes(estado.busca)
+        || (p.descricao || '').toLowerCase().includes(estado.busca)
+        || (p.prerequisito || '').toLowerCase().includes(estado.busca);
+      return okTipo && okBusca;
+    });
+
+    const countEl = document.getElementById(`poderes${categoria.charAt(0).toUpperCase()}${categoria.slice(1)}Count`);
+    if (countEl) countEl.textContent = `${filtrados.length} poder${filtrados.length !== 1 ? 'es' : ''}`;
+
+    container.innerHTML = filtrados.length
+      ? filtrados.map(p => renderPoderHtml(p)).join('')
+      : `<div class="cp-poderes-vazio">Nenhum poder encontrado.</div>`;
+  }
+
+  // Página combinada: todas as 5 categorias juntas, com filtro extra por categoria.
+  // Agrupada por categoria (igual Perícias por atributo) e num grid que se
+  // reorganiza sozinho — em tela normal os grupos empilham, em tela larga
+  // ficam lado a lado, evitando a coluna única esticada em ultrawide.
+  function renderPoderesTodosNaSecao() {
+    const container = document.getElementById('poderesTodosLista');
+    if (!container) return;
+
+    const estado = _pgEstado.todos;
+    const todos = window.PODERES_GERAIS || [];
+
+    _cpTodosPoderes = todos;
+    window._classeAtualId = 'geral';
+
+    const filtrados = todos.filter(p => {
+      const okCategoria = estado.categoria === 'todos' || p.categoria === estado.categoria;
+      const okTipo = estado.tipo === 'todos'
+        || (estado.tipo === 'bonus' ? poderEhBonus(p) : p.tipo === estado.tipo);
+      const okBusca = !estado.busca
+        || (p.nome || '').toLowerCase().includes(estado.busca)
+        || (p.descricao || '').toLowerCase().includes(estado.busca)
+        || (p.prerequisito || '').toLowerCase().includes(estado.busca);
+      return okCategoria && okTipo && okBusca;
+    });
+
+    const countEl = document.getElementById('poderesTodosCount');
+    if (countEl) countEl.textContent = `${filtrados.length} poder${filtrados.length !== 1 ? 'es' : ''}`;
+
+    const ORDEM_CATEGORIAS = ['combate', 'destino', 'magia', 'concedidos', 'tormenta'];
+    const LABEL_CATEGORIA = { combate: 'Combate', destino: 'Destino', magia: 'Magia', concedidos: 'Concedidos', tormenta: 'Tormenta' };
+    const grupos = {};
+    filtrados.forEach(p => {
+      if (!grupos[p.categoria]) grupos[p.categoria] = [];
+      grupos[p.categoria].push(p);
+    });
+
+    let html = '';
+    ORDEM_CATEGORIAS.forEach(cat => {
+      const itens = grupos[cat];
+      if (!itens || !itens.length) return;
+      itens.sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'));
+      html += `
+        <div class="pg-grupo">
+          <div class="pg-grupo-hd">
+            <span class="pg-grupo-linha"></span>
+            <span class="pg-grupo-titulo">${LABEL_CATEGORIA[cat]}</span>
+            <span class="pg-grupo-count">${itens.length} poder${itens.length !== 1 ? 'es' : ''}</span>
+          </div>
+          ${itens.map(p => renderPoderHtml(p)).join('')}
+        </div>`;
+    });
+
+    container.innerHTML = html || `<div class="cp-poderes-vazio">Nenhum poder encontrado.</div>`;
+  }
+
+  window.setFiltroPoderGeral = (btn, categoria, tipo) => {
+    document.querySelectorAll(`#poderes${categoria.charAt(0).toUpperCase()}${categoria.slice(1)}Filtros .filtro-btn`).forEach(b => b.classList.remove('a'));
+    btn.classList.add('a');
+    _pgEstado[categoria].tipo = tipo;
+    renderPoderesGeraisNaSecao(categoria);
+  };
+
+  // Filtro da página combinada — eixo (categoria|tipo) é independente do valor.
+  window.setFiltroPoderTodos = (btn, eixo, valor) => {
+    const grupoId = eixo === 'categoria' ? 'poderesTodosFiltrosCategoria' : 'poderesTodosFiltrosTipo';
+    document.querySelectorAll(`#${grupoId} .filtro-btn`).forEach(b => b.classList.remove('a'));
+    btn.classList.add('a');
+    _pgEstado.todos[eixo] = valor;
+    renderPoderesTodosNaSecao();
+  };
+
+  // Clique num chip de poder geral (ex: Poderes Concedidos no painel de um Deus)
+  // leva até a categoria certa já filtrada só por aquele nome.
+  window.irParaPoderGeral = function(nome, categoria) {
+    mostrarSecao('poderes-' + categoria);
+    setTimeout(() => {
+      const cap = categoria.charAt(0).toUpperCase() + categoria.slice(1);
+      const input = document.getElementById('buscaPoderes' + cap);
+      if (input) input.value = nome;
+      _pgEstado[categoria].busca = nome.toLowerCase();
+      renderPoderesGeraisNaSecao(categoria);
+    }, 50);
+  };
+
   window.filtrarPoderesPainel = (tipo, btn) => {
     _cpPoderFiltro = tipo;
     document.querySelectorAll('.cp-filtro-btn').forEach(b => b.classList.remove('on'));
@@ -1092,6 +1338,15 @@ document.addEventListener('DOMContentLoaded', () => {
     mostrarSecao('classes');
     const classe = (window.CLASSES||[]).find(c => c.id === id);
     if (classe) setTimeout(() => abrirDetalheClasse(classe), 100);
+  };
+
+  // Clique em item de origem individual na nav
+  window.irParaOrigem = (id) => {
+    document.querySelectorAll('.nav-origem-item').forEach(i => i.classList.remove('ativo'));
+    document.querySelector(`.nav-origem-item[data-origem="${id}"]`)?.classList.add('ativo');
+    mostrarSecao('origens');
+    const origem = (window.ORIGENS||[]).find(o => o.id === id);
+    if (origem) setTimeout(() => abrirDetalheOrigem(origem), 100);
   };
 
   // Filtro e busca de classes
@@ -1205,6 +1460,162 @@ document.addEventListener('DOMContentLoaded', () => {
     painelEl.classList.remove('aberto');
     document.querySelector('.cards-area')?.classList.remove('encolhido');
     document.querySelectorAll('.race-card').forEach(c => c.classList.remove('selecionado'));
+  };
+
+  // ── PAINEL DE DETALHE DE ORIGEM ─────────────────────────────
+  const origemPainelEl = document.getElementById('origemPainel');
+
+  window.abrirDetalheOrigem = function(o) {
+    if (!o) return;
+    const kw = typeof processarKeywords === 'function' ? processarKeywords : (t) => t;
+
+    document.getElementById('opHeroIcon').className = `ti ${o.icone} dp-hero-icon`;
+    document.getElementById('opNome').textContent = o.nome;
+    document.getElementById('opSub').textContent = o.temas.join(' · ');
+
+    const periciasHtml = o.periciasOferecidas.length
+      ? `<div class="op-lista-chips">${o.periciasOferecidas.map(p => kw(p)).join('')}</div>` : '';
+    const poderesGeraisHtml = o.poderesGeraisOferecidos.length
+      ? `<div class="op-lista-chips">${o.poderesGeraisOferecidos.map(p => `<span class="op-poder-geral">${p}</span>`).join('')}</div>` : '';
+    const escolhaLivreHtml = o.escolhaLivre
+      ? `<div class="op-escolha-livre"><i class="ti ti-dice" aria-hidden="true"></i> ${kw(o.escolhaLivre.descricao)}</div>` : '';
+
+    document.getElementById('opBody').innerHTML = `
+      <div class="dp-linha"></div>
+      <div class="dp-badges">
+        <span class="dp-badge" style="background:rgba(139,0,0,.1);color:#cc4444;border:.5px solid rgba(139,0,0,.3)">${o.fonte}</span>
+        ${o.temas.map(t => `<span class="dp-badge" style="background:rgba(201,168,76,.08);color:#c9a84c;border:.5px solid rgba(201,168,76,.25)">${t}</span>`).join('')}
+      </div>
+
+      <div class="dp-secao">Descrição</div>
+      <p class="dp-desc">${kw(o.descricao)}</p>
+
+      <div class="dp-secao">Itens</div>
+      <p style="font-size:12px;color:#888;line-height:1.7;margin-bottom:.9rem">${o.itens.join(', ')}</p>
+
+      <div class="dp-secao">Benefícios · escolha 2</div>
+      ${periciasHtml}
+      ${poderesGeraisHtml}
+      ${escolhaLivreHtml}
+
+      <div class="op-poder-unico-painel">
+        <div class="op-pu-hd">
+          <div class="op-pu-ic"><i class="ti ti-award" aria-hidden="true"></i></div>
+          <div>
+            <div class="op-pu-legenda">Poder único · ${o.nome}</div>
+            <div class="op-pu-nome">${o.poderUnico.nome}</div>
+          </div>
+        </div>
+        <div class="op-pu-desc">${kw(o.poderUnico.descricao)}</div>
+      </div>`;
+
+    document.querySelectorAll('.origem-card').forEach(c => c.classList.remove('selecionado'));
+    document.querySelector(`.origem-card[data-id="${o.id}"]`)?.classList.add('selecionado');
+
+    origemPainelEl.classList.add('aberto');
+    document.querySelector('#secao-origens .cards-area')?.classList.add('encolhido');
+  };
+
+  window.fecharDetalheOrigem = function() {
+    origemPainelEl.classList.remove('aberto');
+    document.querySelector('#secao-origens .cards-area')?.classList.remove('encolhido');
+    document.querySelectorAll('.origem-card').forEach(c => c.classList.remove('selecionado'));
+  };
+
+  // ── PAINEL DE DETALHE DE DEUS ────────────────────────────────
+  const deusPainelEl = document.getElementById('deusPainel');
+
+  function chipsDevoto(nomes, tipo) {
+    return nomes.map(nome => {
+      const lista = tipo === 'raca' ? (window.RACAS || []) : (window.CLASSES || []);
+      const alvo = lista.find(x => x.nome === nome);
+      const fn = tipo === 'raca' ? 'irParaRaca' : 'irParaClasse';
+      return alvo
+        ? `<span class="dd-devoto-link" onclick="${fn}('${alvo.id}')">${nome}</span>`
+        : `<span class="dd-devoto-link dd-devoto-sem-link">${nome}</span>`;
+    }).join('');
+  }
+
+  window.abrirDetalheDeus = function(d) {
+    if (!d) return;
+    const kw = typeof processarKeywords === 'function' ? processarKeywords : (t) => t;
+
+    document.getElementById('ddHeroIcon').className = `ti ${d.icone} dp-hero-icon`;
+    document.getElementById('ddNome').textContent = d.nome;
+    document.getElementById('ddSub').textContent = 'Energia ' + LABEL_ENERGIA[d.energia];
+
+    const devotosHtml = d.devotosNota
+      ? `<div class="dd-devoto-nota"><i class="ti ti-info-circle" aria-hidden="true"></i> ${kw(d.devotosNota)}</div>`
+      : `${d.devotosRacas.length ? `
+         <div class="dd-devoto-grupo">Raças</div>
+         <div class="dd-devoto-chips">${chipsDevoto(d.devotosRacas, 'raca')}</div>` : ''}
+         ${d.devotosClasses.length ? `
+         <div class="dd-devoto-grupo">Classes</div>
+         <div class="dd-devoto-chips">${chipsDevoto(d.devotosClasses, 'classe')}</div>` : ''}`;
+
+    const armaHtml = d.armaPreferida
+      ? `<p style="font-size:12px;color:#888;line-height:1.6;margin-bottom:.9rem">${d.armaPreferida}</p>`
+      : `<p style="font-size:11px;color:#8a7440;line-height:1.6;margin-bottom:.9rem;font-style:italic">${kw(d.armaPreferidaNota)}</p>`;
+
+    document.getElementById('ddBody').innerHTML = `
+      <div class="dp-linha"></div>
+      <div class="dp-badges">
+        <span class="dp-badge" style="background:rgba(139,0,0,.1);color:#cc4444;border:.5px solid rgba(139,0,0,.3)">${d.fonte}</span>
+        <span class="e-divina e-${d.energia}">${LABEL_ENERGIA[d.energia]}</span>
+      </div>
+
+      <p class="dp-desc">${kw(d.lore)}</p>
+
+      <div class="dp-secao">Crenças e Objetivos</div>
+      <p class="dp-desc">${kw(d.crencas)}</p>
+
+      <div class="dp-secao">Símbolo Sagrado</div>
+      <p style="font-size:12px;color:#888;line-height:1.6;margin-bottom:.9rem">${kw(d.simboloSagrado)}</p>
+
+      <div class="dp-secao">Arma Preferida</div>
+      ${armaHtml}
+
+      <div class="dp-secao">Devotos</div>
+      ${devotosHtml}
+
+      <div class="dp-secao">Poderes Concedidos</div>
+      <div class="dd-poder-chips">
+        ${d.poderesConcedidos.map(p => `<span class="op-poder-geral" style="cursor:pointer" onclick="irParaPoderGeral('${p.replace(/'/g, "\\'")}', 'concedidos')">${p}</span>`).join('')}
+      </div>
+
+      <div class="dp-secao">Obrigações e Restrições</div>
+      <p class="dp-desc">${kw(d.obrigacoes)}</p>
+      <p style="font-size:10.5px;color:#775; line-height:1.5">Violar = perde todos os PM até o próximo dia (penitência se violar de novo na mesma aventura).</p>`;
+
+    document.querySelectorAll('.deus-card').forEach(c => c.classList.remove('selecionado'));
+    document.querySelector(`.deus-card[data-id="${d.id}"]`)?.classList.add('selecionado');
+
+    deusPainelEl.classList.add('aberto');
+    document.querySelector('#secao-deuses .cards-area')?.classList.add('encolhido');
+  };
+
+  window.fecharDetalheDeus = function() {
+    deusPainelEl.classList.remove('aberto');
+    document.querySelector('#secao-deuses .cards-area')?.classList.remove('encolhido');
+    document.querySelectorAll('.deus-card').forEach(c => c.classList.remove('selecionado'));
+  };
+
+  window.irParaDeus = (id) => {
+    document.querySelectorAll('.nav-deus-item').forEach(i => i.classList.remove('ativo'));
+    document.querySelector(`.nav-deus-item[data-deus="${id}"]`)?.classList.add('ativo');
+    mostrarSecao('deuses');
+    const deus = (window.DEUSES||[]).find(x => x.id === id);
+    if (deus) setTimeout(() => abrirDetalheDeus(deus), 100);
+  };
+
+  // Clique na tag de energiaDivina de um poder (Clérigo/Paladino) leva pra
+  // Deuses já filtrado pela mesma energia — fecha o ciclo do link Deus → Classe.
+  window.irParaDeusesPorEnergia = function(energia) {
+    mostrarSecao('deuses');
+    setTimeout(() => {
+      const btn = document.querySelector(`#deusesFiltros .filtro-btn[data-energia="${energia}"]`);
+      if (btn) setFiltroDeus(btn, energia);
+    }, 50);
   };
 
   // ── 6. FILTROS E BUSCA ─────────────────────────────────────
@@ -1358,6 +1769,17 @@ document.addEventListener('DOMContentLoaded', () => {
     const countEl = document.getElementById('periciasCount');
     if (countEl) countEl.textContent = lista.length + ' perícia' + (lista.length !== 1 ? 's' : '');
 
+    // Popula lista na sidebar (igual ao de raças/classes/origens)
+    const navListaP = document.getElementById('navListaPericias');
+    if (navListaP) {
+      navListaP.innerHTML = lista.map(p => `
+        <div class="nav-sub-sub-item nav-pericia-item" data-pericia="${p.id}"
+             onclick="irParaPericia('${p.nome.replace(/'/g, "\\'")}')">
+          <i class="ti ${p.icone || 'ti-star'}" aria-hidden="true" style="font-size:11px"></i>
+          <span>${p.nome}</span>
+        </div>`).join('');
+    }
+
     const ordemAtributos = ['Força', 'Destreza', 'Constituição', 'Inteligência', 'Sabedoria', 'Carisma'];
     const grupos = {};
     lista.forEach(p => {
@@ -1476,6 +1898,141 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
+  // ── FILTROS E BUSCA DE ORIGENS ──────────────────────────────
+  let filtroTemaOrigem = 'todos';
+  let termoBuscaOrigem = '';
+
+  function aplicarFiltrosOrigens() {
+    let lista = window.ORIGENS || [];
+
+    if (filtroTemaOrigem !== 'todos') {
+      lista = lista.filter(o => o.temas.includes(filtroTemaOrigem));
+    }
+
+    if (termoBuscaOrigem) {
+      const t = termoBuscaOrigem.toLowerCase();
+      lista = lista.filter(o =>
+        o.nome.toLowerCase().includes(t) ||
+        o.descricao.toLowerCase().includes(t) ||
+        o.itens.some(i => i.toLowerCase().includes(t)) ||
+        o.periciasOferecidas.some(p => p.toLowerCase().includes(t)) ||
+        o.poderesGeraisOferecidos.some(p => p.toLowerCase().includes(t)) ||
+        o.poderUnico.nome.toLowerCase().includes(t) ||
+        o.poderUnico.descricao.toLowerCase().includes(t) ||
+        (o.escolhaLivre && o.escolhaLivre.descricao.toLowerCase().includes(t))
+      );
+    }
+
+    renderOrigens(lista);
+  }
+
+  window.setFiltroOrigem = (btn, tema) => {
+    document.querySelectorAll('#origensFiltros .filtro-btn').forEach(b => b.classList.remove('a'));
+    btn.classList.add('a');
+    filtroTemaOrigem = tema;
+    aplicarFiltrosOrigens();
+  };
+
+  const buscaOrigensInline = document.getElementById('buscaOrigens');
+  if (buscaOrigensInline) {
+    buscaOrigensInline.addEventListener('input', () => {
+      termoBuscaOrigem = buscaOrigensInline.value.trim();
+      aplicarFiltrosOrigens();
+    });
+  }
+
+  // ── FILTROS E BUSCA DE DEUSES ────────────────────────────────
+  let filtroEnergiaDeus = 'todos';
+  let termoBuscaDeus = '';
+
+  function aplicarFiltrosDeuses() {
+    let lista = window.DEUSES || [];
+
+    if (filtroEnergiaDeus !== 'todos') {
+      lista = lista.filter(d => d.energia === filtroEnergiaDeus);
+    }
+
+    if (termoBuscaDeus) {
+      const t = termoBuscaDeus.toLowerCase();
+      lista = lista.filter(d =>
+        d.nome.toLowerCase().includes(t) ||
+        d.descricao.toLowerCase().includes(t) ||
+        d.crencas.toLowerCase().includes(t) ||
+        d.obrigacoes.toLowerCase().includes(t) ||
+        d.devotosRacas.some(r => r.toLowerCase().includes(t)) ||
+        d.devotosClasses.some(c => c.toLowerCase().includes(t)) ||
+        (d.devotosNota && d.devotosNota.toLowerCase().includes(t)) ||
+        d.poderesConcedidos.some(p => p.toLowerCase().includes(t))
+      );
+    }
+
+    renderDeuses(lista);
+  }
+
+  window.setFiltroDeus = (btn, energia) => {
+    document.querySelectorAll('#deusesFiltros .filtro-btn').forEach(b => b.classList.remove('a'));
+    btn.classList.add('a');
+    filtroEnergiaDeus = energia;
+    aplicarFiltrosDeuses();
+  };
+
+  const buscaDeusesInline = document.getElementById('buscaDeuses');
+  if (buscaDeusesInline) {
+    buscaDeusesInline.addEventListener('input', () => {
+      termoBuscaDeus = buscaDeusesInline.value.trim();
+      aplicarFiltrosDeuses();
+    });
+  }
+
+  // ── BUSCA DE PODERES GERAIS (por categoria) ─────────────────
+  const buscaPoderesCombateInline = document.getElementById('buscaPoderesCombate');
+  if (buscaPoderesCombateInline) {
+    buscaPoderesCombateInline.addEventListener('input', () => {
+      _pgEstado.combate.busca = buscaPoderesCombateInline.value.trim().toLowerCase();
+      renderPoderesGeraisNaSecao('combate');
+    });
+  }
+
+  const buscaPoderesDestinoInline = document.getElementById('buscaPoderesDestino');
+  if (buscaPoderesDestinoInline) {
+    buscaPoderesDestinoInline.addEventListener('input', () => {
+      _pgEstado.destino.busca = buscaPoderesDestinoInline.value.trim().toLowerCase();
+      renderPoderesGeraisNaSecao('destino');
+    });
+  }
+
+  const buscaPoderesMagiaInline = document.getElementById('buscaPoderesMagia');
+  if (buscaPoderesMagiaInline) {
+    buscaPoderesMagiaInline.addEventListener('input', () => {
+      _pgEstado.magia.busca = buscaPoderesMagiaInline.value.trim().toLowerCase();
+      renderPoderesGeraisNaSecao('magia');
+    });
+  }
+
+  const buscaPoderesConcedidosInline = document.getElementById('buscaPoderesConcedidos');
+  if (buscaPoderesConcedidosInline) {
+    buscaPoderesConcedidosInline.addEventListener('input', () => {
+      _pgEstado.concedidos.busca = buscaPoderesConcedidosInline.value.trim().toLowerCase();
+      renderPoderesGeraisNaSecao('concedidos');
+    });
+  }
+
+  const buscaPoderesTormentaInline = document.getElementById('buscaPoderesTormenta');
+  if (buscaPoderesTormentaInline) {
+    buscaPoderesTormentaInline.addEventListener('input', () => {
+      _pgEstado.tormenta.busca = buscaPoderesTormentaInline.value.trim().toLowerCase();
+      renderPoderesGeraisNaSecao('tormenta');
+    });
+  }
+
+  const buscaPoderesTodosInline = document.getElementById('buscaPoderesTodos');
+  if (buscaPoderesTodosInline) {
+    buscaPoderesTodosInline.addEventListener('input', () => {
+      _pgEstado.todos.busca = buscaPoderesTodosInline.value.trim().toLowerCase();
+      renderPoderesTodosNaSecao();
+    });
+  }
+
   // Busca global no topbar
   const buscaGlobal = document.getElementById('buscaGlobal');
   if (buscaGlobal) {
@@ -1504,7 +2061,7 @@ document.addEventListener('DOMContentLoaded', () => {
         item.className = 'nav-raca-item';
         item.dataset.raca = r.id;
         item.style.setProperty('--rc', cor);
-        item.innerHTML = `<div class="raca-dot"></div><span>${r.nome}</span>`;
+        item.innerHTML = `<i class="ti ${r.icone}" aria-hidden="true" style="font-size:11px;color:${cor}"></i><span>${r.nome}</span>`;
         item.addEventListener('click', () => irParaRaca(r.id));
         navRacas.appendChild(item);
       });
@@ -1513,6 +2070,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
   if (window.CLASSES) renderClasses(window.CLASSES);
   if (window.PERICIAS) renderPericias(window.PERICIAS);
+  if (window.ORIGENS) renderOrigens(window.ORIGENS);
+  if (window.DEUSES) renderDeuses(window.DEUSES);
+  if (window.PODERES_GERAIS) renderPoderesGeraisNaSecao('combate');
+  if (window.PODERES_GERAIS) renderPoderesGeraisNaSecao('destino');
+  if (window.PODERES_GERAIS) renderPoderesGeraisNaSecao('magia');
+  if (window.PODERES_GERAIS) renderPoderesGeraisNaSecao('concedidos');
+  if (window.PODERES_GERAIS) renderPoderesGeraisNaSecao('tormenta');
+  if (window.PODERES_GERAIS) renderPoderesTodosNaSecao();
 
   // Restaura a última seção visitada (ou Raças, na primeira visita)
   ativarSecaoNav(localStorage.getItem(LS_SECAO) || 'racas');

@@ -107,19 +107,25 @@
           <span class="sub-label">Distinções</span>
         </div>
 
-        <!-- Origens -->
-        <div class="nav-sub-item" data-secao="origens"
+        <!-- Origens → expande lista -->
+        <div class="nav-sub-item tem-filhos" data-secao="origens"
              onclick="toggleSubItem(this,'origens')">
           <i class="ti ti-map-pin" aria-hidden="true"></i>
           <span class="sub-label">Origens</span>
+          <i class="ti ti-chevron-right seta" style="margin-left:auto;font-size:10px" aria-hidden="true"></i>
         </div>
+        <!-- Lista de origens gerada pelo JS -->
+        <div class="nav-sub-sub" id="navListaOrigens" style="display:none"></div>
 
-        <!-- Deuses -->
-        <div class="nav-sub-item" data-secao="deuses"
+        <!-- Deuses → expande lista -->
+        <div class="nav-sub-item tem-filhos" data-secao="deuses"
              onclick="toggleSubItem(this,'deuses')">
           <i class="ti ti-sun" aria-hidden="true"></i>
           <span class="sub-label">Deuses</span>
+          <i class="ti ti-chevron-right seta" style="margin-left:auto;font-size:10px" aria-hidden="true"></i>
         </div>
+        <!-- Lista de deuses gerada pelo JS -->
+        <div class="nav-sub-sub" id="navListaDeuses" style="display:none"></div>
 
         <!-- Toques Finais -->
         <div class="nav-sub-item" data-secao="toques"
@@ -139,17 +145,20 @@
         <i class="ti ti-chevron-right seta" aria-hidden="true"></i>
       </div>
       <div class="nav-sub">
-        <div class="nav-sub-item" data-secao="pericias"
+        <div class="nav-sub-item tem-filhos" data-secao="pericias"
              onclick="toggleSubItem(this,'pericias')">
           <i class="ti ti-list" aria-hidden="true"></i>
           <span class="sub-label">Lista de Perícias</span>
+          <i class="ti ti-chevron-right seta" style="margin-left:auto;font-size:10px" aria-hidden="true"></i>
         </div>
+        <!-- Lista de perícias gerada pelo JS -->
+        <div class="nav-sub-sub" id="navListaPericias" style="display:none"></div>
       </div>
     </div>
 
     <!-- ── PODERES ── -->
     <div class="nav-grupo" data-grupo="poderes">
-      <div class="nav-grupo-header" onclick="toggleGrupo(this)">
+      <div class="nav-grupo-header" onclick="toggleGrupo(this); mostrarSecao('poderes-todos');">
         <i class="ti ti-shield grupo-icone" aria-hidden="true"></i>
         <span class="grupo-label">Poderes</span>
         <i class="ti ti-chevron-right seta" aria-hidden="true"></i>
@@ -485,16 +494,109 @@
       <h2>Distinções</h2>
       <p>Em breve — será complementado com livro adicional</p>
     </div>
-    <div id="secao-origens"         class="secao-conteudo placeholder-area" style="display:none">
-      <i class="ti ti-map-pin" aria-hidden="true"></i>
-      <h2>Origens</h2>
-      <p>Em breve — 20+ origens disponíveis</p>
-    </div>
-    <div id="secao-deuses"          class="secao-conteudo placeholder-area" style="display:none">
-      <i class="ti ti-sun" aria-hidden="true"></i>
-      <h2>Deuses</h2>
-      <p>Em breve — O Panteão com 20 divindades</p>
-    </div>
+    <div id="secao-origens" class="secao-conteudo" style="display:none;flex-direction:column;flex:1;overflow:hidden;">
+
+      <div class="section-hero">
+        <div class="section-hero-bg"></div>
+        <h1>Origens</h1>
+        <p>Sua origem revela sua ocupação antes de ser aventureiro — o que você fazia até ganhar seu primeiro nível numa classe.</p>
+      </div>
+
+      <div class="toolbar">
+        <div class="search-inline">
+          <i class="ti ti-search" aria-hidden="true"></i>
+          <input type="text" id="buscaOrigens" placeholder="Buscar origem…" />
+        </div>
+        <div id="origensFiltros" style="display:flex;gap:8px;flex-wrap:wrap;">
+          <button class="filtro-btn a" onclick="setFiltroOrigem(this,'todos')">Todos</button>
+          <button class="filtro-btn" onclick="setFiltroOrigem(this,'Religioso')">Religioso</button>
+          <button class="filtro-btn" onclick="setFiltroOrigem(this,'Nobre')">Nobre</button>
+          <button class="filtro-btn" onclick="setFiltroOrigem(this,'Crime')">Crime</button>
+          <button class="filtro-btn" onclick="setFiltroOrigem(this,'Combate')">Combate</button>
+          <button class="filtro-btn" onclick="setFiltroOrigem(this,'Natureza')">Natureza</button>
+          <button class="filtro-btn" onclick="setFiltroOrigem(this,'Ofício')">Ofício</button>
+          <button class="filtro-btn" onclick="setFiltroOrigem(this,'Arte')">Arte</button>
+          <button class="filtro-btn" onclick="setFiltroOrigem(this,'Social')">Social</button>
+          <button class="filtro-btn" onclick="setFiltroOrigem(this,'Viagem')">Viagem</button>
+          <button class="filtro-btn" onclick="setFiltroOrigem(this,'Sobrevivência')">Sobrevivência</button>
+          <button class="filtro-btn" onclick="setFiltroOrigem(this,'Misterioso')">Misterioso</button>
+          <button class="filtro-btn" onclick="setFiltroOrigem(this,'Acadêmico')">Acadêmico</button>
+          <button class="filtro-btn" onclick="setFiltroOrigem(this,'Cura')">Cura</button>
+          <button class="filtro-btn" onclick="setFiltroOrigem(this,'Magia')">Magia</button>
+        </div>
+        <span class="filtro-count" id="origensCount">35 origens</span>
+      </div>
+
+      <div class="cards-area">
+        <div class="cards-grid" id="origensGrid"></div>
+      </div>
+
+      <!-- Painel de detalhe da origem -->
+      <div class="detalhe-painel" id="origemPainel">
+        <div class="dp-hero" id="opHero">
+          <div class="dp-hero-bg" id="opHeroBg"></div>
+          <i class="ti ti-map-pin dp-hero-icon" id="opHeroIcon" aria-hidden="true"></i>
+          <div class="dp-hero-content">
+            <div class="dp-tipo" id="opTipo"><i class="ti ti-map-pin" aria-hidden="true"></i> Origem</div>
+            <div class="dp-nome" id="opNome">—</div>
+            <div class="dp-sub" id="opSub">—</div>
+          </div>
+          <button class="dp-fechar" onclick="fecharDetalheOrigem()">
+            <i class="ti ti-x" aria-hidden="true"></i>
+          </button>
+        </div>
+        <div class="dp-body" id="opBody">
+          <!-- preenchido pelo JS -->
+        </div>
+      </div>
+
+    </div><!-- /secao-origens -->
+    <div id="secao-deuses" class="secao-conteudo" style="display:none;flex-direction:column;flex:1;overflow:hidden;">
+
+      <div class="section-hero">
+        <div class="section-hero-bg"></div>
+        <h1>Deuses</h1>
+        <p>O Panteão dos Vinte — divindades que aceitam devotos em troca de poderes concedidos, cada uma com suas próprias crenças e obrigações.</p>
+      </div>
+
+      <div class="toolbar">
+        <div class="search-inline">
+          <i class="ti ti-search" aria-hidden="true"></i>
+          <input type="text" id="buscaDeuses" placeholder="Buscar divindade…" />
+        </div>
+        <div id="deusesFiltros" style="display:flex;gap:8px;flex-wrap:wrap;">
+          <button class="filtro-btn a" data-energia="todos" onclick="setFiltroDeus(this,'todos')">Todos</button>
+          <button class="filtro-btn" data-energia="positiva" onclick="setFiltroDeus(this,'positiva')">Positiva</button>
+          <button class="filtro-btn" data-energia="negativa" onclick="setFiltroDeus(this,'negativa')">Negativa</button>
+          <button class="filtro-btn" data-energia="dual" onclick="setFiltroDeus(this,'dual')">Qualquer</button>
+        </div>
+        <span class="filtro-count" id="deusesCount">20 divindades</span>
+      </div>
+
+      <div class="cards-area">
+        <div class="cards-grid" id="deusesGrid"></div>
+      </div>
+
+      <!-- Painel de detalhe da divindade -->
+      <div class="detalhe-painel" id="deusPainel">
+        <div class="dp-hero" id="ddHero">
+          <div class="dp-hero-bg" id="ddHeroBg"></div>
+          <i class="ti ti-sun dp-hero-icon" id="ddHeroIcon" aria-hidden="true"></i>
+          <div class="dp-hero-content">
+            <div class="dp-tipo" id="ddTipo"><i class="ti ti-sun" aria-hidden="true"></i> Divindade</div>
+            <div class="dp-nome" id="ddNome">—</div>
+            <div class="dp-sub" id="ddSub">—</div>
+          </div>
+          <button class="dp-fechar" onclick="fecharDetalheDeus()">
+            <i class="ti ti-x" aria-hidden="true"></i>
+          </button>
+        </div>
+        <div class="dp-body" id="ddBody">
+          <!-- preenchido pelo JS -->
+        </div>
+      </div>
+
+    </div><!-- /secao-deuses -->
     <div id="secao-toques"          class="secao-conteudo placeholder-area" style="display:none">
       <i class="ti ti-wand" aria-hidden="true"></i>
       <h2>Toques Finais</h2>
@@ -534,21 +636,178 @@
       </div>
 
     </div><!-- /secao-pericias -->
-    <div id="secao-poderes-combate" class="secao-conteudo placeholder-area" style="display:none">
-      <i class="ti ti-sword" aria-hidden="true"></i><h2>Poderes de Combate</h2><p>Em breve</p>
-    </div>
-    <div id="secao-poderes-destino" class="secao-conteudo placeholder-area" style="display:none">
-      <i class="ti ti-star" aria-hidden="true"></i><h2>Poderes de Destino</h2><p>Em breve</p>
-    </div>
-    <div id="secao-poderes-magia"   class="secao-conteudo placeholder-area" style="display:none">
-      <i class="ti ti-sparkles" aria-hidden="true"></i><h2>Poderes de Magia</h2><p>Em breve</p>
-    </div>
-    <div id="secao-poderes-concedidos" class="secao-conteudo placeholder-area" style="display:none">
-      <i class="ti ti-sun" aria-hidden="true"></i><h2>Poderes Concedidos</h2><p>Em breve</p>
-    </div>
-    <div id="secao-poderes-tormenta" class="secao-conteudo placeholder-area" style="display:none">
-      <i class="ti ti-storm" aria-hidden="true"></i><h2>Poderes da Tormenta</h2><p>Em breve</p>
-    </div>
+    <div id="secao-poderes-todos" class="secao-conteudo" style="display:none;flex-direction:column;flex:1;overflow:hidden;">
+
+      <div class="section-hero">
+        <div class="section-hero-bg"></div>
+        <h1>Todos os Poderes Gerais</h1>
+        <p>As 5 categorias juntas — Combate, Destino, Magia, Concedidos e Tormenta. Pra navegar por uma categoria específica, use o menu lateral.</p>
+      </div>
+
+      <div class="toolbar" style="flex-direction:column;align-items:stretch;gap:8px;">
+        <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
+          <div class="search-inline">
+            <i class="ti ti-search" aria-hidden="true"></i>
+            <input type="text" id="buscaPoderesTodos" placeholder="Buscar poder…" />
+          </div>
+          <div id="poderesTodosFiltrosCategoria" style="display:flex;gap:8px;flex-wrap:wrap;">
+            <button class="filtro-btn a" onclick="setFiltroPoderTodos(this,'categoria','todos')">Todas as categorias</button>
+            <button class="filtro-btn" onclick="setFiltroPoderTodos(this,'categoria','combate')">Combate</button>
+            <button class="filtro-btn" onclick="setFiltroPoderTodos(this,'categoria','destino')">Destino</button>
+            <button class="filtro-btn" onclick="setFiltroPoderTodos(this,'categoria','magia')">Magia</button>
+            <button class="filtro-btn" onclick="setFiltroPoderTodos(this,'categoria','concedidos')">Concedidos</button>
+            <button class="filtro-btn" onclick="setFiltroPoderTodos(this,'categoria','tormenta')">Tormenta</button>
+          </div>
+          <span class="filtro-count" id="poderesTodosCount" style="margin-left:auto;">162 poderes</span>
+        </div>
+        <div id="poderesTodosFiltrosTipo" style="display:flex;gap:8px;flex-wrap:wrap;">
+          <button class="filtro-btn a" onclick="setFiltroPoderTodos(this,'tipo','todos')">Todos</button>
+          <button class="filtro-btn" onclick="setFiltroPoderTodos(this,'tipo','ativo')">Ativo</button>
+          <button class="filtro-btn" onclick="setFiltroPoderTodos(this,'tipo','passivo')">Passivo</button>
+          <button class="filtro-btn" onclick="setFiltroPoderTodos(this,'tipo','bonus')">Bônus</button>
+        </div>
+      </div>
+
+      <div class="cards-area">
+        <div id="poderesTodosLista"></div>
+      </div>
+
+    </div><!-- /secao-poderes-todos -->
+    <div id="secao-poderes-combate" class="secao-conteudo" style="display:none;flex-direction:column;flex:1;overflow:hidden;">
+
+      <div class="section-hero">
+        <div class="section-hero-bg"></div>
+        <h1>Poderes de Combate</h1>
+        <p>Poderes gerais que melhoram características ligadas a combate — disponíveis pra qualquer personagem, independente da classe.</p>
+      </div>
+
+      <div class="toolbar">
+        <div class="search-inline">
+          <i class="ti ti-search" aria-hidden="true"></i>
+          <input type="text" id="buscaPoderesCombate" placeholder="Buscar poder…" />
+        </div>
+        <div id="poderesCombateFiltros" style="display:flex;gap:8px;flex-wrap:wrap;">
+          <button class="filtro-btn a" onclick="setFiltroPoderGeral(this,'combate','todos')">Todos</button>
+          <button class="filtro-btn" onclick="setFiltroPoderGeral(this,'combate','ativo')">Ativo</button>
+          <button class="filtro-btn" onclick="setFiltroPoderGeral(this,'combate','passivo')">Passivo</button>
+          <button class="filtro-btn" onclick="setFiltroPoderGeral(this,'combate','bonus')">Bônus</button>
+        </div>
+        <span class="filtro-count" id="poderesCombateCount">40 poderes</span>
+      </div>
+
+      <div class="cards-area">
+        <div id="poderesCombateLista" style="max-width:720px;margin:0 auto;"></div>
+      </div>
+
+    </div><!-- /secao-poderes-combate -->
+    <div id="secao-poderes-destino" class="secao-conteudo" style="display:none;flex-direction:column;flex:1;overflow:hidden;">
+
+      <div class="section-hero">
+        <div class="section-hero-bg"></div>
+        <h1>Poderes de Destino</h1>
+        <p>Poderes gerais que melhoram características não relacionadas a combate — disponíveis pra qualquer personagem, independente da classe.</p>
+      </div>
+
+      <div class="toolbar">
+        <div class="search-inline">
+          <i class="ti ti-search" aria-hidden="true"></i>
+          <input type="text" id="buscaPoderesDestino" placeholder="Buscar poder…" />
+        </div>
+        <div id="poderesDestinoFiltros" style="display:flex;gap:8px;flex-wrap:wrap;">
+          <button class="filtro-btn a" onclick="setFiltroPoderGeral(this,'destino','todos')">Todos</button>
+          <button class="filtro-btn" onclick="setFiltroPoderGeral(this,'destino','ativo')">Ativo</button>
+          <button class="filtro-btn" onclick="setFiltroPoderGeral(this,'destino','passivo')">Passivo</button>
+          <button class="filtro-btn" onclick="setFiltroPoderGeral(this,'destino','bonus')">Bônus</button>
+        </div>
+        <span class="filtro-count" id="poderesDestinoCount">20 poderes</span>
+      </div>
+
+      <div class="cards-area">
+        <div id="poderesDestinoLista" style="max-width:720px;margin:0 auto;"></div>
+      </div>
+
+    </div><!-- /secao-poderes-destino -->
+    <div id="secao-poderes-magia"   class="secao-conteudo" style="display:none;flex-direction:column;flex:1;overflow:hidden;">
+
+      <div class="section-hero">
+        <div class="section-hero-bg"></div>
+        <h1>Poderes de Magia</h1>
+        <p>Poderes gerais ligados a magias e itens mágicos — exigem a habilidade de classe Magias (ou lançar magias de outra forma) como pré-requisito base.</p>
+      </div>
+
+      <div class="toolbar">
+        <div class="search-inline">
+          <i class="ti ti-search" aria-hidden="true"></i>
+          <input type="text" id="buscaPoderesMagia" placeholder="Buscar poder…" />
+        </div>
+        <div id="poderesMagiaFiltros" style="display:flex;gap:8px;flex-wrap:wrap;">
+          <button class="filtro-btn a" onclick="setFiltroPoderGeral(this,'magia','todos')">Todos</button>
+          <button class="filtro-btn" onclick="setFiltroPoderGeral(this,'magia','ativo')">Ativo</button>
+          <button class="filtro-btn" onclick="setFiltroPoderGeral(this,'magia','passivo')">Passivo</button>
+          <button class="filtro-btn" onclick="setFiltroPoderGeral(this,'magia','bonus')">Bônus</button>
+        </div>
+        <span class="filtro-count" id="poderesMagiaCount">8 poderes</span>
+      </div>
+
+      <div class="cards-area">
+        <div id="poderesMagiaLista" style="max-width:720px;margin:0 auto;"></div>
+      </div>
+
+    </div><!-- /secao-poderes-magia -->
+    <div id="secao-poderes-concedidos" class="secao-conteudo" style="display:none;flex-direction:column;flex:1;overflow:hidden;">
+
+      <div class="section-hero">
+        <div class="section-hero-bg"></div>
+        <h1>Poderes Concedidos</h1>
+        <p>Poderes recebidos por devotos de uma divindade — o pré-requisito de cada um é ser devoto do deus indicado. Atributo-chave: Sabedoria.</p>
+      </div>
+
+      <div class="toolbar">
+        <div class="search-inline">
+          <i class="ti ti-search" aria-hidden="true"></i>
+          <input type="text" id="buscaPoderesConcedidos" placeholder="Buscar poder…" />
+        </div>
+        <div id="poderesConcedidosFiltros" style="display:flex;gap:8px;flex-wrap:wrap;">
+          <button class="filtro-btn a" onclick="setFiltroPoderGeral(this,'concedidos','todos')">Todos</button>
+          <button class="filtro-btn" onclick="setFiltroPoderGeral(this,'concedidos','ativo')">Ativo</button>
+          <button class="filtro-btn" onclick="setFiltroPoderGeral(this,'concedidos','passivo')">Passivo</button>
+          <button class="filtro-btn" onclick="setFiltroPoderGeral(this,'concedidos','bonus')">Bônus</button>
+        </div>
+        <span class="filtro-count" id="poderesConcedidosCount">72 poderes</span>
+      </div>
+
+      <div class="cards-area">
+        <div id="poderesConcedidosLista" style="max-width:720px;margin:0 auto;"></div>
+      </div>
+
+    </div><!-- /secao-poderes-concedidos -->
+    <div id="secao-poderes-tormenta" class="secao-conteudo" style="display:none;flex-direction:column;flex:1;overflow:hidden;">
+
+      <div class="section-hero">
+        <div class="section-hero-bg"></div>
+        <h1>Poderes da Tormenta</h1>
+        <p>Habilidades ligadas à tempestade rubra. Escolher qualquer poder deste grupo custa 1 de Carisma — e mais 1 a cada 2 outros poderes da Tormenta que você já tenha.</p>
+      </div>
+
+      <div class="toolbar">
+        <div class="search-inline">
+          <i class="ti ti-search" aria-hidden="true"></i>
+          <input type="text" id="buscaPoderesTormenta" placeholder="Buscar poder…" />
+        </div>
+        <div id="poderesTormentaFiltros" style="display:flex;gap:8px;flex-wrap:wrap;">
+          <button class="filtro-btn a" onclick="setFiltroPoderGeral(this,'tormenta','todos')">Todos</button>
+          <button class="filtro-btn" onclick="setFiltroPoderGeral(this,'tormenta','ativo')">Ativo</button>
+          <button class="filtro-btn" onclick="setFiltroPoderGeral(this,'tormenta','passivo')">Passivo</button>
+          <button class="filtro-btn" onclick="setFiltroPoderGeral(this,'tormenta','bonus')">Bônus</button>
+        </div>
+        <span class="filtro-count" id="poderesTormentaCount">22 poderes</span>
+      </div>
+
+      <div class="cards-area">
+        <div id="poderesTormentaLista" style="max-width:720px;margin:0 auto;"></div>
+      </div>
+
+    </div><!-- /secao-poderes-tormenta -->
     <div id="secao-armas"           class="secao-conteudo placeholder-area" style="display:none">
       <i class="ti ti-sword" aria-hidden="true"></i><h2>Armas</h2><p>Em breve</p>
     </div>
@@ -625,6 +884,9 @@
 <script src="../js/data/classes.js"></script>
 <script src="../js/data/poderes_classes.js"></script>
 <script src="../js/data/pericias.js"></script>
+<script src="../js/data/origens.js"></script>
+<script src="../js/data/deuses.js"></script>
+<script src="../js/data/poderes_gerais.js"></script>
 <script src="../js/keywords.js"></script>
 <script src="../js/compendio.js"></script>
 

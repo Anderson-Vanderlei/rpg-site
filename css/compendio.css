@@ -389,6 +389,95 @@ html, body {
 .btn-ver:hover { border-color:#c9a84c55; color:#c9a84c; background:rgba(201,168,76,.04); }
 .btn-ver i { font-size:12px; }
 
+/* ── CARD DE ORIGEM ──────────────────────────────────────── */
+.origem-card {
+  background: #0d0a0a;
+  border: .5px solid #1e1e1e;
+  border-radius: 6px;
+  overflow: hidden;
+  cursor: pointer;
+  transition: border-color .2s, transform .2s, box-shadow .2s;
+  display: flex;
+  flex-direction: column;
+}
+.origem-card:hover {
+  border-color: rgba(139,0,0,.4);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 24px rgba(0,0,0,.5);
+}
+.origem-card.selecionado {
+  border-color: rgba(201,168,76,.5);
+  box-shadow: 0 0 0 1px rgba(201,168,76,.15);
+}
+
+.oc-top { display:flex; justify-content:space-between; align-items:flex-start; padding:.7rem .7rem 0; }
+.oc-temas { display:flex; gap:4px; flex-wrap:wrap; justify-content:flex-end; }
+.oc-tema-tag {
+  font-family:'Cinzel',serif; font-size:7px; padding:1px 6px; border-radius:2px;
+  letter-spacing:.06em; background:rgba(201,168,76,.08); color:#c9a84c99; border:.5px solid rgba(201,168,76,.22);
+}
+
+.oc-icon-wrap { height:64px; display:flex; align-items:center; justify-content:center; position:relative; }
+.oc-icon { font-size:34px; color:#3a2a2a; transition:transform .4s, color .3s; }
+.origem-card:hover .oc-icon { transform:scale(1.08); color:#5a3030; }
+
+.oc-body { padding:0 .9rem .9rem; flex:1; display:flex; flex-direction:column; }
+.oc-nome { font-family:'Cinzel',serif; font-size:14px; color:#e8e8e8; letter-spacing:.06em; margin-bottom:3px; }
+.oc-hook { font-size:11px; color:#555; font-style:italic; line-height:1.5; margin-bottom:.7rem; }
+
+.oc-campo { margin-bottom:.5rem; }
+.oc-campo-l { font-family:'Cinzel',serif; font-size:7px; color:#8B0000; letter-spacing:.12em; text-transform:uppercase; margin-bottom:1px; }
+.oc-campo-v { font-size:11px; color:#777; line-height:1.4; }
+
+.oc-pericias { font-size:11px; margin-bottom:.7rem; display:flex; gap:6px; flex-wrap:wrap; }
+
+.oc-poder-unico {
+  display:flex; align-items:center; gap:6px;
+  background:rgba(201,168,76,.06); border:.5px solid rgba(201,168,76,.2); border-radius:3px;
+  padding:6px 8px; font-size:10px; color:#c9a84c; margin-top:auto;
+}
+.oc-poder-unico i { font-size:12px; flex-shrink:0; }
+
+.oc-footer { margin-top:.75rem; display:flex; gap:6px; }
+
+/* ── CARD DE DEUS (simples: ícone, nome, descrição, 2 tags) ── */
+.deus-card {
+  background: #0d0a0a;
+  border: .5px solid #1e1e1e;
+  border-radius: 6px;
+  overflow: hidden;
+  cursor: pointer;
+  transition: border-color .2s, transform .2s, box-shadow .2s;
+  display: flex;
+  flex-direction: column;
+}
+.deus-card:hover {
+  border-color: rgba(201,168,76,.4);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 24px rgba(0,0,0,.5);
+}
+.deus-card.selecionado {
+  border-color: rgba(201,168,76,.5);
+  box-shadow: 0 0 0 1px rgba(201,168,76,.15);
+}
+.dc-top { display:flex; justify-content:space-between; align-items:flex-start; padding:.7rem .7rem 0; }
+.dc-icon-wrap { height:230px; display:flex; align-items:center; justify-content:center; background:linear-gradient(180deg, rgba(255,255,255,.02), transparent); }
+.dc-icon-wrap-positiva { background: radial-gradient(circle at 50% 40%, rgba(201,148,58,.14), transparent 70%); }
+.dc-icon-wrap-negativa { background: radial-gradient(circle at 50% 40%, rgba(144,96,200,.14), transparent 70%); }
+.dc-icon-wrap-dual     { background: radial-gradient(circle at 50% 40%, rgba(153,128,96,.14), transparent 70%); }
+.dc-icon { font-size:68px; color:#3a3020; transition:transform .4s, color .3s; }
+.dc-icon-wrap-positiva .dc-icon { color:#7a6030; }
+.dc-icon-wrap-negativa .dc-icon { color:#5a4a70; }
+.dc-icon-wrap-dual .dc-icon     { color:#5a4c38; }
+.deus-card:hover .dc-icon { transform:scale(1.08); }
+.deus-card:hover .dc-icon-wrap-positiva .dc-icon { color:#c9943a; }
+.deus-card:hover .dc-icon-wrap-negativa .dc-icon { color:#9060c8; }
+.deus-card:hover .dc-icon-wrap-dual .dc-icon     { color:#998060; }
+.dc-body { padding:0 .9rem .9rem; flex:1; display:flex; flex-direction:column; }
+.dc-nome { font-family:'Cinzel',serif; font-size:16px; color:#e8e8e8; letter-spacing:.06em; margin-bottom:6px; }
+.dc-desc { font-size:12px; color:#666; line-height:1.6; margin-bottom:.8rem; }
+.dc-footer { margin-top:auto; display:flex; gap:6px; }
+
 /* ── PAINEL DE DETALHES ──────────────────────────────────── */
 .detalhe-painel {
   position: absolute;
@@ -475,6 +564,55 @@ html, body {
 /* Classes recomendadas */
 .dp-classes { display:flex; gap:5px; flex-wrap:wrap; }
 .dp-classe-tag { font-family:'Cinzel',serif; font-size:7px; padding:2px 8px; border-radius:2px; background:rgba(136,136,255,.07); color:#8888ff88; border:.5px solid rgba(136,136,255,.2); letter-spacing:.06em; }
+
+/* ── Painel de detalhe de Origem ── */
+.op-lista-chips { display:flex; gap:6px; flex-wrap:wrap; margin-bottom:.6rem; font-size:12px; }
+.op-poder-geral {
+  font-size:10px; color:#999; padding:2px 7px; border-radius:2px;
+  background:rgba(80,80,80,.1); border:.5px solid rgba(80,80,80,.28);
+}
+.op-escolha-livre {
+  display:flex; align-items:center; gap:6px; font-size:11px; color:#8a7440;
+  background:rgba(201,168,76,.05); border:.5px solid rgba(201,168,76,.15); border-radius:3px;
+  padding:6px 8px; margin-bottom:.9rem;
+}
+.op-escolha-livre i { font-size:12px; flex-shrink:0; color:#c9a84c; }
+
+.op-poder-unico-painel {
+  background: rgba(20,16,5,.35); border: .5px solid rgba(201,168,76,.3); border-radius: 5px;
+  padding: 12px 14px; margin-top: 1rem;
+}
+.op-pu-hd { display:flex; align-items:center; gap:8px; margin-bottom:8px; }
+.op-pu-ic {
+  width:24px; height:24px; border-radius:4px; background:rgba(30,22,5,.5);
+  border:.5px solid rgba(80,60,10,.35); display:flex; align-items:center; justify-content:center;
+  color:#c9a84c; font-size:13px; flex-shrink:0;
+}
+.op-pu-legenda { font-family:'Cinzel',serif; font-size:7px; color:#8a7440; letter-spacing:.1em; text-transform:uppercase; }
+.op-pu-nome { font-family:'Cinzel',serif; font-size:13px; color:#e0c060; }
+.op-pu-desc { font-size:11px; color:#999; line-height:1.65; }
+
+/* ── Painel de detalhe de Deus ── */
+/* largura de 460px só em telas grandes — ver @media (min-width: 901px) mais abaixo,
+   senão essa regra (seletor de ID) vence a versão mobile por especificidade */
+
+.dd-devoto-grupo { font-family:'Cinzel',serif; font-size:8px; color:#666; letter-spacing:.08em; text-transform:uppercase; margin-bottom:5px; }
+.dd-devoto-grupo:not(:first-child) { margin-top:8px; }
+.dd-devoto-chips { display:flex; gap:6px; flex-wrap:wrap; margin-bottom:.9rem; }
+.dd-devoto-link {
+  font-size:11px; color:#5090c0; border-bottom:1px dotted #5090c0; cursor:pointer;
+  padding:1px 2px;
+}
+.dd-devoto-link:hover { color:#7ab0e0; border-bottom-color:#7ab0e0; }
+.dd-devoto-sem-link { color:#777; border-bottom:none; cursor:default; }
+.dd-devoto-nota {
+  display:flex; align-items:center; gap:6px; font-size:11px; color:#8a7440;
+  background:rgba(201,168,76,.05); border:.5px solid rgba(201,168,76,.15); border-radius:3px;
+  padding:7px 9px; margin-bottom:.9rem;
+}
+.dd-devoto-nota i { font-size:13px; flex-shrink:0; color:#c9a84c; }
+
+.dd-poder-chips { display:flex; gap:6px; flex-wrap:wrap; margin-bottom:.9rem; }
 
 /* Botões painel */
 .dp-btns { margin-top:1rem; display:flex; flex-direction:column; gap:6px; }
@@ -600,7 +738,7 @@ html, body {
 .cc-profs     { display: flex; gap: 4px; flex-wrap: wrap; margin-bottom: .45rem; }
 
 /* Base compartilhada de todas as tags-pill (tipo, PM, nível, bônus, fonte, proficiência) */
-.tag-ativo, .tag-passivo, .tag-custo-pm, .tag-bonus, .cc-prof-tag, .cp-tag-fonte, .cp-poder-nivel {
+.tag-ativo, .tag-passivo, .tag-custo-pm, .tag-bonus, .cc-prof-tag, .cp-tag-fonte, .cp-tag-categoria, .cp-poder-nivel {
   font-family: 'Cinzel', serif;
   font-size: 7px;
   padding: 1px 6px;
@@ -724,11 +862,14 @@ html, body {
 .kw-acao   { color: #e09050; border-bottom: 1px dotted #e09050; cursor: default; }
 .kw-pericia { color: #6090d0; border-bottom: 1px dotted #6090d0; cursor: default; }
 .kw-poder   { color: #9080d8; border-bottom: 1px dotted #9080d8; cursor: default; }
+.kw-poder-geral { color: #9080d8; border-bottom: 1px dotted #9080d8; }
+.kw-poder-geral:hover { color: #b0a0f0; border-bottom-color: #b0a0f0; }
 .kw-cond    { color: #d06060; border-bottom: 1px dotted #d06060; cursor: default; }
 
 /* Highlights numéricos */
 .num-dano   { background: rgba(139,70,0,.18); color: #e09050; border-radius: 2px; padding: 0 4px; font-size: 11px; font-weight: 500; }
 .num-bonus  { background: rgba(0,100,50,.15);  color: #50b870; border-radius: 2px; padding: 0 4px; font-size: 11px; font-weight: 500; }
+.num-pen    { background: rgba(139,0,0,.15);   color: #d06060; border-radius: 2px; padding: 0 4px; font-size: 11px; font-weight: 500; }
 .num-pm     { background: rgba(100,60,180,.15); color: #a390d8; border-radius: 2px; padding: 0 4px; font-size: 11px; font-weight: 500; }
 
 /* Poderes de classe */
@@ -750,7 +891,9 @@ html, body {
 
 .cp-poder-footer { display: flex; align-items: center; margin-top: 9px; }
 .cp-poder-footer .cp-poder-add-btn { margin-top: 0; }
-.cp-tag-fonte { margin-left: auto; color: #8a1f1f; background: rgba(139,0,0,.10); border-color: rgba(139,0,0,.25); }
+.cp-poder-footer-direita { margin-left: auto; display: flex; align-items: center; gap: 6px; }
+.cp-tag-fonte { color: #8a1f1f; background: rgba(139,0,0,.10); border-color: rgba(139,0,0,.25); }
+.cp-tag-categoria { color: #999; background: rgba(120,120,120,.1); border-color: rgba(120,120,120,.28); }
 
 /* Painel de variações (caminhos, linhagens...) */
 .cp-variacao {
@@ -1002,7 +1145,15 @@ html, body {
   /* Empurra o grid para a esquerda quando o painel de detalhes abre
      (só faz sentido quando o painel é uma faixa fixa de 340px) */
   .cards-area.encolhido { margin-right: 340px; }
+  /* Deuses tem painel mais largo (460px) — precisa de mais margem, e a largura
+     também só vale aqui (senão o seletor de ID vence a versão mobile de 100%) */
+  #secao-deuses .cards-area.encolhido { margin-right: 460px; }
+  #deusPainel { width: 460px; }
 }
+
+/* Colunas mais estreitas só pro grid de Deuses — com a área do ícone alta (150px),
+   isso deixa o card com proporção de retrato em vez de quase-quadrado */
+#deusesGrid { grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); }
 
 @media (max-width: 900px) {
   .sidebar { width:200px; min-width:200px; }
@@ -1412,6 +1563,19 @@ html, body {
   align-items: start;
 }
 .per-grupo { margin-bottom: 18px; }
+
+/* ── Todos os Poderes — grupos por categoria, grid responsivo ── */
+#poderesTodosLista {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+  gap: 4px 28px;
+  align-items: start;
+}
+.pg-grupo { margin-bottom: 18px; }
+.pg-grupo-hd { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+.pg-grupo-linha { width: 16px; height: 2px; background: #c9a84c; flex-shrink: 0; }
+.pg-grupo-titulo { font-family: 'Cinzel', serif; font-size: 11px; color: #c9a84c; letter-spacing: .1em; text-transform: uppercase; }
+.pg-grupo-count { font-size: 10px; color: #555; }
 .per-grupo-hd { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; padding: 0 1.25rem; }
 .per-grupo-linha { width: 16px; height: 2px; background: #c9a84c; flex-shrink: 0; }
 .per-grupo-titulo { font-family: 'Cinzel', serif; font-size: 11px; color: #c9a84c; letter-spacing: .1em; text-transform: uppercase; }

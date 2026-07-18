@@ -76,15 +76,16 @@ rpg-site/
 │       ├── locais.js                ✅ locais do atlas
 │       ├── classes.js               ✅ 14 classes revisadas e completas
 │       ├── poderes_classes.js       ✅ poderes das 14 classes revisados
-│       ├── origens.js               ⏳ a criar
-│       ├── deuses.js                ⏳ a criar
+│       ├── origens.js               ✅ 35 origens completas (Cap. 1, pp. 85–95)
+│       ├── deuses.js                ✅ 20 divindades completas (Cap. 1, pp. 96–105)
 │       ├── pericias.js              ✅ 29 perícias completas (Cap. 2, pp. 114–123)
+│       ├── poderes_gerais.js        🔶 só Combate (40/~167) — Destino/Magia/Concedidos/Tormenta faltam
 │       ├── magias.js                ⏳ a criar
 │       ├── equipamentos.js          ⏳ a criar
 │       └── criaturas.js             ⏳ a criar
 ├── pages/
 │   ├── atlas.html                   ✅ mapa interativo 5 camadas
-│   ├── compendio.html               ✅ raças + classes + perícias funcionando
+│   ├── compendio.html               ✅ raças + classes + perícias + origens + deuses + poderes de combate funcionando
 │   ├── ficha.html                   ⏳ a criar
 │   └── mestre.html                  ⏳ a criar
 └── images/
@@ -301,6 +302,12 @@ Poderes com energiaDivina no dado atual:
 - Clérigo: canalizar-energia (dual), expulsar-comandar-mortos-vivos (dual — poder único, efeito depende da energia canalizada), magia-sagrada-profana (dual), simbolo-sagrado-energizado (dual), canalizar-amplo (dual)
 - Paladino: aura-ardente (positiva), cura-pelas-maos (positiva)
 
+**Cross-link com Deuses:** a tag `.e-divina` nos poderes agora é clicável — chama
+`irParaDeusesPorEnergia(energia)`, que troca pra seção Deuses e já aplica o filtro
+correspondente. `deuses.js` usa as MESMAS classes CSS (`.e-positiva`/`.e-negativa`/`.e-dual`)
+e o mesmo vocabulário (`dual` = "Qualquer" na UI de Deuses). O caminho inverso já existe
+também: no painel de um Deus, cada nome em Devotos → Raças/Classes é clicável.
+
 ---
 
 ## 9. Sistema de Keywords (js/keywords.js v2)
@@ -461,6 +468,59 @@ Na ficha de personagem precisarão de componente de input PM compartilhado.
   busca com auto-expansão de uso encontrado, painel de escolha (Ofício), painel de
   explicação (Perícias de Resistência), tabela renderizada (Jogatina), link cross-page
   poder → perícia via kw-pericia
+- **35 origens completas** em origens.js (Cap. 1, pp. 85–95, Tabela 1-19) — grid de cards
+  (não lista, por ter texto de sabor), painel de detalhe reaproveitando `.detalhe-painel`/
+  `.dp-*` das raças, seção de Poder Único destacada (reaproveita linguagem visual dourada
+  de `.cp-explicacao`), filtro por tema (13 temas, invenção nossa — livro não categoriza
+  oficialmente), busca cobrindo nome/descrição/itens/perícias/poderes gerais/poder único/
+  escolha livre, `poderesGeraisOferecidos[]` como strings soltas até `poderes_gerais.js`
+  existir, nav lateral expansível (igual Raças/Classes) pra Origens e Perícias
+- **17 raças corrigidas** contra o livro (14/jul) — as 9 raças raras (Golem, Hynne, Kliren,
+  Medusa, Osteon, Sereia/Tritão, Sílfide, Suraggel, Trog) tinham habilidades com nomes e
+  mecânicas **inventados/aproximados**, não extraídos do livro; todas as 9 foram reescritas
+  com o texto oficial. Também corrigido: Elfo faltava a habilidade Sentidos Élficos por
+  inteiro; Golem e Hynne tinham deslocamento errado (6m, não 9m); Kliren tinha tamanho
+  errado (Médio, não Pequeno — nenhuma habilidade real dele muda tamanho); Sílfide tinha
+  tamanho errado (Minúsculo, não Médio); Suraggel misturava bônus de atributo dentro do
+  nome da habilidade em vez de usar os campos atributos/penalidade já existentes.
+- **20 divindades completas** em deuses.js (Cap. 1, pp. 96–105, Tabela 1-20 — Panteão dos
+  Vinte) — cards simples (ícone, nome, descrição curta, tag Tormenta 20 + tag de energia
+  reaproveitando `.e-divina`/`.e-positiva`/`.e-negativa`/`.e-dual` já usada em Clérigo/
+  Paladino), painel de detalhe largo (`#deusPainel { width:460px }`, override específico
+  sobre `.detalhe-painel`) com texto narrativo completo (`lore`, paráfrase fiel — não
+  verbatim do livro, por direitos autorais) + Crenças e Objetivos + Símbolo Sagrado + Arma
+  Preferida + Devotos (separados em Raças/Classes, clicáveis via `irParaRaca`/`irParaClasse`
+  já existentes) + Poderes Concedidos (strings soltas, mesma lógica do `poderesGeraisOferecidos`
+  de Origens) + Obrigações e Restrições (texto padrão, sem caixa colorida). Casos especiais:
+  Aharadak/Thwor/Valkaria sem lista fechada de devotos (`devotosNota`), Lena/Marah sem arma
+  preferida (`armaPreferidaNota`, regra de não poder lançar Arma Espiritual). Link cross-page
+  nos dois sentidos: card de Deus → Raça/Classe (Devotos clicáveis) e poder de Clérigo/
+  Paladino → Deuses filtrado pela mesma energiaDivina (`irParaDeusesPorEnergia`).
+- **Poderes Gerais — categoria Combate completa** (40 poderes) em poderes_gerais.js
+  (Cap. 2, pp. 123–137). Mesmo schema de poderes_classes.js + campo novo `categoria`
+  ('combate'|'destino'|'magia'|'concedidos'|'tormenta', bate com as 5 seções que já
+  existiam no menu). Reaproveita `renderPoderHtml()` inteiro, sem nenhuma mudança nele —
+  só usa `window._classeAtualId = 'geral'` como chave pseudo-classe pro botão "Adicionar
+  ao Personagem" persistir no localStorage. Nova função `renderPoderesGeraisNaSecao(categoria)`
+  filtra por tipo (Ativo/Passivo) + busca (nome/descrição). Extração teve bastante
+  embaralhamento de coluna (pior que Raças) — validado cruzando com a Tabela 2-5 do
+  livro (39 poderes na tabela oficial, +1 confirmado depois pelo usuário = 40).
+- **Bug de CSS corrigido:** `.num-pen` (penalidades tipo –2, gerado pelo `keywords.js`
+  desde sempre) nunca teve regra de estilo — só `.num-bonus`/`.num-dano`/`.num-pm`
+  existiam. Penalidades apareciam sem cor nenhuma em TODO o site. Uma linha de CSS
+  resolveu globalmente (achado do usuário, 14/jul).
+
+### 🔑 Lição aprendida — qualidade de extração de PDF
+A extração raw (`pdftotext` sem `-layout`) de capítulos com diagramação em 2 colunas e
+muitas caixas de texto (Raças, com boxes de citação e arte espalhados) embaralha a ordem
+do texto de forma que sentenças de uma seção aparecem coladas em outra, sem aviso. Isso já
+causou dados fabricados sem querer numa extração anterior a este projeto. Mitigação que
+funcionou bem: extrair página a página (`-f N -l N`) em vez do capítulo inteiro de uma vez,
+e SEMPRE cross-checar contra pelo menos duas fontes (raw + layout) quando o conteúdo não
+bater com o que já existe no site. O capítulo de Poderes Gerais (Combate) teve o pior
+embaralhamento até agora — várias descrições apareciam sob o cabeçalho errado, só foi
+possível resolver cruzando cada texto com a Tabela 2-5 (nome + pré-requisito oficial).
+Mesmo cuidado extra vale pra Destino/Magia/Concedidos/Tormenta.
 
 ### Revisão Final Pendente ⚠️
 Após inspeção do usuário, aplicar os ajustes apontados:
@@ -475,12 +535,56 @@ Após inspeção do usuário, aplicar os ajustes apontados:
    confere linha por linha contra o livro) — foi extraído e escrito direto do PDF.
    Números (CD, dados) foram conferidos com cuidado; vale reler as descrições mais
    longas (Acrobacia, Enganação, Misticismo) contra o livro quando houver tempo.
+9. **origens.js também não passou pelo ciclo normal de verificação**, mesma situação
+   do item 8. Validação cruzada automática confirmou as contagens de perícias/poderes
+   de 34 das 35 origens contra a Tabela 1-19 (Amnésico tem regra própria, diverge por
+   design), mas a leitura humana linha a linha ainda não rolou.
+10. **Melhorias visuais/UX da página de Origens** apontadas em revisão (13/jul):
+    - Menu lateral não fecha os outros grupos ao expandir um novo (Raças/Classes/
+      Perícias/Origens juntos = ~95 itens visíveis de uma vez) — um acordeão de
+      verdade resolveria
+    - Cards de origem sem `line-clamp` na descrição (`.oc-hook`) — cards na mesma
+      fileira do grid podem ficar com alturas bem desiguais, já que a lista de
+      Itens também varia muito (1 a 5 itens)
+    - Retomar a taxonomia de temas — "Cura", "Acadêmico" e "Magia" hoje têm só 1
+      origem cada, pode valer consolidar com outros temas maiores
+11. **Melhorias sugeridas na página de Deuses** apontadas em revisão (14/jul) — duas
+    aplicadas, duas ficaram em aberto por decisão do usuário (não é falta de tempo,
+    é incerteza genuína sobre se vale a pena):
+    - ⏸️ **Busca cobrir o campo `lore`** — hoje a busca em `aplicarFiltrosDeuses()` não
+      inclui o texto narrativo completo (`lore`), só o resumo curto (`descricao`).
+      Usuário decidiu não fazer por preocupação de deixar a busca/site "pesado" —
+      vale reconsiderar se performance não for problema na prática (o texto já está
+      carregado em memória de qualquer forma, buscar nele é só mais um `.includes()`).
+    - ⏸️ **Filtro por Devoto (raça/classe)** — ex: "só me mostra deuses que anões podem
+      cultuar". Dados já existem estruturados (`devotosRacas[]`/`devotosClasses[]`),
+      mas o usuário está inseguro se isso vira poluição visual de filtros (17 raças +
+      14 classes = muitas opções). Precisa de um desenho de UI melhor antes de tentar
+      de novo (talvez dropdown/busca em vez de botões, diferente do padrão de filtro-btn
+      já usado nas outras páginas).
+    - ✅ Link Classe → Deus: tag de `energiaDivina` nos poderes de Clérigo/Paladino agora
+      é clicável, leva pra Deuses já filtrado pela mesma energia (`irParaDeusesPorEnergia`)
+    - ✅ Gradiente de fundo radial por energia na área do ícone dos cards (dourado/roxo/
+      terroso, preparando visualmente pro dia que imagens de verdade substituírem os ícones)
+12. **Melhorias sugeridas em Poderes Gerais/Combate** (14/jul) — usuário decidiu
+    deliberadamente esperar até TODAS as 5 categorias existirem antes de aplicar,
+    pra fazer de uma vez só em vez de retrabalhar por categoria:
+    - Busca em `renderPoderesGeraisNaSecao()` não cobre o campo `prerequisito` — buscar
+      "Combate Defensivo" não acha Derrubar/Desarmar Aprimorado, que dependem dele
+    - `kw-poder-geral` — mesmo padrão do `kw-pericia`, deixaria clicável qualquer menção
+      a um poder geral em QUALQUER lugar do site (poderes de classe, origens, etc.).
+      Só faz sentido pleno depois que Destino existir, já que a maioria dos poderes
+      gerais citados em Origens (Sortudo, Lobo Solitário, Vontade de Ferro...) é
+      categoria Destino, não Combate
+    - Filtro rápido "só Bônus" (17 dos 40 poderes de Combate citam outro poder da
+      lista como pré-requisito — mesmo padrão dos filtros Treinada/Armadura de Perícias)
 
 ### Backlog 📋 (ordem)
-1. Revisão final das 14 classes (detalhes apontados pelo usuário)
-2. Magias (Cap. 4, pp. 168–211)
-3. Origens (Cap. 1, pp. 85–95)
-4. Deuses — panteão dos 20 + energiaDivina por divindade (Cap. 1, pp. 96–105)
+1. Poderes Gerais restantes — Destino (20), Magia (8), Concedidos (80), Tormenta (~20)
+2. Depois de Poderes Gerais completo: aplicar os 3 itens do item 12 acima
+3. Revisão final das 14 classes (detalhes apontados pelo usuário)
+4. Magias — magias em si, Cap. 4, pp. 168–211 (não confundir com "Poderes de Magia",
+   que é uma das 5 categorias de poderes gerais, já em andamento)
 5. Equipamentos (Cap. 3, pp. 138–167)
 6. Criaturas / Bestiário (Cap. 7, pp. 282–316)
 7. Ficha de personagem (pages/ficha.html)
@@ -491,6 +595,8 @@ Após inspeção do usuário, aplicar os ajustes apontados:
     contrário. Não é urgente; fica melhor depois que Classes e Origens estiverem fechadas.
 11. Botões "Ver no Livro" e "Adicionar à Ficha" no painel de classe ainda não têm ação
     (decisão pendente: linkar PDF, remover, ou desabilitar com tooltip "em breve")
+12. Trocar `poderesGeraisOferecidos[]` (origens.js) e `poderesConcedidos[]` (deuses.js)
+    de strings soltas pra spans clicáveis — vira parte do item 2 acima (kw-poder-geral)
 
 ### Estratégia de Suplementos
 PDFs de suplementos serão anexados DEPOIS do livro básico completo.

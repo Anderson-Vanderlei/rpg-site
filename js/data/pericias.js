@@ -93,7 +93,7 @@ const PERICIAS = [
     usos: [],
   },
   {
-    id: 'pilotagem', icone: 'ti-helm', nome: 'Pilotagem', atributoChave: 'Destreza',
+    id: 'pilotagem', icone: 'ti-ship', nome: 'Pilotagem', atributoChave: 'Destreza',
     somenteTreinada: true, penalidadeArmadura: false,
     descricao: 'Operar veículos como carroças, barcos e balões. Ações simples (atrelar, velejar em água calma) não exigem teste.',
     usos: [

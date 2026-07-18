@@ -31,7 +31,7 @@ const RACAS = [
       {nome:'Conhecimento das Rochas', descricao:'Você recebe visão no escuro e +2 em testes de Percepção e Sobrevivência realizados no subterrâneo.'},
       {nome:'Devagar e Sempre', descricao:'Seu deslocamento é 6m (em vez de 9m). Porém, seu deslocamento não é reduzido por uso de armadura ou excesso de carga.'},
       {nome:'Duro como Pedra', descricao:'Você recebe +3 pontos de vida no 1º nível e +1 por nível seguinte.'},
-      {nome:'Tradição de Heredrimm', descricao:'Para você, todos os machados, martelos, marretas e picaretas são armas simples. Você recebe +2 em ataques com essas armas.'},
+      {nome:'Tradição de Heredrimm', descricao:'Você é perito nas armas tradicionais anãs, seja por ter treinado com elas, seja por usá-las como ferramentas de ofício. Para você, todos os machados, martelos, marretas e picaretas são armas simples. Você recebe +2 em ataques com essas armas.'},
     ],
   },
   {
@@ -61,6 +61,7 @@ const RACAS = [
     habilidades:[
       {nome:'Graça de Glórienn', descricao:'Seu deslocamento é 12m (em vez de 9m).'},
       {nome:'Sangue Mágico', descricao:'Você recebe +1 ponto de mana por nível.'},
+      {nome:'Sentidos Élficos', descricao:'Você recebe visão na penumbra e +2 em Misticismo e Percepção.'},
     ],
   },
   {
@@ -90,7 +91,7 @@ const RACAS = [
     classesRecomendadas:['Bárbaro','Guerreiro','Arcanista','Clérigo'],
     habilidades:[
       {nome:'Cria da Tormenta', descricao:'Você é uma criatura do tipo monstro e recebe +5 em testes de resistência contra efeitos causados por lefeu e pela Tormenta.'},
-      {nome:'Deformidade', descricao:'Todo lefou possui defeitos físicos que conferem vantagens. Você recebe +2 em duas perícias a sua escolha. Você pode trocar um desses bônus por um poder da Tormenta a sua escolha.'},
+      {nome:'Deformidade', descricao:'Todo lefou possui defeitos físicos que, embora desagradáveis, conferem certas vantagens. Você recebe +2 em duas perícias a sua escolha. Cada um desses bônus conta como um poder da Tormenta (exceto para perda de Carisma). Você pode trocar um desses bônus por um poder da Tormenta a sua escolha (ele também não conta para perda de Carisma).'},
     ],
   },
   {
@@ -129,13 +130,15 @@ const RACAS = [
     tipo:'Construto', raridade:'rara', fonte:'Tormenta 20', pagina:27,
     icone:'ti-robot', cor:'#6688aa',
     atributos:'Força +2, Constituição +1', penalidade:'Carisma –1',
-    tamanho:'Médio', deslocamento:'9m', tags:['Construto','Raro'],
+    tamanho:'Médio', deslocamento:'6m', tags:['Construto','Raro'],
     descricao:'Criaturas artificiais com alma, os golens buscam seu propósito no mundo. Não comem, não dormem e não respiram — mas sentem. São construídos por arcanistas poderosos e animados por fragmentos de alma.',
     historia:'Os golens são criações da magia arcana avançada, principalmente de Vectora. Muitos buscam entender sua própria existência — o que significa ter uma alma sem ter nascido?',
     classesRecomendadas:['Guerreiro','Cavaleiro','Inventor','Paladino'],
     habilidades:[
-      {nome:'Corpo de Construto', descricao:'Você é do tipo construto. É imune a efeitos de sono, veneno, doenças e fadiga. Não precisa comer, beber, dormir ou respirar. Não se cura com magia de cura — necessita de magias de transmutação ou reparos mecânicos.'},
-      {nome:'Resistência Mágica', descricao:'Você recebe +2 em testes de resistência contra magias e efeitos mágicos.'},
+      {nome:'Chassi', descricao:'Seu corpo artificial é resistente, mas rígido. Seu deslocamento é 6m, mas não é reduzido por uso de armadura ou excesso de carga. Você recebe +2 na Defesa, mas possui penalidade de armadura –2. Você leva um dia para vestir ou remover uma armadura (pois precisa acoplar as peças dela a seu chassi). Por ser acoplada, sua armadura não conta no limite de itens que você pode usar (mas você continua só podendo usar uma armadura).'},
+      {nome:'Criatura Artificial', descricao:'Você é uma criatura do tipo construto. Recebe visão no escuro e imunidade a efeitos de cansaço, metabólicos e de veneno. Além disso, não precisa respirar, alimentar-se ou dormir, mas não se beneficia de cura mundana e de itens da categoria alimentação. Você precisa ficar inerte por oito horas por dia para recarregar sua fonte de energia — se fizer isso, recupera PV e PM por descanso em condições normais (golens não são afetados por condições boas ou ruins de descanso). Por fim, a perícia Cura não funciona em você, mas Ofício (artesão) pode ser usada no lugar dela.'},
+      {nome:'Fonte Elemental', descricao:'Você possui um espírito elemental preso em seu corpo. Escolha entre água (frio), ar (eletricidade), fogo (fogo) e terra (ácido). Você é imune a dano desse tipo. Se fosse sofrer dano mágico desse tipo, em vez disso cura PV em quantidade igual à metade do dano.'},
+      {nome:'Propósito de Criação', descricao:'Você foi construído "pronto" para um propósito específico e não teve uma infância. Você não tem direito a escolher uma origem, mas recebe um poder geral a sua escolha.'},
     ],
   },
   {
@@ -143,14 +146,14 @@ const RACAS = [
     tipo:'Humanoide', raridade:'rara', fonte:'Tormenta 20', pagina:28,
     icone:'ti-heart', cor:'#cc8888',
     atributos:'Destreza +2, Carisma +1', penalidade:'Força –1',
-    tamanho:'Pequeno', deslocamento:'9m', tags:['Humanoide','Pequeno','Raro'],
+    tamanho:'Pequeno', deslocamento:'6m', tags:['Humanoide','Pequeno','Raro'],
     descricao:'Os hynne são criaturas pequeninhas e alegres, semelhantes a humanos em miniatura. Apesar do tamanho reduzido, são incrivelmente ágeis e carismáticos. Adoram festas, músicas e histórias.',
     historia:'Originários de comunidades escondidas nas florestas e campos de Arton, os hynne raramente se aventuram longe de casa — mas quando o fazem, tornam-se aventureiros extraordinários.',
     classesRecomendadas:['Bardo','Ladino','Bucaneiro','Caçador'],
     habilidades:[
-      {nome:'Tamanho Pequeno', descricao:'Você é Pequeno. Pode se mover pelo espaço de criaturas maiores e usar cobertura de criaturas Médias ou maiores.'},
-      {nome:'Sortudo', descricao:'Uma vez por rodada, quando sofrer um ataque, pode gastar 1 PM para relançar o dado de ataque do inimigo. O atacante usa o menor resultado.'},
-      {nome:'Coração Bravo', descricao:'Você é imune a efeitos de medo e recebe +2 em testes de Vontade.'},
+      {nome:'Arremessador', descricao:'Quando faz um ataque à distância com uma funda ou uma arma de arremesso, seu dano aumenta em um passo.'},
+      {nome:'Pequeno e Rechonchudo', descricao:'Seu tamanho é Pequeno e seu deslocamento é 6m. Você recebe +2 em Enganação e pode usar Destreza como atributo-chave de Atletismo (em vez de Força).'},
+      {nome:'Sorte Salvadora', descricao:'Quando faz um teste de resistência, você pode gastar 1 PM para rolar este teste novamente.'},
     ],
   },
   {
@@ -158,14 +161,15 @@ const RACAS = [
     tipo:'Humanoide', raridade:'rara', fonte:'Tormenta 20', pagina:29,
     icone:'ti-settings', cor:'#aaaa44',
     atributos:'Inteligência +2, Carisma +1', penalidade:'Força –1',
-    tamanho:'Pequeno', deslocamento:'9m', tags:['Humanoide','Pequeno','Raro'],
-    descricao:'Os kliren são pequenas criaturas de intelecto prodigioso. Mentes inquietas e criativas, responsáveis por algumas das invenções mais revolucionárias de Arton. Adoram quebra-cabeças e desafios intelectuais.',
-    historia:'Originários de comunidades subterrâneas onde desenvolveram técnicas avançadas de engenharia e alquimia. São frequentemente confundidos com goblins pelos não iniciados, o que os irrita profundamente.',
+    tamanho:'Médio', deslocamento:'9m', tags:['Humanoide','Raro'],
+    descricao:'Os kliren são criaturas de intelecto prodigioso, mesclando a inteligência gnômica com a curiosidade humana. Mentes inquietas e criativas, responsáveis por algumas das invenções mais revolucionárias de Arton.',
+    historia:'Visitantes de outro mundo, os kliren seriam uma combinação entre humanos e gnomos. Somam a alta inteligência gnômica e a curiosidade humana, resultando em seres de extrema engenhosidade — mas também impulsividade e imprudência.',
     classesRecomendadas:['Inventor','Arcanista','Ladino','Bardo'],
     habilidades:[
-      {nome:'Mente Brilhante', descricao:'Você recebe +2 em Misticismo e Investigação. Uma vez por cena, pode repetir um teste de Inteligência e usar o melhor resultado.'},
-      {nome:'Toque do Inventor', descricao:'Você pode usar a perícia Ofício para criar itens alquímicos e mecânicos como se tivesse treinamento, mesmo sem ele.'},
-      {nome:'Baixa Estatura', descricao:'Seu tamanho é Pequeno. Você recebe +2 em Furtividade e pode se esconder atrás de objetos e criaturas Médias.'},
+      {nome:'Híbrido', descricao:'Sua natureza multifacetada fez com que você aprendesse conhecimentos variados. Você se torna treinado em uma perícia a sua escolha (não precisa ser da sua classe).'},
+      {nome:'Engenhosidade', descricao:'Quando faz um teste de perícia, você pode gastar 2 PM para somar sua Inteligência no teste. Você não pode usar esta habilidade em testes de ataque. Caso receba esta habilidade novamente, seu custo é reduzido em –1 PM.'},
+      {nome:'Ossos Frágeis', descricao:'Você sofre 1 ponto de dano adicional por dado de dano de impacto.', tipo:'penalidade'},
+      {nome:'Vanguardista', descricao:'Você recebe proficiência em armas de fogo e +2 em Ofício (um qualquer, a sua escolha).'},
     ],
   },
   {
@@ -178,8 +182,9 @@ const RACAS = [
     historia:'Originárias de uma ilha distante, as medusas gradualmente se espalharam por Arton. São vistas com mistura de fascínio e terror. Aquelas que partem para a aventura frequentemente usam véus para não petrificar acidentalmente seus aliados.',
     classesRecomendadas:['Ladino','Bardo','Arcanista','Caçador'],
     habilidades:[
-      {nome:'Olhar Petrificante', descricao:'Uma vez por cena, use uma ação padrão para tentar petrificar uma criatura em alcance curto que veja seus olhos (Fortitude CD 10 + modificador de Carisma anula). Uma criatura afetada fica petrificada por 1 rodada.'},
-      {nome:'Cabelos Serpentinos', descricao:'Você possui uma arma natural de mordida de serpente (dano 1d4, crítico x2, perfuração + veneno CD 10, Fortitude anula).'},
+      {nome:'Cria de Megalokk', descricao:'Você é uma criatura do tipo monstro e recebe visão no escuro.'},
+      {nome:'Natureza Venenosa', descricao:'Você recebe resistência a veneno +5 e pode gastar uma ação de movimento e 1 PM para envenenar uma arma que esteja usando. A arma causa perda de 1d12 pontos de vida. O veneno dura até você acertar um ataque ou até o fim da cena (o que acontecer primeiro).'},
+      {nome:'Olhar Atordoante', descricao:'Você pode gastar uma ação de movimento e 1 PM para forçar uma criatura em alcance curto a fazer um teste de Fortitude (CD Car). Se a criatura falhar, fica atordoada por uma rodada (apenas uma vez por cena).'},
     ],
   },
   {
@@ -192,9 +197,10 @@ const RACAS = [
     historia:'Os osteon surgem por razões misteriosas — uma missão inacabada, um juramento não cumprido. Muitos buscam descobrir por que não puderam partir para o além e o que precisam fazer para encontrar paz.',
     classesRecomendadas:['Arcanista','Clérigo','Guerreiro','Ladino'],
     habilidades:[
-      {nome:'Corpo Morto', descricao:'Você é do tipo morto-vivo. É imune a efeitos de sono, veneno, doenças e fadiga. Não precisa comer, beber, dormir ou respirar.'},
-      {nome:'Resistência Óssea', descricao:'Você recebe resistência a dano cortante e perfurante 2. Porém, recebe penalidade adicional de 2 contra dano contundente.', tipo:'penalidade'},
-      {nome:'Vontade Indomável', descricao:'Você recebe +3 em testes de Vontade.'},
+      {nome:'Armadura Óssea', descricao:'Você recebe redução de corte, frio e perfuração 5.'},
+      {nome:'Memória Póstuma', descricao:'Você se torna treinado em uma perícia (não precisa ser da sua classe) ou recebe um poder geral a sua escolha. Como alternativa, você pode ser um osteon de outra raça humanoide que não humano — neste caso, ganha uma habilidade dessa raça a sua escolha, e se a raça era de tamanho diferente de Médio, também possui sua categoria de tamanho.'},
+      {nome:'Natureza Esquelética', descricao:'Você é uma criatura do tipo morto-vivo. Recebe visão no escuro e imunidade a efeitos de cansaço, metabólicos, de trevas e de veneno. Além disso, não precisa respirar, alimentar-se ou dormir. Por fim, efeitos mágicos de cura de luz causam dano a você e você não se beneficia de itens da categoria alimentação, mas dano de trevas recupera seus PV.'},
+      {nome:'Preço da Não Vida', descricao:'Você precisa passar oito horas sob a luz de estrelas ou no subterrâneo. Se fizer isso, recupera PV e PM por descanso em condições normais (osteon não são afetados por condições boas ou ruins de descanso). Caso contrário, sofre os efeitos de fome.', tipo:'penalidade'},
     ],
   },
   {
@@ -207,9 +213,9 @@ const RACAS = [
     historia:'Vindos de cidades submarinas nas profundezas do Mar Negro e do Grande Oceano, raramente visitam a superfície. Aqueles que o fazem geralmente têm alguma missão ou curiosidade irresistível pelo mundo dos terrestres.',
     classesRecomendadas:['Bardo','Druida','Bucaneiro','Caçador'],
     habilidades:[
-      {nome:'Anfíbio', descricao:'Você pode respirar tanto ar quanto água. Seu deslocamento de natação é 12m.'},
-      {nome:'Mestre do Tridente', descricao:'Para você, o tridente é uma arma simples. Além disso, você recebe +2 emrolagens de dano com azagaias, lanças e tridentes.'},
-      {nome:'Voz das Profundezas', descricao:'Você recebe +2 em Atuação e Diplomacia. Uma vez por cena, pode fascinar uma criatura com sua voz (Vontade CD 10 + Carisma anula), deixando-a pasma por 1 rodada.'},
+      {nome:'Canção dos Mares', descricao:'Você pode lançar duas das magias a seguir: Amedrontar, Comando, Despedaçar, Enfeitiçar, Hipnotismo ou Sono (atributo-chave Carisma). Caso aprenda novamente uma dessas magias, seu custo diminui em –1 PM.'},
+      {nome:'Mestre do Tridente', descricao:'Para você, o tridente é uma arma simples. Além disso, você recebe +2 em rolagens de dano com azagaias, lanças e tridentes.'},
+      {nome:'Transformação Anfíbia', descricao:'Você pode respirar debaixo d\'água e possui uma cauda que fornece deslocamento de natação 12m. Quando fora d\'água, sua cauda desaparece e dá lugar a pernas (deslocamento 9m). Se permanecer mais de um dia sem contato com água, você não recupera PM com descanso até voltar para a água.'},
     ],
   },
   {
@@ -217,14 +223,14 @@ const RACAS = [
     tipo:'Espírito', raridade:'rara', fonte:'Tormenta 20', pagina:33,
     icone:'ti-feather', cor:'#88ccdd',
     atributos:'Carisma +2, Destreza +1', penalidade:'Força –2',
-    tamanho:'Médio', deslocamento:'9m (12m voar)', tags:['Espírito','Voador','Raro'],
-    descricao:'Sílfides são espíritos do ar que tomaram forma física. Leves como uma brisa, graciosas como o vento, são seres de beleza etérea e temperamento inconstante. Suas asas translúcidas lhes permitem voar.',
+    tamanho:'Minúsculo', deslocamento:'9m (pairando; voo 12m por 1 PM/rodada)', tags:['Espírito','Voador','Raro'],
+    descricao:'Sílfides são espíritos do ar que tomaram forma física. Leves como uma brisa, graciosas como o vento, são seres de beleza etérea e temperamento inconstante. Suas asas de inseto lhes permitem pairar e voar.',
     historia:'Oriundas do Plano Elemental do Ar, as sílfides gradualmente passaram a habitar o mundo material de Arton. São raras e misteriosas — aparecem quando menos se espera e partem da mesma forma.',
     classesRecomendadas:['Bardo','Arcanista','Caçador','Ladino'],
     habilidades:[
-      {nome:'Asas Etéreas', descricao:'Você possui asas e deslocamento de voo de 12m. Não pode usar armaduras pesadas sem perder a capacidade de voo.'},
-      {nome:'Leveza Elemental', descricao:'Você pesa apenas metade do normal e sempre cai como se sob o efeito de Queda Suave. Recebe +4 em testes de Acrobacia envolvendo equilíbrio.'},
-      {nome:'Sopro do Vento', descricao:'Uma vez por cena, pode criar uma rajada de vento como ação padrão, empurrando uma criatura Média ou menor até 3m (Fortitude CD 10 + Des anula).'},
+      {nome:'Asas de Borboleta', descricao:'Seu tamanho é Minúsculo. Você pode pairar a 1,5m do chão com deslocamento 9m. Isso permite que você ignore terreno difícil e o torna imune a dano por queda (a menos que esteja inconsciente). Você pode gastar 1 PM por rodada para voar com deslocamento de 12m.'},
+      {nome:'Espírito da Natureza', descricao:'Você é uma criatura do tipo espírito, recebe visão na penumbra e pode falar com animais livremente.'},
+      {nome:'Magia das Fadas', descricao:'Você pode lançar duas das magias a seguir (atributo-chave Carisma): Criar Ilusão, Enfeitiçar, Luz (como uma magia arcana) e Sono. Caso aprenda novamente uma dessas magias, seu custo diminui em –1 PM.'},
     ],
   },
   {
@@ -237,9 +243,9 @@ const RACAS = [
     historia:'Nascidos de uniões improváveis entre mortais e seres planares, existem entre dois mundos. Os aggelus frequentemente são chamados para missões sagradas; os sulfure muitas vezes lutam contra sua natureza sombria.',
     classesRecomendadas:['Paladino','Clérigo','Arcanista','Bardo'],
     habilidades:[
-      {nome:'Herança Planar (Aggelus): Sabedoria +2, Carisma +1', descricao:'Você recebe visão no escuro, resistência 5 a dano sagrado e pode lançar Luz como poder inato (1 PM).', variante:'aggelus'},
-      {nome:'Herança Planar (Sulfure): Destreza +2, Inteligência +1', descricao:'Você recebe visão no escuro, resistência 5 a dano profano e pode lançar Trevas como poder inato (1 PM).', variante:'sulfure'},
-      {nome:'Aura Planar', descricao:'Criaturas de alinhamento oposto à sua herança recebem –1 em ataques e testes de resistência contra você.'},
+      {nome:'Herança Divina', descricao:'Você é uma criatura do tipo espírito e recebe visão no escuro.'},
+      {nome:'Luz Sagrada (Aggelus)', descricao:'Você recebe +2 em Diplomacia e Intuição. Além disso, pode lançar Luz (como uma magia divina; atributo-chave Carisma). Caso aprenda novamente essa magia, seu custo diminui em –1 PM.', variante:'aggelus'},
+      {nome:'Sombras Profanas (Sulfure)', descricao:'Você recebe +2 em Enganação e Furtividade. Além disso, pode lançar Escuridão (como uma magia divina; atributo-chave Inteligência). Caso aprenda novamente essa magia, seu custo diminui em –1 PM.', variante:'sulfure'},
     ],
   },
   {
@@ -252,9 +258,10 @@ const RACAS = [
     historia:'Oriundos das regiões mais selvagens de Arton, raramente se misturam com civilizações. Aqueles que partem para a aventura geralmente são exilados de suas tribos ou têm algum objetivo específico que os leva ao mundo civilizado.',
     classesRecomendadas:['Bárbaro','Guerreiro','Druida','Caçador'],
     habilidades:[
-      {nome:'Escamas Reptilianas', descricao:'Você recebe +2 na Defesa quando não usa armadura (suas escamas contam como proteção natural).'},
-      {nome:'Vitalidade Selvagem', descricao:'Você recebe +2 PV por nível e +2 em Fortitude.'},
-      {nome:'Instinto de Sobrevivência', descricao:'Você recebe +2 em Sobrevivência e Percepção. Nunca fica perdido em ambientes naturais.'},
+      {nome:'Mau Cheiro', descricao:'Você pode gastar uma ação padrão e 2 PM para expelir um gás fétido. Todas as criaturas (exceto trogs) em alcance curto devem passar em um teste de Fortitude contra veneno (CD Con) ou ficarão enjoadas durante 1d6 rodadas. Uma criatura que passe no teste de resistência fica imune a esta habilidade por um dia.'},
+      {nome:'Mordida', descricao:'Você possui uma arma natural de mordida (dano 1d6, crítico x2, perfuração). Uma vez por rodada, quando usa a ação agredir para atacar com outra arma, pode gastar 1 PM para fazer um ataque corpo a corpo extra com a mordida.'},
+      {nome:'Reptiliano', descricao:'Você é uma criatura do tipo monstro e recebe visão no escuro, +1 na Defesa e, se estiver sem armadura ou roupas pesadas, +5 em Furtividade.'},
+      {nome:'Sangue Frio', descricao:'Você sofre 1 ponto de dano adicional por dado de dano de frio.', tipo:'penalidade'},
     ],
   },
 ];

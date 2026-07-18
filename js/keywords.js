@@ -274,6 +274,11 @@ function _buildKeywordList() {
 
 const _KEYWORD_LIST = _buildKeywordList();
 
+// Cache da lista de Poderes Gerais pra keyword — construída sob demanda na
+// primeira vez que processarKeywords() rodar (ver função principal abaixo),
+// porque depende de window.PODERES_GERAIS já estar carregado.
+let _PODER_GERAL_LIST = null;
+
 // ── DETECÇÃO NUMÉRICA AUTOMÁTICA ───────────────────────────
 
 function _processarNumericos(texto, placeholders) {
@@ -340,6 +345,38 @@ function processarKeywords(texto) {
       );
       return `\x00${idx}\x00`;
     });
+  }
+
+  // Passo 3: nomes de Poderes Gerais (Combate/Destino/Magia/Concedidos/Tormenta) —
+  // construído sob demanda a partir de window.PODERES_GERAIS (já carregado nesse
+  // ponto, pois só roda quando algo é efetivamente renderizado). Não duplica os
+  // 162 nomes aqui: lê direto do arquivo de dados, uma vez só, e cacheia.
+  if (!_PODER_GERAL_LIST && typeof window !== 'undefined' && window.PODERES_GERAIS) {
+    _PODER_GERAL_LIST = window.PODERES_GERAIS
+      .filter(p => p.nome)
+      .map(p => ({
+        nome: p.nome,
+        categoria: p.categoria,
+        regex: new RegExp(
+          `(?<=[\\s,;:.!?()"'\\-]|^)(${_escapeRegex(p.nome)})(?=[\\s,;:.!?()"'\\-]|$)`,
+          'g'
+        ),
+      }))
+      .sort((a, b) => b.nome.length - a.nome.length);
+  }
+  if (_PODER_GERAL_LIST) {
+    for (const pg of _PODER_GERAL_LIST) {
+      resultado = resultado.replace(pg.regex, (_, capture) => {
+        const idx = placeholders.length;
+        const nomeEscapado = _escapeHtml(capture).replace(/'/g, "\\'");
+        placeholders.push(
+          `<span class="kw kw-poder-geral"` +
+          ` onclick="event.stopPropagation(); window.irParaPoderGeral && window.irParaPoderGeral('${nomeEscapado}', '${pg.categoria}')"` +
+          ` style="cursor:pointer">${capture}</span>`
+        );
+        return `\x00${idx}\x00`;
+      });
+    }
   }
 
   // Passo 3: restaura placeholders

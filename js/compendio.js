@@ -1153,6 +1153,323 @@ document.addEventListener('DOMContentLoaded', () => {
     container.innerHTML = html;
   }
 
+  // ══════════════════ MAGIAS ══════════════════
+
+  const ESCOLA_INFO = {
+    abjuracao:    { label: 'Abjuração',    icone: 'ti-shield',   cor: '#5090c0' },
+    adivinhacao:  { label: 'Adivinhação',  icone: 'ti-eye',      cor: '#c9a84c' },
+    convocacao:   { label: 'Convocação',   icone: 'ti-transfer', cor: '#44aaee' },
+    encantamento: { label: 'Encantamento', icone: 'ti-brain',    cor: '#cc66cc' },
+    evocacao:     { label: 'Evocação',     icone: 'ti-flame',    cor: '#e09050' },
+    ilusao:       { label: 'Ilusão',       icone: 'ti-mask',     cor: '#8888ff' },
+    necromancia:  { label: 'Necromancia',  icone: 'ti-skull',    cor: '#9060c8' },
+    transmutacao: { label: 'Transmutação', icone: 'ti-atom-2',   cor: '#50b870' },
+  };
+  const TIPO_MAGIA_INFO = {
+    arcana:    { label: 'Arcana' },
+    divina:    { label: 'Divina' },
+    universal: { label: 'Universal' },
+  };
+  const MAGIA_SECAO_IDS = {
+    todas:     { grid: 'magiasTodasGrid',     count: 'magiasTodasCount',     busca: 'buscaMagiasTodas',     filtroTipo: 'magiasTodasFiltroTipo', filtroCirculo: 'magiasTodasFiltroCirculo', filtroEscola: 'magiasTodasFiltroEscola' },
+    arcana:    { grid: 'magiasArcanasGrid',   count: 'magiasArcanasCount',   busca: 'buscaMagiasArcanas',   filtroCirculo: 'magiasArcanasFiltroCirculo', filtroEscola: 'magiasArcanasFiltroEscola' },
+    divina:    { grid: 'magiasDivinasGrid',   count: 'magiasDivinasCount',   busca: 'buscaMagiasDivinas',   filtroCirculo: 'magiasDivinasFiltroCirculo', filtroEscola: 'magiasDivinasFiltroEscola' },
+    universal: { grid: 'magiasUniversalGrid', count: 'magiasUniversalCount', busca: 'buscaMagiasUniversal', filtroCirculo: 'magiasUniversalFiltroCirculo', filtroEscola: 'magiasUniversalFiltroEscola' },
+  };
+  const _magiaEstado = {
+    todas:     { tipo: 'todos', circulo: 'todos', escola: 'todos', busca: '' },
+    arcana:    { circulo: 'todos', escola: 'todos', busca: '' },
+    divina:    { circulo: 'todos', escola: 'todos', busca: '' },
+    universal: { circulo: 'todos', escola: 'todos', busca: '' },
+  };
+
+  function truncarTexto(txt, max) {
+    if (!txt) return '';
+    return txt.length > max ? txt.slice(0, max).trim() + '…' : txt;
+  }
+
+  function renderMagiaCard(m) {
+    const esc = ESCOLA_INFO[m.escola] || { label: m.escola, icone: 'ti-sparkles', cor: '#888' };
+    const card = document.createElement('div');
+    card.className = 'magia-card';
+    card.dataset.id = m.id;
+    card.innerHTML = `
+      <div class="mgc-top">
+        <span class="mgc-escola" style="color:${esc.cor}"><i class="ti ${esc.icone}" aria-hidden="true"></i> ${esc.label}</span>
+        <span class="mgc-tipo mgc-tipo-${m.tipo}">${TIPO_MAGIA_INFO[m.tipo].label}</span>
+      </div>
+      <div class="mgc-nome">${m.nome}</div>
+      <div class="mgc-desc">${truncarTexto(m.descricao, 90)}</div>
+      <div class="mgc-footer">
+        <span class="mgc-stat"><i class="ti ti-orbit" aria-hidden="true"></i>${m.circulo}º</span>
+        <span class="mgc-stat"><i class="ti ti-bolt" aria-hidden="true"></i>${m.execucao}</span>
+        <span class="mgc-stat"><i class="ti ti-adjustments" aria-hidden="true"></i>${m.aprimoramentos.length}</span>
+        <span class="rc-badge badge-fonte">Tormenta 20</span>
+      </div>`;
+    card.addEventListener('click', () => abrirDetalheMagia(m.id));
+    return card;
+  }
+
+  function renderMagiasNaSecao(secaoTipo) {
+    const ids = MAGIA_SECAO_IDS[secaoTipo];
+    const grid = document.getElementById(ids.grid);
+    if (!grid) return;
+
+    const estado = _magiaEstado[secaoTipo];
+    let lista = window.MAGIAS || [];
+
+    if (secaoTipo !== 'todas') {
+      lista = lista.filter(m => m.tipo === secaoTipo);
+    } else if (estado.tipo !== 'todos') {
+      lista = lista.filter(m => m.tipo === estado.tipo);
+    }
+    if (estado.circulo !== 'todos') {
+      lista = lista.filter(m => m.circulo === parseInt(estado.circulo, 10));
+    }
+    if (estado.escola !== 'todos') {
+      lista = lista.filter(m => m.escola === estado.escola);
+    }
+    if (estado.busca) {
+      const t = estado.busca;
+      lista = lista.filter(m =>
+        m.nome.toLowerCase().includes(t) ||
+        m.descricao.toLowerCase().includes(t) ||
+        (m.alcance || '').toLowerCase().includes(t) ||
+        (m.execucao || '').toLowerCase().includes(t) ||
+        (m.resistencia || '').toLowerCase().includes(t)
+      );
+    }
+
+    const countEl = document.getElementById(ids.count);
+    if (countEl) countEl.textContent = lista.length + (lista.length !== 1 ? ' magias' : ' magia');
+
+    grid.innerHTML = '';
+    if (!lista.length) {
+      grid.innerHTML = `<div class="cp-poderes-vazio" style="grid-column:1/-1">Nenhuma magia encontrada — lembre-se que só o 1º Círculo está completo por enquanto.</div>`;
+      return;
+    }
+    lista.forEach(m => grid.appendChild(renderMagiaCard(m)));
+  }
+
+  window.setFiltroMagia = (secaoTipo, eixo, btn, valor) => {
+    const ids = MAGIA_SECAO_IDS[secaoTipo];
+    const grupoId = eixo === 'tipo' ? ids.filtroTipo : (eixo === 'circulo' ? ids.filtroCirculo : ids.filtroEscola);
+    document.querySelectorAll(`#${grupoId} .filtro-btn`).forEach(b => b.classList.remove('a'));
+    btn.classList.add('a');
+    _magiaEstado[secaoTipo][eixo] = valor;
+    renderMagiasNaSecao(secaoTipo);
+  };
+
+  // ── Painel de detalhe de Magia (compartilhado pelas 4 seções) ──────
+  let _magiaAtual = null;
+  let _magiaSelecoes = []; // paralelo a aprimoramentos: quantidade selecionada (0 = não selecionado)
+
+  function calcularPMTotalMagia() {
+    const m = _magiaAtual;
+    if (!m) return 0;
+    const truqueIdx = m.aprimoramentos.findIndex(a => a.tipo === 'truque');
+    if (truqueIdx !== -1 && _magiaSelecoes[truqueIdx] > 0) return 0;
+    let total = CUSTO_POR_CIRCULO[m.circulo] || 0;
+    m.aprimoramentos.forEach((a, i) => { total += (a.custoPM || 0) * _magiaSelecoes[i]; });
+    return total;
+  }
+
+  // Detecta e separa "Requer Nº círculo." do texto do aprimoramento, pra
+  // virar uma tag visual própria em vez de ficar perdido no meio da frase.
+  function extrairRequerCirculo(efeito) {
+    const match = efeito.match(/\s*Requer (\d)º círculo\.?\s*$/);
+    if (!match) return { texto: efeito, circuloExigido: null };
+    return { texto: efeito.slice(0, match.index).trim(), circuloExigido: parseInt(match[1], 10) };
+  }
+
+  function renderLinhaAprimoramento(a, i) {
+    const qtd = _magiaSelecoes[i];
+    const restricaoTag = a.restricao ? `<span class="mg-restricao">Apenas ${a.restricao === 'arcana' ? 'Arcanos' : 'Divinos'}</span>` : '';
+    const { texto: efeitoLimpo, circuloExigido } = extrairRequerCirculo(a.efeito);
+    const requerTag = circuloExigido ? `<span class="mg-requer"><i class="ti ti-lock" aria-hidden="true"></i>Requer ${circuloExigido}º Círculo</span>` : '';
+    if (a.tipo === 'aumenta') {
+      return `
+        <div class="mg-aprim ${qtd ? 'selecionado' : ''}">
+          <div class="mg-aprim-stepper">
+            <button onclick="alterarAprimoramentoMagia(${i}, -1)" ${qtd === 0 ? 'disabled' : ''}>−</button>
+            <span class="mg-aprim-qtd">${qtd}</span>
+            <button onclick="alterarAprimoramentoMagia(${i}, 1)">+</button>
+          </div>
+          <div class="mg-aprim-corpo">
+            <span class="mg-aprim-custo">+${a.custoPM} PM</span>${restricaoTag}${requerTag}
+            <span class="mg-aprim-texto">${efeitoLimpo}</span>
+          </div>
+        </div>`;
+    }
+    const custoTag = a.tipo === 'truque'
+      ? `<span class="mg-aprim-custo mg-aprim-truque">Truque</span>`
+      : `<span class="mg-aprim-custo">+${a.custoPM} PM</span>`;
+    const onclickFn = a.tipo === 'truque' ? `toggleAprimoramentoTruqueMagia(${i})` : `toggleAprimoramentoMudaMagia(${i})`;
+    return `
+      <div class="mg-aprim ${qtd ? 'selecionado' : ''}">
+        <div class="mg-aprim-check" onclick="${onclickFn}">${qtd ? '<i class="ti ti-check" aria-hidden="true"></i>' : ''}</div>
+        <div class="mg-aprim-corpo">
+          ${custoTag}${restricaoTag}${requerTag}
+          <span class="mg-aprim-texto">${efeitoLimpo}</span>
+        </div>
+      </div>`;
+  }
+
+  // Renderiza o seletor de "Efeitos à Escolha" (magias como Controlar Água,
+  // Rogar Maldição, Aprisionamento etc. que oferecem vários efeitos nomeados
+  // pra escolher ao lançar). Abas clicáveis, mostrando um efeito por vez.
+  function renderOpcoesEscolha(opcoes) {
+    const kw = typeof processarKeywords === 'function' ? processarKeywords : (t) => t;
+    const pills = opcoes.map((o, i) =>
+      `<button class="mg-opcao-pill ${i === 0 ? 'ativa' : ''}" data-oi="${i}" onclick="selecionarOpcaoMagia(this, ${i})">${o.nome}</button>`
+    ).join('');
+    const textos = opcoes.map((o, i) =>
+      `<div class="mg-opcao-texto" data-oi="${i}" style="${i === 0 ? '' : 'display:none'}">${kw(o.descricao)}</div>`
+    ).join('');
+    return `
+      <div class="dp-secao">Efeitos à Escolha</div>
+      <div class="mg-opcoes-wrap">
+        <div class="mg-opcoes-pills">${pills}</div>
+        <div class="mg-opcoes-corpo">${textos}</div>
+      </div>`;
+  }
+
+  window.selecionarOpcaoMagia = function(btn, i) {
+    const wrap = btn.closest('.mg-opcoes-wrap');
+    if (!wrap) return;
+    wrap.querySelectorAll('.mg-opcao-pill').forEach(b => b.classList.remove('ativa'));
+    btn.classList.add('ativa');
+    wrap.querySelectorAll('.mg-opcao-texto').forEach(t => {
+      t.style.display = t.dataset.oi === String(i) ? '' : 'none';
+    });
+  };
+
+  function renderCorpoMagia() {
+    const m = _magiaAtual;
+    if (!m) return;
+    const kw = typeof processarKeywords === 'function' ? processarKeywords : (t) => t;
+    const esc = ESCOLA_INFO[m.escola] || { label: m.escola, cor: '#888' };
+    const tipoInfo = TIPO_MAGIA_INFO[m.tipo];
+
+    const aprimHtml = m.aprimoramentos.map((a, i) => renderLinhaAprimoramento(a, i)).join('');
+
+    document.getElementById('mgBody').innerHTML = `
+      <div class="dp-linha"></div>
+      <div class="dp-badges">
+        <span class="dp-badge" style="background:rgba(139,0,0,.1);color:#cc4444;border:.5px solid rgba(139,0,0,.3)">Tormenta 20</span>
+        <span class="dp-badge" style="color:${esc.cor};border-color:${esc.cor}55;background:${esc.cor}18">${esc.label}</span>
+        <span class="mgc-tipo mgc-tipo-${m.tipo}">${tipoInfo.label}</span>
+      </div>
+
+      <div class="mg-stats-grid">
+        <div><div class="mg-stat-l">Círculo</div><div class="mg-stat-v">${m.circulo}º Círculo</div></div>
+        <div><div class="mg-stat-l">Execução</div><div class="mg-stat-v">${m.execucao}</div></div>
+        <div><div class="mg-stat-l">Alcance</div><div class="mg-stat-v">${m.alcance}</div></div>
+        <div><div class="mg-stat-l">Alvo/Área</div><div class="mg-stat-v">${m.alvoArea}</div></div>
+        <div><div class="mg-stat-l">Duração</div><div class="mg-stat-v">${m.duracao}</div></div>
+        <div><div class="mg-stat-l">Resistência</div><div class="mg-stat-v">${m.resistencia || '—'}</div></div>
+      </div>
+
+      <p class="dp-desc">${kw(m.descricao)}</p>
+      ${m.tabela ? renderTabelaUso(m.tabela) : ''}
+      ${m.opcoes ? renderOpcoesEscolha(m.opcoes) : ''}
+
+      ${m.aprimoramentos.length ? `
+      <div class="dp-secao">Aprimoramentos Disponíveis</div>
+      <div id="mgAprimList">${aprimHtml}</div>
+      <div class="mg-pm-total">
+        <i class="ti ti-sparkles" aria-hidden="true"></i>
+        <span>Custo total: <strong id="mgPmTotal">${calcularPMTotalMagia()}</strong> PM</span>
+      </div>` : ''}
+    `;
+  }
+
+  window.toggleAprimoramentoTruqueMagia = function(i) {
+    const jaSelecionado = _magiaSelecoes[i] > 0;
+    _magiaSelecoes = _magiaSelecoes.map(() => 0);
+    if (!jaSelecionado) _magiaSelecoes[i] = 1;
+    renderCorpoMagia();
+  };
+
+  window.toggleAprimoramentoMudaMagia = function(i) {
+    const truqueIdx = _magiaAtual.aprimoramentos.findIndex(a => a.tipo === 'truque');
+    if (truqueIdx !== -1) _magiaSelecoes[truqueIdx] = 0;
+    _magiaSelecoes[i] = _magiaSelecoes[i] > 0 ? 0 : 1;
+    renderCorpoMagia();
+  };
+
+  window.alterarAprimoramentoMagia = function(i, delta) {
+    if (delta > 0) {
+      const truqueIdx = _magiaAtual.aprimoramentos.findIndex(a => a.tipo === 'truque');
+      if (truqueIdx !== -1) _magiaSelecoes[truqueIdx] = 0;
+    }
+    _magiaSelecoes[i] = Math.max(0, _magiaSelecoes[i] + delta);
+    renderCorpoMagia();
+  };
+
+  const MAGIA_SECOES_TODAS = ['secao-magias-todas', 'secao-magias-arcanas', 'secao-magias-divinas', 'secao-magias-universal'];
+
+  window.abrirDetalheMagia = function(id) {
+    const m = (window.MAGIAS || []).find(x => x.id === id);
+    if (!m) return;
+    _magiaAtual = m;
+    _magiaSelecoes = m.aprimoramentos.map(() => 0);
+
+    const esc = ESCOLA_INFO[m.escola] || { label: m.escola, icone: 'ti-sparkles' };
+    document.getElementById('mgHeroIcon').className = `ti ${esc.icone} dp-hero-icon`;
+    document.getElementById('mgNome').textContent = m.nome;
+    document.getElementById('mgSub').textContent = esc.label + ' · ' + m.circulo + 'º Círculo';
+
+    renderCorpoMagia();
+
+    document.querySelectorAll('.magia-card').forEach(c => c.classList.remove('selecionado'));
+    document.querySelector(`.magia-card[data-id="${id}"]`)?.classList.add('selecionado');
+
+    document.getElementById('magiaPainel').classList.add('aberto');
+    MAGIA_SECOES_TODAS.forEach(s => {
+      const el = document.getElementById(s);
+      if (el && el.style.display !== 'none') {
+        el.querySelector('.cards-area')?.classList.add('encolhido');
+      }
+    });
+  };
+
+  window.fecharDetalheMagia = function() {
+    document.getElementById('magiaPainel').classList.remove('aberto');
+    MAGIA_SECOES_TODAS.forEach(s => {
+      document.getElementById(s)?.querySelector('.cards-area')?.classList.remove('encolhido');
+    });
+    document.querySelectorAll('.magia-card').forEach(c => c.classList.remove('selecionado'));
+  };
+
+  // Clique num nome de magia citado em qualquer descrição do site (kw-magia)
+  // leva pra "Todas as Magias", com os filtros resetados e a busca já
+  // preenchida, e abre o painel de detalhe direto — sem precisar de um
+  // segundo clique no card.
+  window.irParaMagia = function(nome) {
+    const m = (window.MAGIAS || []).find(x => x.nome === nome);
+    if (!m) return;
+
+    mostrarSecao('magias-todas');
+
+    _magiaEstado.todas.tipo = 'todos';
+    _magiaEstado.todas.circulo = 'todos';
+    _magiaEstado.todas.escola = 'todos';
+    _magiaEstado.todas.busca = nome.toLowerCase();
+
+    document.querySelectorAll('#magiasTodasFiltroTipo .filtro-btn, #magiasTodasFiltroCirculo .filtro-btn, #magiasTodasFiltroEscola .filtro-btn')
+      .forEach(b => b.classList.remove('a'));
+    document.querySelector('#magiasTodasFiltroTipo .filtro-btn')?.classList.add('a');
+    document.querySelector('#magiasTodasFiltroCirculo .filtro-btn')?.classList.add('a');
+    document.querySelector('#magiasTodasFiltroEscola .filtro-btn')?.classList.add('a');
+
+    const buscaInput = document.getElementById('buscaMagiasTodas');
+    if (buscaInput) buscaInput.value = nome;
+
+    renderMagiasNaSecao('todas');
+    setTimeout(() => abrirDetalheMagia(m.id), 50);
+  };
+
   // ── PODERES GERAIS (Combate/Destino/Magia/Concedidos/Tormenta) ─────
   // Reaproveita renderPoderHtml() e togglePoderPersonagem() sem mudar nada
   // neles — só usa um "classeId" fixo ('geral') pra persistência no
@@ -1265,6 +1582,18 @@ document.addEventListener('DOMContentLoaded', () => {
     btn.classList.add('a');
     _pgEstado.todos[eixo] = valor;
     renderPoderesTodosNaSecao();
+  };
+
+  // Alterna entre lista única centralizada e duas colunas — a classe fica no
+  // próprio container, então sobrevive a re-renders (innerHTML só troca o
+  // conteúdo de dentro, não a classe do elemento).
+  window.setModoPoderesTodos = (modo) => {
+    const container = document.getElementById('poderesTodosLista');
+    if (!container) return;
+    container.classList.remove('pg-modo-lista', 'pg-modo-colunas');
+    container.classList.add(modo === 'lista' ? 'pg-modo-lista' : 'pg-modo-colunas');
+    document.getElementById('pgModoLista')?.classList.toggle('a', modo === 'lista');
+    document.getElementById('pgModoColunas')?.classList.toggle('a', modo === 'colunas');
   };
 
   // Clique num chip de poder geral (ex: Poderes Concedidos no painel de um Deus)
@@ -1985,6 +2314,18 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // ── BUSCA DE PODERES GERAIS (por categoria) ─────────────────
+  // ── BUSCA DE MAGIAS (4 seções) ──────────────────────────────
+  ['todas', 'arcana', 'divina', 'universal'].forEach(secaoTipo => {
+    const ids = MAGIA_SECAO_IDS[secaoTipo];
+    const input = document.getElementById(ids.busca);
+    if (input) {
+      input.addEventListener('input', () => {
+        _magiaEstado[secaoTipo].busca = input.value.trim().toLowerCase();
+        renderMagiasNaSecao(secaoTipo);
+      });
+    }
+  });
+
   const buscaPoderesCombateInline = document.getElementById('buscaPoderesCombate');
   if (buscaPoderesCombateInline) {
     buscaPoderesCombateInline.addEventListener('input', () => {
@@ -2072,6 +2413,12 @@ document.addEventListener('DOMContentLoaded', () => {
   if (window.PERICIAS) renderPericias(window.PERICIAS);
   if (window.ORIGENS) renderOrigens(window.ORIGENS);
   if (window.DEUSES) renderDeuses(window.DEUSES);
+  if (window.MAGIAS) {
+    renderMagiasNaSecao('todas');
+    renderMagiasNaSecao('arcana');
+    renderMagiasNaSecao('divina');
+    renderMagiasNaSecao('universal');
+  }
   if (window.PODERES_GERAIS) renderPoderesGeraisNaSecao('combate');
   if (window.PODERES_GERAIS) renderPoderesGeraisNaSecao('destino');
   if (window.PODERES_GERAIS) renderPoderesGeraisNaSecao('magia');

@@ -257,12 +257,17 @@
 
     <!-- ── MAGIAS ── -->
     <div class="nav-grupo" data-grupo="magias">
-      <div class="nav-grupo-header" onclick="toggleGrupo(this)">
+      <div class="nav-grupo-header" onclick="toggleGrupo(this); mostrarSecao('magias-todas');">
         <i class="ti ti-sparkles grupo-icone" aria-hidden="true"></i>
         <span class="grupo-label">Magias</span>
         <i class="ti ti-chevron-right seta" aria-hidden="true"></i>
       </div>
       <div class="nav-sub">
+        <div class="nav-sub-item" data-secao="magias-todas"
+             onclick="toggleSubItem(this,'magias-todas')">
+          <i class="ti ti-books" aria-hidden="true"></i>
+          <span class="sub-label">Todas as Magias</span>
+        </div>
         <div class="nav-sub-item" data-secao="magias-arcanas"
              onclick="toggleSubItem(this,'magias-arcanas')">
           <i class="ti ti-moon" aria-hidden="true"></i>
@@ -272,6 +277,11 @@
              onclick="toggleSubItem(this,'magias-divinas')">
           <i class="ti ti-sun" aria-hidden="true"></i>
           <span class="sub-label">Magias Divinas</span>
+        </div>
+        <div class="nav-sub-item" data-secao="magias-universal"
+             onclick="toggleSubItem(this,'magias-universal')">
+          <i class="ti ti-infinity" aria-hidden="true"></i>
+          <span class="sub-label">Magias Universais</span>
         </div>
       </div>
     </div>
@@ -659,6 +669,14 @@
             <button class="filtro-btn" onclick="setFiltroPoderTodos(this,'categoria','tormenta')">Tormenta</button>
           </div>
           <span class="filtro-count" id="poderesTodosCount" style="margin-left:auto;">162 poderes</span>
+          <div class="pg-modo-toggle">
+            <button class="pg-modo-btn" id="pgModoLista" onclick="setModoPoderesTodos('lista')" title="Lista única">
+              <i class="ti ti-list" aria-hidden="true"></i>
+            </button>
+            <button class="pg-modo-btn a" id="pgModoColunas" onclick="setModoPoderesTodos('colunas')" title="Duas colunas">
+              <i class="ti ti-layout-grid" aria-hidden="true"></i>
+            </button>
+          </div>
         </div>
         <div id="poderesTodosFiltrosTipo" style="display:flex;gap:8px;flex-wrap:wrap;">
           <button class="filtro-btn a" onclick="setFiltroPoderTodos(this,'tipo','todos')">Todos</button>
@@ -669,7 +687,7 @@
       </div>
 
       <div class="cards-area">
-        <div id="poderesTodosLista"></div>
+        <div id="poderesTodosLista" class="pg-modo-colunas"></div>
       </div>
 
     </div><!-- /secao-poderes-todos -->
@@ -838,11 +856,189 @@
     <div id="secao-artefatos"       class="secao-conteudo placeholder-area" style="display:none">
       <i class="ti ti-flame" aria-hidden="true"></i><h2>Artefatos</h2><p>Em breve</p>
     </div>
-    <div id="secao-magias-arcanas"  class="secao-conteudo placeholder-area" style="display:none">
-      <i class="ti ti-moon" aria-hidden="true"></i><h2>Magias Arcanas</h2><p>Em breve — ~80 magias</p>
-    </div>
-    <div id="secao-magias-divinas"  class="secao-conteudo placeholder-area" style="display:none">
-      <i class="ti ti-sun" aria-hidden="true"></i><h2>Magias Divinas</h2><p>Em breve — ~40 magias</p>
+    <div id="secao-magias-todas" class="secao-conteudo" style="display:none;flex-direction:column;flex:1;overflow:hidden;">
+
+      <div class="section-hero">
+        <div class="section-hero-bg"></div>
+        <h1>Todas as Magias</h1>
+        <p>Arcanas, divinas e universais juntas. Pra navegar por um tipo específico, use o menu lateral. Só o 1º Círculo está completo por enquanto — os demais entram aos poucos.</p>
+      </div>
+
+      <div class="toolbar" style="flex-direction:column;align-items:stretch;gap:8px;">
+        <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
+          <div class="search-inline">
+            <i class="ti ti-search" aria-hidden="true"></i>
+            <input type="text" id="buscaMagiasTodas" placeholder="Buscar magia…" />
+          </div>
+          <div id="magiasTodasFiltroTipo" style="display:flex;gap:8px;flex-wrap:wrap;">
+            <button class="filtro-btn a" onclick="setFiltroMagia('todas','tipo',this,'todos')">Todos os tipos</button>
+            <button class="filtro-btn" onclick="setFiltroMagia('todas','tipo',this,'arcana')">Arcana</button>
+            <button class="filtro-btn" onclick="setFiltroMagia('todas','tipo',this,'divina')">Divina</button>
+            <button class="filtro-btn" onclick="setFiltroMagia('todas','tipo',this,'universal')">Universal</button>
+          </div>
+          <span class="filtro-count" id="magiasTodasCount" style="margin-left:auto;">52 magias</span>
+        </div>
+        <div id="magiasTodasFiltroCirculo" style="display:flex;gap:8px;flex-wrap:wrap;">
+          <button class="filtro-btn a" onclick="setFiltroMagia('todas','circulo',this,'todos')">Todos os círculos</button>
+          <button class="filtro-btn" onclick="setFiltroMagia('todas','circulo',this,'1')">1º</button>
+          <button class="filtro-btn" onclick="setFiltroMagia('todas','circulo',this,'2')">2º</button>
+          <button class="filtro-btn" onclick="setFiltroMagia('todas','circulo',this,'3')">3º</button>
+          <button class="filtro-btn" onclick="setFiltroMagia('todas','circulo',this,'4')">4º</button>
+          <button class="filtro-btn" onclick="setFiltroMagia('todas','circulo',this,'5')">5º</button>
+        </div>
+        <div id="magiasTodasFiltroEscola" style="display:flex;gap:8px;flex-wrap:wrap;">
+          <button class="filtro-btn a" onclick="setFiltroMagia('todas','escola',this,'todos')">Todas as escolas</button>
+          <button class="filtro-btn" onclick="setFiltroMagia('todas','escola',this,'abjuracao')">Abjuração</button>
+          <button class="filtro-btn" onclick="setFiltroMagia('todas','escola',this,'adivinhacao')">Adivinhação</button>
+          <button class="filtro-btn" onclick="setFiltroMagia('todas','escola',this,'convocacao')">Convocação</button>
+          <button class="filtro-btn" onclick="setFiltroMagia('todas','escola',this,'encantamento')">Encantamento</button>
+          <button class="filtro-btn" onclick="setFiltroMagia('todas','escola',this,'evocacao')">Evocação</button>
+          <button class="filtro-btn" onclick="setFiltroMagia('todas','escola',this,'ilusao')">Ilusão</button>
+          <button class="filtro-btn" onclick="setFiltroMagia('todas','escola',this,'necromancia')">Necromancia</button>
+          <button class="filtro-btn" onclick="setFiltroMagia('todas','escola',this,'transmutacao')">Transmutação</button>
+        </div>
+      </div>
+
+      <div class="cards-area">
+        <div class="cards-grid" id="magiasTodasGrid"></div>
+      </div>
+
+    </div><!-- /secao-magias-todas -->
+
+    <div id="secao-magias-arcanas" class="secao-conteudo" style="display:none;flex-direction:column;flex:1;overflow:hidden;">
+      <div class="section-hero">
+        <div class="section-hero-bg"></div>
+        <h1>Magias Arcanas</h1>
+        <p>Magias lançadas através do conhecimento e da razão — arcanistas, bardos e outros conjuradores arcanos.</p>
+      </div>
+      <div class="toolbar" style="flex-direction:column;align-items:stretch;gap:8px;">
+        <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
+          <div class="search-inline">
+            <i class="ti ti-search" aria-hidden="true"></i>
+            <input type="text" id="buscaMagiasArcanas" placeholder="Buscar magia…" />
+          </div>
+          <span class="filtro-count" id="magiasArcanasCount" style="margin-left:auto;">0 magias</span>
+        </div>
+        <div id="magiasArcanasFiltroCirculo" style="display:flex;gap:8px;flex-wrap:wrap;">
+          <button class="filtro-btn a" onclick="setFiltroMagia('arcana','circulo',this,'todos')">Todos os círculos</button>
+          <button class="filtro-btn" onclick="setFiltroMagia('arcana','circulo',this,'1')">1º</button>
+          <button class="filtro-btn" onclick="setFiltroMagia('arcana','circulo',this,'2')">2º</button>
+          <button class="filtro-btn" onclick="setFiltroMagia('arcana','circulo',this,'3')">3º</button>
+          <button class="filtro-btn" onclick="setFiltroMagia('arcana','circulo',this,'4')">4º</button>
+          <button class="filtro-btn" onclick="setFiltroMagia('arcana','circulo',this,'5')">5º</button>
+        </div>
+        <div id="magiasArcanasFiltroEscola" style="display:flex;gap:8px;flex-wrap:wrap;">
+          <button class="filtro-btn a" onclick="setFiltroMagia('arcana','escola',this,'todos')">Todas as escolas</button>
+          <button class="filtro-btn" onclick="setFiltroMagia('arcana','escola',this,'abjuracao')">Abjuração</button>
+          <button class="filtro-btn" onclick="setFiltroMagia('arcana','escola',this,'adivinhacao')">Adivinhação</button>
+          <button class="filtro-btn" onclick="setFiltroMagia('arcana','escola',this,'convocacao')">Convocação</button>
+          <button class="filtro-btn" onclick="setFiltroMagia('arcana','escola',this,'encantamento')">Encantamento</button>
+          <button class="filtro-btn" onclick="setFiltroMagia('arcana','escola',this,'evocacao')">Evocação</button>
+          <button class="filtro-btn" onclick="setFiltroMagia('arcana','escola',this,'ilusao')">Ilusão</button>
+          <button class="filtro-btn" onclick="setFiltroMagia('arcana','escola',this,'necromancia')">Necromancia</button>
+          <button class="filtro-btn" onclick="setFiltroMagia('arcana','escola',this,'transmutacao')">Transmutação</button>
+        </div>
+      </div>
+      <div class="cards-area">
+        <div class="cards-grid" id="magiasArcanasGrid"></div>
+      </div>
+    </div><!-- /secao-magias-arcanas -->
+
+    <div id="secao-magias-divinas" class="secao-conteudo" style="display:none;flex-direction:column;flex:1;overflow:hidden;">
+      <div class="section-hero">
+        <div class="section-hero-bg"></div>
+        <h1>Magias Divinas</h1>
+        <p>Magias concedidas por uma divindade — clérigos, druidas, paladinos e outros conjuradores divinos.</p>
+      </div>
+      <div class="toolbar" style="flex-direction:column;align-items:stretch;gap:8px;">
+        <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
+          <div class="search-inline">
+            <i class="ti ti-search" aria-hidden="true"></i>
+            <input type="text" id="buscaMagiasDivinas" placeholder="Buscar magia…" />
+          </div>
+          <span class="filtro-count" id="magiasDivinasCount" style="margin-left:auto;">0 magias</span>
+        </div>
+        <div id="magiasDivinasFiltroCirculo" style="display:flex;gap:8px;flex-wrap:wrap;">
+          <button class="filtro-btn a" onclick="setFiltroMagia('divina','circulo',this,'todos')">Todos os círculos</button>
+          <button class="filtro-btn" onclick="setFiltroMagia('divina','circulo',this,'1')">1º</button>
+          <button class="filtro-btn" onclick="setFiltroMagia('divina','circulo',this,'2')">2º</button>
+          <button class="filtro-btn" onclick="setFiltroMagia('divina','circulo',this,'3')">3º</button>
+          <button class="filtro-btn" onclick="setFiltroMagia('divina','circulo',this,'4')">4º</button>
+          <button class="filtro-btn" onclick="setFiltroMagia('divina','circulo',this,'5')">5º</button>
+        </div>
+        <div id="magiasDivinasFiltroEscola" style="display:flex;gap:8px;flex-wrap:wrap;">
+          <button class="filtro-btn a" onclick="setFiltroMagia('divina','escola',this,'todos')">Todas as escolas</button>
+          <button class="filtro-btn" onclick="setFiltroMagia('divina','escola',this,'abjuracao')">Abjuração</button>
+          <button class="filtro-btn" onclick="setFiltroMagia('divina','escola',this,'adivinhacao')">Adivinhação</button>
+          <button class="filtro-btn" onclick="setFiltroMagia('divina','escola',this,'convocacao')">Convocação</button>
+          <button class="filtro-btn" onclick="setFiltroMagia('divina','escola',this,'encantamento')">Encantamento</button>
+          <button class="filtro-btn" onclick="setFiltroMagia('divina','escola',this,'evocacao')">Evocação</button>
+          <button class="filtro-btn" onclick="setFiltroMagia('divina','escola',this,'ilusao')">Ilusão</button>
+          <button class="filtro-btn" onclick="setFiltroMagia('divina','escola',this,'necromancia')">Necromancia</button>
+          <button class="filtro-btn" onclick="setFiltroMagia('divina','escola',this,'transmutacao')">Transmutação</button>
+        </div>
+      </div>
+      <div class="cards-area">
+        <div class="cards-grid" id="magiasDivinasGrid"></div>
+      </div>
+    </div><!-- /secao-magias-divinas -->
+
+    <div id="secao-magias-universal" class="secao-conteudo" style="display:none;flex-direction:column;flex:1;overflow:hidden;">
+      <div class="section-hero">
+        <div class="section-hero-bg"></div>
+        <h1>Magias Universais</h1>
+        <p>Magias que funcionam igual para conjuradores arcanos e divinos — uma entrada só, sem duplicar.</p>
+      </div>
+      <div class="toolbar" style="flex-direction:column;align-items:stretch;gap:8px;">
+        <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
+          <div class="search-inline">
+            <i class="ti ti-search" aria-hidden="true"></i>
+            <input type="text" id="buscaMagiasUniversal" placeholder="Buscar magia…" />
+          </div>
+          <span class="filtro-count" id="magiasUniversalCount" style="margin-left:auto;">0 magias</span>
+        </div>
+        <div id="magiasUniversalFiltroCirculo" style="display:flex;gap:8px;flex-wrap:wrap;">
+          <button class="filtro-btn a" onclick="setFiltroMagia('universal','circulo',this,'todos')">Todos os círculos</button>
+          <button class="filtro-btn" onclick="setFiltroMagia('universal','circulo',this,'1')">1º</button>
+          <button class="filtro-btn" onclick="setFiltroMagia('universal','circulo',this,'2')">2º</button>
+          <button class="filtro-btn" onclick="setFiltroMagia('universal','circulo',this,'3')">3º</button>
+          <button class="filtro-btn" onclick="setFiltroMagia('universal','circulo',this,'4')">4º</button>
+          <button class="filtro-btn" onclick="setFiltroMagia('universal','circulo',this,'5')">5º</button>
+        </div>
+        <div id="magiasUniversalFiltroEscola" style="display:flex;gap:8px;flex-wrap:wrap;">
+          <button class="filtro-btn a" onclick="setFiltroMagia('universal','escola',this,'todos')">Todas as escolas</button>
+          <button class="filtro-btn" onclick="setFiltroMagia('universal','escola',this,'abjuracao')">Abjuração</button>
+          <button class="filtro-btn" onclick="setFiltroMagia('universal','escola',this,'adivinhacao')">Adivinhação</button>
+          <button class="filtro-btn" onclick="setFiltroMagia('universal','escola',this,'convocacao')">Convocação</button>
+          <button class="filtro-btn" onclick="setFiltroMagia('universal','escola',this,'encantamento')">Encantamento</button>
+          <button class="filtro-btn" onclick="setFiltroMagia('universal','escola',this,'evocacao')">Evocação</button>
+          <button class="filtro-btn" onclick="setFiltroMagia('universal','escola',this,'ilusao')">Ilusão</button>
+          <button class="filtro-btn" onclick="setFiltroMagia('universal','escola',this,'necromancia')">Necromancia</button>
+          <button class="filtro-btn" onclick="setFiltroMagia('universal','escola',this,'transmutacao')">Transmutação</button>
+        </div>
+      </div>
+      <div class="cards-area">
+        <div class="cards-grid" id="magiasUniversalGrid"></div>
+      </div>
+    </div><!-- /secao-magias-universal -->
+
+    <!-- Painel de detalhe de Magia (compartilhado pelas 4 seções acima) -->
+    <div class="detalhe-painel" id="magiaPainel">
+      <div class="dp-hero" id="mgHero">
+        <div class="dp-hero-bg" id="mgHeroBg"></div>
+        <i class="ti ti-sparkles dp-hero-icon" id="mgHeroIcon" aria-hidden="true"></i>
+        <div class="dp-hero-content">
+          <div class="dp-tipo" id="mgTipo"><i class="ti ti-sparkles" aria-hidden="true"></i> Magia</div>
+          <div class="dp-nome" id="mgNome">—</div>
+          <div class="dp-sub" id="mgSub">—</div>
+        </div>
+        <button class="dp-fechar" onclick="fecharDetalheMagia()">
+          <i class="ti ti-x" aria-hidden="true"></i>
+        </button>
+      </div>
+      <div class="dp-body" id="mgBody">
+        <!-- preenchido pelo JS -->
+      </div>
     </div>
     <div id="secao-criaturas"       class="secao-conteudo placeholder-area" style="display:none">
       <i class="ti ti-paw" aria-hidden="true"></i><h2>Criaturas</h2><p>Em breve — aguardando livro de criaturas</p>
@@ -887,6 +1083,7 @@
 <script src="../js/data/origens.js"></script>
 <script src="../js/data/deuses.js"></script>
 <script src="../js/data/poderes_gerais.js"></script>
+<script src="../js/data/magias.js"></script>
 <script src="../js/keywords.js"></script>
 <script src="../js/compendio.js"></script>
 

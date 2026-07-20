@@ -279,6 +279,10 @@ const _KEYWORD_LIST = _buildKeywordList();
 // porque depende de window.PODERES_GERAIS já estar carregado.
 let _PODER_GERAL_LIST = null;
 
+// Cache da lista de Magias pra keyword — mesmo esquema, construída sob
+// demanda na primeira vez que processarKeywords() rodar.
+let _MAGIA_LIST = null;
+
 // ── DETECÇÃO NUMÉRICA AUTOMÁTICA ───────────────────────────
 
 function _processarNumericos(texto, placeholders) {
@@ -372,6 +376,36 @@ function processarKeywords(texto) {
         placeholders.push(
           `<span class="kw kw-poder-geral"` +
           ` onclick="event.stopPropagation(); window.irParaPoderGeral && window.irParaPoderGeral('${nomeEscapado}', '${pg.categoria}')"` +
+          ` style="cursor:pointer">${capture}</span>`
+        );
+        return `\x00${idx}\x00`;
+      });
+    }
+  }
+
+  // Passo 4: nomes de Magias (197 no total, Círculos 1-5) — mesma técnica
+  // dinâmica do Passo 3, construída sob demanda a partir de window.MAGIAS,
+  // sem duplicar os nomes aqui.
+  if (!_MAGIA_LIST && typeof window !== 'undefined' && window.MAGIAS) {
+    _MAGIA_LIST = window.MAGIAS
+      .filter(m => m.nome)
+      .map(m => ({
+        nome: m.nome,
+        regex: new RegExp(
+          `(?<=[\\s,;:.!?()"'\\-]|^)(${_escapeRegex(m.nome)})(?=[\\s,;:.!?()"'\\-]|$)`,
+          'g'
+        ),
+      }))
+      .sort((a, b) => b.nome.length - a.nome.length);
+  }
+  if (_MAGIA_LIST) {
+    for (const mg of _MAGIA_LIST) {
+      resultado = resultado.replace(mg.regex, (_, capture) => {
+        const idx = placeholders.length;
+        const nomeEscapado = _escapeHtml(capture).replace(/'/g, "\\'");
+        placeholders.push(
+          `<span class="kw kw-magia"` +
+          ` onclick="event.stopPropagation(); window.irParaMagia && window.irParaMagia('${nomeEscapado}')"` +
           ` style="cursor:pointer">${capture}</span>`
         );
         return `\x00${idx}\x00`;

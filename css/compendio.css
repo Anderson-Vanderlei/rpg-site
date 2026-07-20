@@ -288,6 +288,24 @@ html, body {
 }
 .filtro-btn:hover { color:#888; border-color:#2a2a2a; }
 .filtro-btn.a  { color:#c9a84c; border-color:rgba(201,168,76,.35); background:rgba(201,168,76,.05); }
+
+/* ── Alternância lista/colunas (Todos os Poderes) ── */
+.pg-modo-toggle { display:flex; gap:4px; }
+.pg-modo-btn {
+  width:26px; height:26px; display:flex; align-items:center; justify-content:center;
+  background:transparent; border:.5px solid #2a2a2a; border-radius:4px;
+  color:#666; cursor:pointer; font-size:13px; transition:all .15s;
+}
+.pg-modo-btn:hover { color:#888; border-color:#3a3a3a; }
+.pg-modo-btn.a { color:#c9a84c; border-color:rgba(201,168,76,.35); background:rgba(201,168,76,.08); }
+
+#poderesTodosLista.pg-modo-lista {
+  display:block; max-width:720px; margin:0 auto;
+}
+#poderesTodosLista.pg-modo-colunas {
+  display:grid; grid-template-columns:repeat(2, 1fr); gap:4px 28px;
+  align-items:start; max-width:1160px; margin:0 auto;
+}
 .filtro-count  { font-family:'Cinzel',serif; font-size:9px; color:#2a2a2a; letter-spacing:.1em; margin-left:auto; white-space:nowrap; }
 
 /* ── GRID DE CARDS ───────────────────────────────────────── */
@@ -527,6 +545,93 @@ html, body {
 .dp-body::-webkit-scrollbar-thumb { background:#2a2a2a; border-radius:2px; }
 
 .dp-linha { width:36px; height:1px; background:linear-gradient(to right,#8B0000,transparent); margin-bottom:.9rem; }
+
+/* ══════════════════ MAGIAS ══════════════════ */
+
+/* Card (menor que os de Origens/Deuses, mais denso em informação) */
+.magia-card {
+  background: #0d0a0a; border: .5px solid #1e1e1e; border-radius: 6px;
+  padding: 10px 12px; cursor: pointer; transition: border-color .2s, transform .2s, box-shadow .2s;
+  display: flex; flex-direction: column;
+}
+.magia-card:hover { border-color: rgba(201,168,76,.4); transform: translateY(-2px); box-shadow: 0 6px 20px rgba(0,0,0,.5); }
+.magia-card.selecionado { border-color: rgba(201,168,76,.5); box-shadow: 0 0 0 1px rgba(201,168,76,.15); }
+.mgc-top { display:flex; justify-content:space-between; align-items:center; margin-bottom:6px; gap:6px; }
+.mgc-escola { font-size:8px; font-family:'Cinzel',serif; letter-spacing:.06em; display:flex; align-items:center; gap:3px; white-space:nowrap; }
+.mgc-escola i { font-size:10px; }
+.mgc-tipo { font-family:'Cinzel',serif; font-size:7px; padding:1px 6px; border-radius:2px; letter-spacing:.06em; flex-shrink:0; }
+.mgc-tipo-arcana { background:rgba(136,136,255,.12); color:#8888ff; border:.5px solid rgba(136,136,255,.3); }
+.mgc-tipo-divina { background:rgba(201,168,76,.12); color:#c9a84c; border:.5px solid rgba(201,168,76,.3); }
+.mgc-tipo-universal { background:rgba(80,184,112,.12); color:#50b870; border:.5px solid rgba(80,184,112,.3); }
+.mgc-nome { font-family:'Cinzel',serif; font-size:13px; color:#e8e8e8; letter-spacing:.04em; margin-bottom:4px; }
+.mgc-desc { font-size:10.5px; color:#666; line-height:1.5; margin-bottom:8px; flex:1; }
+.mgc-footer { display:flex; align-items:center; gap:9px; font-size:9px; color:#777; flex-wrap:wrap; }
+.mgc-footer .rc-badge { margin-left:auto; }
+.mgc-stat { display:flex; align-items:center; gap:3px; }
+.mgc-stat i { font-size:11px; color:#666; }
+
+/* Painel de detalhe */
+.mg-stats-grid {
+  display:grid; grid-template-columns:1fr 1fr; gap:8px 16px;
+  background:rgba(255,255,255,.02); border:.5px solid #1a1a1a; border-radius:5px;
+  padding:10px 12px; margin-bottom:12px;
+}
+.mg-stat-l { font-size:7px; color:#666; letter-spacing:.08em; text-transform:uppercase; margin-bottom:2px; }
+.mg-stat-v { font-size:11px; color:#ccc; }
+
+.mg-aprim {
+  display:flex; gap:9px; align-items:flex-start; padding:8px 10px; margin-bottom:6px;
+  border:.5px solid #222; border-radius:4px; transition:all .15s;
+}
+.mg-aprim.selecionado { background:rgba(201,168,76,.06); border-color:rgba(201,168,76,.25); }
+.mg-aprim-check {
+  width:14px; height:14px; border-radius:3px; border:1px solid #444; flex-shrink:0; margin-top:1px;
+  cursor:pointer; display:flex; align-items:center; justify-content:center;
+}
+.mg-aprim.selecionado .mg-aprim-check { background:#c9a84c; border-color:#c9a84c; color:#0a0a0a; font-size:10px; }
+.mg-aprim-stepper { display:flex; align-items:center; gap:5px; flex-shrink:0; }
+.mg-aprim-stepper button {
+  width:16px; height:16px; border-radius:3px; border:.5px solid #444; background:transparent;
+  color:#999; font-size:11px; cursor:pointer; display:flex; align-items:center; justify-content:center; line-height:1;
+}
+.mg-aprim-stepper button:hover { border-color:#c9a84c; color:#c9a84c; }
+.mg-aprim-stepper button:disabled { opacity:.3; cursor:default; }
+.mg-aprim-stepper button:disabled:hover { border-color:#444; color:#999; }
+.mg-aprim-qtd { font-size:11px; color:#ccc; min-width:12px; text-align:center; }
+.mg-aprim-corpo { flex:1; }
+.mg-aprim-custo {
+  font-size:9px; background:rgba(68,170,238,.15); color:#44aaee; border-radius:2px; padding:1px 5px;
+  font-weight:600; margin-right:6px;
+}
+.mg-aprim-truque { background:rgba(201,168,76,.15); color:#c9a84c; }
+.mg-restricao { font-size:8px; color:#8a7440; margin-right:6px; }
+.mg-requer {
+  font-size:8px; color:#c9a84c; margin-right:6px; display:inline-flex; align-items:center; gap:3px;
+  background:rgba(201,168,76,.1); border:.5px solid rgba(201,168,76,.3); border-radius:2px; padding:1px 5px;
+}
+.mg-requer i { font-size:9px; }
+
+.mg-opcoes-wrap { margin-bottom:12px; }
+.mg-opcoes-pills { display:flex; gap:6px; flex-wrap:wrap; margin-bottom:10px; }
+.mg-opcao-pill {
+  font-family:'Cinzel',serif; font-size:10px; letter-spacing:.03em; padding:4px 11px;
+  border-radius:3px; border:.5px solid #333; background:transparent; color:#999; cursor:pointer;
+  transition:all .15s;
+}
+.mg-opcao-pill:hover { border-color:#c9a84c; color:#c9a84c; }
+.mg-opcao-pill.ativa { background:rgba(201,168,76,.12); border-color:#c9a84c; color:#c9a84c; }
+.mg-opcao-texto {
+  font-size:11px; color:#999; line-height:1.6; background:rgba(255,255,255,.02);
+  border:.5px solid #1a1a1a; border-left:2px solid #c9a84c; border-radius:0 4px 4px 0; padding:9px 12px;
+}
+.mg-aprim-texto { font-size:10.5px; color:#999; line-height:1.55; }
+
+.mg-pm-total {
+  display:flex; align-items:center; gap:7px; margin-top:10px; padding-top:10px;
+  border-top:.5px solid rgba(201,168,76,.2); font-size:11px; color:#999;
+}
+.mg-pm-total i { color:#c9a84c; font-size:14px; }
+.mg-pm-total strong { color:#c9a84c; font-size:14px; }
 
 /* Badges raridade/fonte */
 .dp-badges { display:flex; gap:4px; flex-wrap:wrap; margin-bottom:.9rem; }
@@ -864,6 +969,8 @@ html, body {
 .kw-poder   { color: #9080d8; border-bottom: 1px dotted #9080d8; cursor: default; }
 .kw-poder-geral { color: #9080d8; border-bottom: 1px dotted #9080d8; }
 .kw-poder-geral:hover { color: #b0a0f0; border-bottom-color: #b0a0f0; }
+.kw-magia { color: #5ec8d8; border-bottom: 1px dotted #5ec8d8; }
+.kw-magia:hover { color: #7ed8e8; border-bottom-color: #7ed8e8; }
 .kw-cond    { color: #d06060; border-bottom: 1px dotted #d06060; cursor: default; }
 
 /* Highlights numéricos */
@@ -1149,6 +1256,8 @@ html, body {
      também só vale aqui (senão o seletor de ID vence a versão mobile de 100%) */
   #secao-deuses .cards-area.encolhido { margin-right: 460px; }
   #deusPainel { width: 460px; }
+  #magiaPainel { width: 460px; }
+  [id^="secao-magias"] .cards-area.encolhido { margin-right: 460px; }
 }
 
 /* Colunas mais estreitas só pro grid de Deuses — com a área do ícone alta (150px),
@@ -1564,13 +1673,7 @@ html, body {
 }
 .per-grupo { margin-bottom: 18px; }
 
-/* ── Todos os Poderes — grupos por categoria, grid responsivo ── */
-#poderesTodosLista {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
-  gap: 4px 28px;
-  align-items: start;
-}
+/* ── Todos os Poderes — grupos por categoria ── */
 .pg-grupo { margin-bottom: 18px; }
 .pg-grupo-hd { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
 .pg-grupo-linha { width: 16px; height: 2px; background: #c9a84c; flex-shrink: 0; }

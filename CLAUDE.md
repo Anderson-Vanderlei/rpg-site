@@ -79,13 +79,13 @@ rpg-site/
 │       ├── origens.js               ✅ 35 origens completas (Cap. 1, pp. 85–95)
 │       ├── deuses.js                ✅ 20 divindades completas (Cap. 1, pp. 96–105)
 │       ├── pericias.js              ✅ 29 perícias completas (Cap. 2, pp. 114–123)
-│       ├── poderes_gerais.js        🔶 só Combate (40/~167) — Destino/Magia/Concedidos/Tormenta faltam
-│       ├── magias.js                ⏳ a criar
+│       ├── poderes_gerais.js        ✅ 162 poderes completos (5 categorias, Cap. 2, pp. 123–137)
+│       ├── magias.js                ✅ 197 magias, Círculos 1-5 completos
 │       ├── equipamentos.js          ⏳ a criar
 │       └── criaturas.js             ⏳ a criar
 ├── pages/
 │   ├── atlas.html                   ✅ mapa interativo 5 camadas
-│   ├── compendio.html               ✅ raças + classes + perícias + origens + deuses + poderes de combate funcionando
+│   ├── compendio.html               ✅ raças + classes + perícias + origens + deuses + poderes gerais + magias (completo) funcionando
 │   ├── ficha.html                   ⏳ a criar
 │   └── mestre.html                  ⏳ a criar
 └── images/
@@ -496,19 +496,64 @@ Na ficha de personagem precisarão de componente de input PM compartilhado.
   preferida (`armaPreferidaNota`, regra de não poder lançar Arma Espiritual). Link cross-page
   nos dois sentidos: card de Deus → Raça/Classe (Devotos clicáveis) e poder de Clérigo/
   Paladino → Deuses filtrado pela mesma energiaDivina (`irParaDeusesPorEnergia`).
-- **Poderes Gerais — categoria Combate completa** (40 poderes) em poderes_gerais.js
-  (Cap. 2, pp. 123–137). Mesmo schema de poderes_classes.js + campo novo `categoria`
-  ('combate'|'destino'|'magia'|'concedidos'|'tormenta', bate com as 5 seções que já
-  existiam no menu). Reaproveita `renderPoderHtml()` inteiro, sem nenhuma mudança nele —
-  só usa `window._classeAtualId = 'geral'` como chave pseudo-classe pro botão "Adicionar
-  ao Personagem" persistir no localStorage. Nova função `renderPoderesGeraisNaSecao(categoria)`
-  filtra por tipo (Ativo/Passivo) + busca (nome/descrição). Extração teve bastante
-  embaralhamento de coluna (pior que Raças) — validado cruzando com a Tabela 2-5 do
-  livro (39 poderes na tabela oficial, +1 confirmado depois pelo usuário = 40).
+- **Poderes Gerais — as 5 categorias completas** (162 poderes) em poderes_gerais.js
+  (Cap. 2, pp. 123–137): Combate (40), Destino (20), Magia (8), Concedidos (72 nomes
+  únicos — 80 "slots" nos 20 deuses, vários compartilhados), Tormenta (22). Mesmo schema
+  de poderes_classes.js + campo novo `categoria`. Reaproveita `renderPoderHtml()` inteiro,
+  sem nenhuma mudança nele — só usa `window._classeAtualId = 'geral'` como chave pseudo-
+  classe pro botão "Adicionar ao Personagem" persistir no localStorage. Concedidos batido
+  100% contra `poderesConcedidos[]` de deuses.js (nada faltando, nada sobrando). Extração
+  teve bastante embaralhamento de coluna (pior que Raças) — validado cruzando com as
+  tabelas oficiais do livro (Tabela 2-5 de Combate, etc.) e com o próprio deuses.js.
+- **Nova página "Todos os Poderes"** (`#secao-poderes-todos`) — clicar no cabeçalho
+  "Poderes" do menu (não numa das 5 subcategorias) mostra as 5 categorias juntas
+  (162 poderes), agrupadas com cabeçalho por categoria (igual Perícias por atributo),
+  ordem alfabética dentro de cada grupo, filtro por categoria + tipo + busca. Botões de
+  alternância lista única / duas colunas (`pg-modo-lista`/`pg-modo-colunas`) no canto
+  direito, porque grid automático (auto-fit) tinha ficado estranho em tela ultrawide —
+  usuário preferiu controle manual explícito em vez de reflow automático.
+- **4 melhorias aplicadas em Poderes Gerais** (14/jul), depois de todas as 5 categorias
+  prontas (adiadas de propósito até esse ponto):
+  - Busca em `renderPoderesGeraisNaSecao()` agora cobre `prerequisito` também
+  - `kw-poder-geral`: nomes dos 162 poderes viram link clicável em QUALQUER descrição
+    do site (poderes de classe, outras origens etc.) — construído dinamicamente a partir
+    de `window.PODERES_GERAIS` dentro de `processarKeywords()` (não duplica os 162
+    nomes em keywords.js, só lê o arquivo de dados uma vez e cacheia)
+  - Tag cinza de categoria (Combate/Destino/.../Tormenta) no rodapé de cada card de
+    poder geral — não aparece em poderes de classe, que não têm o campo `categoria`
+  - Filtro "Bônus" (reaproveita `poderEhBonus()` já existente) nas 5 páginas + na
+    combinada
+  - Bônus: chips de Poderes Concedidos no painel de um Deus agora são clicáveis,
+    levando direto pro poder filtrado em Poderes Concedidos (`irParaPoderGeral`)
 - **Bug de CSS corrigido:** `.num-pen` (penalidades tipo –2, gerado pelo `keywords.js`
   desde sempre) nunca teve regra de estilo — só `.num-bonus`/`.num-dano`/`.num-pm`
   existiam. Penalidades apareciam sem cor nenhuma em TODO o site. Uma linha de CSS
   resolveu globalmente (achado do usuário, 14/jul).
+- **Magias — capítulo inteiro completo, 197 magias** (Cap. 4, pp. 168–211): Círculo 1
+  (53), 2 (48), 3 (40), 4 (30), 5 (25). Extraído círculo por círculo com o mesmo padrão
+  de Poderes Gerais (embaralhamento de coluna intenso — bastante conteúdo de uma magia
+  contaminando outra, resolvido com cross-check linha a linha). Página com 4 seções
+  (Todas/Arcanas/Divinas/Universais), painel de detalhe único, grade de estatísticas,
+  seletor interativo de aprimoramentos com stepper/checkbox e Truque exclusivo, PM total
+  ao vivo. Depois de completo, 3 melhorias aplicadas:
+  - Busca cobrindo alcance/execução/resistência, além de nome/descrição
+  - `kw-magia`: nomes das 197 magias viram link clicável em qualquer descrição do site,
+    igual `kw-poder-geral` (mesmo esquema dinâmico, sem duplicar nomes)
+  - Tag "Requer Nº círculo" extraída do texto do aprimoramento em tempo de render
+    (`extrairRequerCirculo()`) e destacada como badge dourada com cadeado — 143 dos 508
+    aprimoramentos do capítulo (quase 30%) têm essa exigência
+  - **21 magias com seletor de "Efeitos à Escolha"** (`opcoes: [{nome, descricao}]`,
+    abas clicáveis) pra magias com múltiplos efeitos nomeados à escolha ao lançar
+    (Controlar Água/Fogo/Terra/Madeira, Rogar Maldição, Aprisionamento, Desejo,
+    Intervenção Divina, Manto do Cruzado, Terremoto, Palavra Primordial, Criar/Conjurar
+    Elemental(al) etc.) — mesmo padrão de campo já usado em `poderes_classes.js`
+  - **2 magias com `tabela`** (Vidência — modificador por grau de conhecimento; Animar
+    Objetos — estatísticas por tamanho) reaproveitando `renderTabelaUso()` de Poderes
+  - Achados de bônus durante a extração (magias que faltavam e apareceram contaminando
+    outras): Hipnotismo (Círculo 1), Globo da Verdade de Gwen (Círculo 2), Segunda Chance
+    (Círculo 5, nome confirmado pelo usuário conferindo o livro)
+  - Uma pendência real restou: um fragmento sem nome nem descrição (só stats + 2
+    aprimoramentos de dano) não identificado — ver cabeçalho de `magias.js`
 
 ### 🔑 Lição aprendida — qualidade de extração de PDF
 A extração raw (`pdftotext` sem `-layout`) de capítulos com diagramação em 2 colunas e
@@ -517,11 +562,24 @@ do texto de forma que sentenças de uma seção aparecem coladas em outra, sem a
 causou dados fabricados sem querer numa extração anterior a este projeto. Mitigação que
 funcionou bem: extrair página a página (`-f N -l N`) em vez do capítulo inteiro de uma vez,
 e SEMPRE cross-checar contra pelo menos duas fontes (raw + layout) quando o conteúdo não
-bater com o que já existe no site. O capítulo de Poderes Gerais (Combate) teve o pior
-embaralhamento até agora — várias descrições apareciam sob o cabeçalho errado, só foi
-possível resolver cruzando cada texto com a Tabela 2-5 (nome + pré-requisito oficial).
-Mesmo cuidado extra vale pra Destino/Magia/Concedidos/Tormenta.
+bater com o que já existe no site. O capítulo de Poderes Gerais teve o pior embaralhamento
+até agora — várias descrições apareciam sob o cabeçalho errado, só foi possível resolver
+cruzando cada texto com as tabelas oficiais (nome + pré-requisito) e, no caso de Concedidos,
+cruzando também com `poderesConcedidos[]` já existente em deuses.js.
 
+### 🔑 Lição aprendida — prompts aplicados parcialmente
+Em Poderes Concedidos (14/jul), 3 prompts seguidos entraram só parcialmente (faltou a
+inicialização automática, depois a busca) sem erro nenhum aparecer — só sintoma silencioso
+(lista vazia até clicar num filtro; busca sem efeito). Criamos um checklist de `grep -c`
+pra rodar depois de aplicar qualquer prompt de uma categoria nova, conferindo de uma vez
+que TODAS as peças entraram (dado, HTML, busca, inicialização, script). Vale reaproveitar
+esse checklist sempre que uma seção nova tiver mais de 2-3 prompts.
+
+### 📋 Melhorias futuras anotadas (não é falta de tempo, é decisão de fazer depois)
+- **Poderes Gerais / Todos os Poderes:** em telas pequenas, os filtros (6 de categoria +
+  4 de tipo + busca = a página com mais filtros do site) ficam "achatados"/apertados
+  mesmo com quebra de linha automática. Precisa de uma solução melhor pra mobile
+  (dropdown? sheet deslizante? colapsar num menu "Mais filtros"?) — ainda não decidido.
 ### Revisão Final Pendente ⚠️
 Após inspeção do usuário, aplicar os ajustes apontados:
 1. Verificar hierarquia de níveis em todas as habilidades fixas
@@ -580,23 +638,115 @@ Após inspeção do usuário, aplicar os ajustes apontados:
       lista como pré-requisito — mesmo padrão dos filtros Treinada/Armadura de Perícias)
 
 ### Backlog 📋 (ordem)
-1. Poderes Gerais restantes — Destino (20), Magia (8), Concedidos (80), Tormenta (~20)
-2. Depois de Poderes Gerais completo: aplicar os 3 itens do item 12 acima
-3. Revisão final das 14 classes (detalhes apontados pelo usuário)
-4. Magias — magias em si, Cap. 4, pp. 168–211 (não confundir com "Poderes de Magia",
-   que é uma das 5 categorias de poderes gerais, já em andamento)
-5. Equipamentos (Cap. 3, pp. 138–167)
-6. Criaturas / Bestiário (Cap. 7, pp. 282–316)
-7. Ficha de personagem (pages/ficha.html)
-8. Ferramentas do Mestre (pages/mestre.html)
-9. Firebase Auth + Firestore
-10. Link reverso perícia → classe/poder ("concedida por: Ladino, Cigano...") na própria
-    linha da perícia — hoje o link só existe de poder para perícia (kw-pericia), não o
-    contrário. Não é urgente; fica melhor depois que Classes e Origens estiverem fechadas.
-11. Botões "Ver no Livro" e "Adicionar à Ficha" no painel de classe ainda não têm ação
-    (decisão pendente: linkar PDF, remover, ou desabilitar com tooltip "em breve")
-12. Trocar `poderesGeraisOferecidos[]` (origens.js) e `poderesConcedidos[]` (deuses.js)
-    de strings soltas pra spans clicáveis — vira parte do item 2 acima (kw-poder-geral)
+1. Revisão final das 14 classes (detalhes apontados pelo usuário)
+2. **Magias — COMPLETO** (Cap. 4, pp. 168–211, não confundir com "Poderes de Magia",
+   que já é uma das 5 categorias de poderes gerais, completa). Capítulo maior e mais
+   complexo do livro. **197 magias no total**, Círculos 1 a 5, todos fechados
+   (53 + 48 + 40 + 30 + 25 = 196, mais "Segunda Chance" identificada por conferência
+   manual com o livro = 197).
+
+   **Schema final** (`js/data/magias.js`):
+   `{ id, nome, tipo: 'arcana'|'divina'|'universal', escola, circulo, execucao, alcance,
+   alvoArea, duracao, resistencia, descricao, tabela?, opcoes?, aprimoramentos: [{ custoPM,
+   efeito, tipo: 'aumenta'|'muda'|'truque', restricao? }] }`.
+   `tipo` é STRING ÚNICA, não array — "Universal" é tag OFICIAL do próprio livro (achado
+   durante a extração, não dedução nossa): magias que funcionam igual pra arcanistas e
+   divinos ganham uma entrada ÚNICA marcada "Universal" no livro, em vez de duplicada.
+   `aprimoramentos[].restricao` (opcional, 'arcana'|'divina') existe pra magias universais
+   com upgrades exclusivos de um dos dois lados (ex: Luz tem aprimoramentos "Apenas
+   Arcanos" e "Apenas Divinos").
+   `tabela` (opcional) — mesmo formato de Poderes Gerais (`{colunas, linhas}`, renderizado
+   com `renderTabelaUso()` reaproveitada), pra listas de consulta tipo "modificador por
+   grau de conhecimento" (Vidência) ou "estatísticas por tamanho" (Animar Objetos) — NÃO
+   é uma escolha de efeito, é só referência.
+   `opcoes` (opcional) — `[{nome, descricao}]`, pra magias com efeitos nomeados à escolha
+   ao lançar (Controlar Água/Fogo/Terra/Madeira, Rogar Maldição, Aprisionamento, Desejo,
+   Intervenção Divina, Manto do Cruzado, Terremoto, Palavra Primordial etc. — 21 magias no
+   total). Renderizado como abas clicáveis (`renderOpcoesEscolha()` + `selecionarOpcaoMagia()`
+   em compendio.js), mostrando uma descrição por vez. Mesmo nome de campo (`opcoes`/`nome`/
+   `descricao`) já usado em `poderes_classes.js` — mantivemos consistência ao perceber a
+   divergência (tínhamos usado `efeitos`/`efeito` numa primeira tentativa, corrigido).
+
+   **Regras de mecânica confirmadas:**
+   - Tabela 4-1 (custo-base por círculo): 1º=1PM, 2º=3PM, 3º=6PM, 4º=10PM, 5º=15PM
+     (`window.CUSTO_POR_CIRCULO`, exportado junto com `window.MAGIAS`)
+   - Truque: custo 0, EXCLUSIVO — selecionar zera/desabilita todos os outros aprimoramentos
+     da mesma magia (e vice-versa). UI: `toggleAprimoramentoTruqueMagia()`.
+   - Aprimoramentos "aumenta" são cumuláveis (stepper +/−, `alterarAprimoramentoMagia()`).
+     Aprimoramentos "muda" são checkbox único, não acumulam (`toggleAprimoramentoMudaMagia()`).
+   - PM total = custo-base do círculo + soma dos aprimoramentos selecionados (0 se Truque
+     ativo) — calculado ao vivo em `calcularPMTotalMagia()`.
+   - "Requer Nº círculo" aparece em 143 dos 508 aprimoramentos (quase 30%) — extraído do
+     texto do `efeito` em tempo de render (`extrairRequerCirculo()`) e mostrado como tag
+     dourada com cadeado, sem precisar duplicar o dado num campo estruturado à parte.
+
+   **Página:** grupo "Magias" no menu (igual "Poderes") expande pra "Todas as Magias",
+   "Magias Arcanas", "Magias Divinas", "Magias Universais". Painel de detalhe ÚNICO
+   compartilhado pelas 4 seções (`#magiaPainel`, 460px, desktop-only). Ícones por escola:
+   Abjuração=escudo, Adivinhação=olho, Convocação=transferência, Encantamento=cérebro,
+   Evocação=chama, Ilusão=máscara, Necromancia=caveira, Transmutação=átomo.
+   Busca cobre nome + descrição + alcance + execução + resistência (ex: buscar "toque"
+   acha as ~36 magias com esse alcance).
+   `kw-magia` ativo — nomes de magias citados em qualquer descrição do site (inclusive
+   dentro de outras magias, poderes, deuses etc.) viram links clicáveis que levam direto
+   pro painel da magia citada (`window.irParaMagia()`), igual `kw-poder-geral` já fazia
+   pra poderes. Cache dinâmico a partir de `window.MAGIAS`, sem duplicar os 197 nomes em
+   `keywords.js`.
+
+   **Adiado de propósito (não é esquecimento):**
+   - "Grimório Pessoal" (favoritar magias) — usuário decidiu focar primeiro em conteúdo
+   - Seleções de aprimoramento não persistem entre aberturas do painel (reseta zerado
+     toda vez) — ok pra ferramenta de consulta; se quiser lembrar a última escolha por
+     magia, dá pra guardar no localStorage depois
+   - **Melhoria futura sugerida pelo usuário:** trocar o layout de `opcoes` de abas
+     clicáveis (uma descrição visível por vez) para lista empilhada (todas as opções e
+     descrições visíveis ao mesmo tempo, sem clique nenhum) — mais fácil de comparar as
+     opções antes de escolher, ao custo de painéis mais compridos em magias com muitas
+     opções (Intervenção Divina tem 7). Troca simples: só mexe em `renderOpcoesEscolha()`,
+     não precisa mudar nada nos dados (`opcoes: [{nome, descricao}]` continua igual).
+
+   **Pendências de verificação que restaram** (as demais já foram resolvidas):
+   - Um fragmento SEM NOME e SEM DESCRIÇÃO apareceu entre "Soco de Arsenal" e "Sombra
+     Assassina" (extração do Círculo 2), com só a linha de estatísticas e dois
+     aprimoramentos sobrevivendo: "Execução: padrão; Alcance: curto; Alvo: 1 humanoide;
+     Duração: cena; Resistência: Vontade parcial." + "+2 PM: aumenta o dano em +1d6." +
+     "+5 PM: muda o tipo do dano para essência." Não sabemos a que magia pertence — não
+     incluído em lugar nenhum ainda, não descartado.
+3. Equipamentos (Cap. 3, pp. 138–167)
+4. Criaturas / Bestiário (Cap. 7, pp. 282–316)
+5. Ficha de personagem (pages/ficha.html)
+6. Ferramentas do Mestre (pages/mestre.html)
+7. Firebase Auth + Firestore
+8. Link reverso perícia → classe/poder ("concedida por: Ladino, Cigano...") na própria
+   linha da perícia — hoje o link só existe de poder para perícia (kw-pericia), não o
+   contrário. Não é urgente; fica melhor depois que Classes e Origens estiverem fechadas.
+9. Botões "Ver no Livro" e "Adicionar à Ficha" no painel de classe ainda não têm ação
+   (decisão pendente: linkar PDF, remover, ou desabilitar com tooltip "em breve")
+10. Revisão geral de UX/polimento acumulada — passar por tudo isso de uma vez só, quando
+    o conteúdo principal estiver fechado (decisão deliberada do usuário, não esquecimento):
+
+    **Pontuais, já apontados em páginas específicas:**
+    - Acordeão no menu lateral (fechar outros grupos ao abrir um novo — Raças/Classes/
+      Perícias/Origens/Deuses/Poderes juntos já são bastante item)
+    - Cards de origem sem `line-clamp` na descrição — alturas desiguais na mesma fileira
+    - Taxonomia de temas de Origens ("Cura", "Acadêmico", "Magia" têm só 1 origem cada)
+    - Filtros de Poderes Gerais/Todos os Poderes apertados em tela pequena
+
+    **Gerais, pro site inteiro (lista do usuário, 14/jul — vai crescendo com o tempo):**
+    - Organização em ordem alfabética (em todo lugar que hoje não tem, não só Poderes)
+    - Personalização de exibição dos cards (o usuário poder escolher como os cards
+      aparecem — layout, densidade de informação etc.; provavelmente estender a ideia
+      do toggle lista/colunas de Poderes Gerais pras outras páginas de card)
+    - Melhorias nos filtros pré-selecionados (qual filtro já vem ativo por padrão)
+    - Mini botão dentro da caixa de busca pra limpar o texto digitado (um "×")
+    - Botão de voltar pra facilitar navegação em telas pequenas, deixando mais intuitivo
+    - Corrigir Poderes Gerais pra adicionar mais uma categoria a todos os poderes
+      (usuário não detalhou qual categoria ainda — perguntar quando chegar a vez)
+    - Voltar e corrigir o Atlas (pendências não detalhadas ainda)
+    - Uma caixa de busca única pra pesquisar o site inteiro (hoje cada página tem a
+      própria busca local; isso seria uma busca global cruzando todo o conteúdo)
+    - "Pin" de seleção fixa nos painéis laterais, pra manter destacado o item aberto
+      mesmo navegando entre diferentes categorias/painéis
 
 ### Estratégia de Suplementos
 PDFs de suplementos serão anexados DEPOIS do livro básico completo.

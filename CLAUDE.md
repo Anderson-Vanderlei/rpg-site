@@ -81,7 +81,11 @@ rpg-site/
 │       ├── pericias.js              ✅ 29 perícias completas (Cap. 2, pp. 114–123)
 │       ├── poderes_gerais.js        ✅ 162 poderes completos (5 categorias, Cap. 2, pp. 123–137)
 │       ├── magias.js                ✅ 197 magias, Círculos 1-5 completos
-│       ├── equipamentos.js          ⏳ a criar
+│       ├── armas.js                 ✅ 40 armas + 4 munições (Cap. 3, pp. 141–151)
+│       ├── armaduras.js             ✅ 12 armaduras/escudos (Cap. 3, pp. 152–154)
+│       ├── itens_gerais.js          ✅ 121 itens, 9 categorias (Cap. 3, pp. 154–163)
+│       ├── melhorias.js             ✅ 29 melhorias de item (Cap. 3, pp. 163–166)
+│       ├── materiais_especiais.js   ✅ 6 materiais especiais (Cap. 3, pp. 166–167)
 │       └── criaturas.js             ⏳ a criar
 ├── pages/
 │   ├── atlas.html                   ✅ mapa interativo 5 camadas
@@ -693,6 +697,26 @@ Após inspeção do usuário, aplicar os ajustes apontados:
    pra poderes. Cache dinâmico a partir de `window.MAGIAS`, sem duplicar os 197 nomes em
    `keywords.js`.
 
+   **Achado de auditoria (revisão pós-conclusão, pedido do usuário):** ao testar `kw-magia`
+   em citações fora do capítulo de Magias (ex: Dahllan tem a habilidade "Amiga das Plantas"
+   citando a magia Controlar Plantas), descobrimos que 3 lugares no site exibiam descrição
+   SEM passar por `processarKeywords()` nenhuma — não era só falta de `kw-magia`, era o
+   sistema de keywords inteiro (cores de número, `kw-pericia`, `kw-poder-geral`, tooltips
+   de atributo etc.) faltando nesses pontos: habilidades de Raça (`dp-hab-desc`), descrição
+   curta do card de Raças (`rc-desc`) e descrição de opção de variação de Classe
+   (`cp-var-opt-desc`). Corrigido nos três — confirmado que **não sobra mais nenhum** lugar
+   no site exibindo `.descricao` sem `processarKeywords()` (varredura com grep confirmou).
+   Habilidades de Classe (`cp-hab-desc`) já processavam corretamente desde antes, não
+   precisou de correção.
+
+   **Auditoria de qualidade dos dados (pós-conclusão, pedido do usuário) — tudo OK:**
+   IDs/nomes únicos, campos obrigatórios completos, enums válidos (tipo/escola/círculo/
+   tipo de aprimoramento), os 12 pares "X anula Y" recíprocos e existentes, nenhum
+   aprimoramento duplicado, nenhuma exigência de círculo inconsistente, renderização
+   testada nas 197 magias (cards + painéis) sem nenhum erro de execução, risco de falso
+   positivo em nomes curtos de magia (Luz/Voo/Sono/Teia/Névoa) investigado e descartado
+   (regex sensível a maiúsculas protege bem — só captura referências reais e capitalizadas).
+
    **Adiado de propósito (não é esquecimento):**
    - "Grimório Pessoal" (favoritar magias) — usuário decidiu focar primeiro em conteúdo
    - Seleções de aprimoramento não persistem entre aberturas do painel (reseta zerado
@@ -712,7 +736,47 @@ Após inspeção do usuário, aplicar os ajustes apontados:
      Duração: cena; Resistência: Vontade parcial." + "+2 PM: aumenta o dano em +1d6." +
      "+5 PM: muda o tipo do dano para essência." Não sabemos a que magia pertence — não
      incluído em lugar nenhum ainda, não descartado.
-3. Equipamentos (Cap. 3, pp. 138–167)
+3. **Equipamentos — página em andamento** (Cap. 3, pp. 138–167). Os 5 data
+   files (armas, armaduras, itens_gerais, melhorias, materiais_especiais —
+   212 entradas no total) estão extraídos e validados. Página construída:
+   menu "Equipamentos" com 5 sub-abas (Armas, Armaduras & Escudos, Itens
+   Gerais, Melhorias, Materiais Especiais) + "Itens Mágicos"/"Artefatos"
+   como placeholders pra capítulos futuros. Painel de detalhe único
+   compartilhado (`#equipPainel`, 460px, desktop-only, mesmo padrão de
+   Magias) — auditado e testado tanto em Armas quanto em Armaduras.
+
+   **Recursos já implementados** (pedido do usuário, 4 das 5 ideias originais
+   + 1 melhoria adicional):
+   - Toggle cards/tabela em Armas e Armaduras (`setModoVisualArmas/Armaduras`)
+     — tabela com `max-width:900px` centralizada (evita esticar em ultrawide)
+   - Filtro de preço em Itens Gerais (até T$1/T$10/T$100/acima de T$100)
+   - Munição aparece direto no painel da arma que a usa (clicável, abre o
+     item na aba Itens Gerais)
+   - **Calculadora de Item Superior** dentro do painel de arma/armadura:
+     marca melhorias compatíveis (`melhoriasCompativeis()`), preço e CD
+     atualizam ao vivo seguindo a Tabela 3-7 por QUANTIDADE de melhorias
+     (não por melhoria individual). Restrições reais do livro aplicadas de
+     verdade, não só como texto: Mira Telescópica só em armas de disparo
+     exceto funda; Precisa/Maciça mutuamente exclusivas; Delicada/Reforçada
+     mutuamente exclusivas; Delicada/Selada só em armadura pesada;
+     Pungente/Atroz/Sob Medida ficam desabilitadas (opacas, sem clique) até
+     o pré-requisito nomeado ser marcado primeiro; Harmonizada exige
+     qualquer outra melhoria já selecionada. Cada melhoria mostra só nome +
+     efeito curto no painel (campo `efeito`, extraído da Tabela 3-8) — a
+     descrição completa em prosa fica reservada pra página dedicada de
+     Melhorias. Seleção de Material Especial vira abas clicáveis
+     (`mg-opcao-pill`, reaproveitado das opções de magia), não dropdown.
+   - Auditoria de Armas (40) e Armaduras (12) feitas com o mesmo rigor da
+     de Magias — dados, renderização e a calculadora testados um por um,
+     zero problemas encontrados nas duas.
+
+   **Falta:**
+   - Auditoria de Itens Gerais (121), Melhorias (29) e Materiais (6)
+   - `kw-item`: nomes de arma/armadura/item citados em qualquer descrição
+     do site virarem link clicável, igual `kw-magia`/`kw-poder-geral` —
+     **decidido de propósito fazer por último**, depois de todas as
+     categorias de Equipamentos estarem revisadas (mesma lógica de esperar
+     todos os círculos de Magias prontos antes de ativar `kw-magia`)
 4. Criaturas / Bestiário (Cap. 7, pp. 282–316)
 5. Ficha de personagem (pages/ficha.html)
 6. Ferramentas do Mestre (pages/mestre.html)
@@ -779,7 +843,17 @@ Prioridades de implementação baseadas nas mecânicas mapeadas:
 6. **Sistema de Virtudes Paladinescas**: contador de virtudes → bônus PM
    automático (+1/+3/+6/+10/+15).
 
-7. **prerequisitoValidacao[]** (a adicionar quando iniciar a ficha):
+7. **Limites de Uso de Equipamento — "empunhado" vs. "vestido"** (observação
+   do usuário, 20/jul, durante a revisão de Armaduras): o Cap. 3 do livro
+   (p. 141) tem uma regra de "Limites de Uso" que o compêndio de Equipamentos
+   NÃO precisa aplicar (é só catálogo de consulta), mas a FICHA vai precisar
+   simular de verdade — quantas mãos livres o personagem tem, quais itens
+   exigem estar vestido (vestuário, esotéricos) vs. empunhado (armas,
+   escudos, alguns itens gerais como bandoleira/organizador de pergaminhos)
+   simultaneamente, e as penalidades de ocupar as duas mãos. Não implementar
+   agora — só nota pra quando a ficha começar.
+
+8. **prerequisitoValidacao[]** (a adicionar quando iniciar a ficha):
 ```js
 prerequisitoValidacao: [
   { tipo: 'atributo', atributo: 'Sab', valor: 1 },
@@ -823,7 +897,16 @@ Claude Code (VS Code) → execução dos prompts, edição direta nos arquivos.
 Modelo padrão: Sonnet 4.6.
 Usar Opus apenas para: refatoração multi-arquivo complexa ou bug difícil.
 
-Formato de prompt para correção pontual:
+Formato de prompt para correção pontual em arquivo que já existe:
   Em [arquivo], ENCONTRE [trecho único identificável] e SUBSTITUA/ADICIONE [novo trecho]
 
 Nunca reescrever arquivos inteiros para correções pequenas.
+
+Formato de prompt para ARQUIVO NOVO (ainda não existe no projeto):
+  Entrega o conteúdo completo do arquivo — inline se for pequeno, como
+  arquivo pra baixar (present_files) se for grande. NÃO forçar um
+  ENCONTRE/SUBSTITUA artificial quando não há nada pra encontrar ainda —
+  isso só atrapalha. Decidido em 20/jul durante a extração dos data
+  files de Equipamentos (armas.js, armaduras.js, itens_gerais.js,
+  melhorias.js, materiais_especiais.js — todos entregues como arquivo
+  completo, não como prompt de edição).

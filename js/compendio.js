@@ -296,7 +296,7 @@ document.addEventListener('DOMContentLoaded', () => {
             <div class="rc-campo-l">Tamanho · Deslocamento</div>
             <div class="rc-campo-v">${r.tamanho} · ${r.deslocamento}</div>
           </div>
-          <div class="rc-desc">${r.descricao}</div>
+          <div class="rc-desc">${processarKeywords(r.descricao)}</div>
           <div class="rc-footer">
             <button class="btn-ver" onclick="abrirDetalhe(window.RACAS.find(x=>x.id==='${r.id}'))">
               <i class="ti ti-eye" aria-hidden="true"></i> Ver Raça
@@ -622,7 +622,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const opcoesHtml = (v.opcoes||[]).map(op => `
         <div class="cp-var-opt">
           <div class="cp-var-opt-nome">${op.nome}</div>
-          <div class="cp-var-opt-desc">${op.descricao}</div>
+          <div class="cp-var-opt-desc">${processarKeywords(op.descricao)}</div>
         </div>`).join('');
 
       // Poderes do primeiro caminho como preview
@@ -1152,6 +1152,589 @@ document.addEventListener('DOMContentLoaded', () => {
 
     container.innerHTML = html;
   }
+
+  // ══════════════════ EQUIPAMENTOS ══════════════════
+
+  const CATEGORIA_ARMA_INFO = {
+    simples: { label: 'Simples' }, marcial: { label: 'Marcial' },
+    exotica: { label: 'Exótica' }, fogo: { label: 'Arma de Fogo' },
+  };
+  const HABILIDADE_ARMA_LABEL = {
+    'ágil': 'Ágil', alongada: 'Alongada', adaptável: 'Adaptável',
+    desbalanceada: 'Desbalanceada', dupla: 'Dupla', versátil: 'Versátil',
+  };
+  const CATEGORIA_ARMADURA_INFO = {
+    leve: { label: 'Leve' }, pesada: { label: 'Pesada' }, escudo: { label: 'Escudo' },
+  };
+  const CATEGORIA_ITEM_GERAL_INFO = {
+    aventura: 'Equipamento de Aventura', ferramentas: 'Ferramentas', vestuario: 'Vestuário',
+    esotericos: 'Esotéricos', 'alquimicos-preparados': 'Alquímico — Preparado',
+    'alquimicos-catalisadores': 'Alquímico — Catalisador', 'alquimicos-venenos': 'Alquímico — Veneno',
+    alimentacao: 'Alimentação', animais: 'Animais', veiculos: 'Veículos', servicos: 'Serviços',
+  };
+
+  function precoParaNumero(preco) {
+    if (!preco) return 0;
+    const match = String(preco).replace(/\./g, '').match(/[\d,]+/);
+    if (!match) return 0;
+    return parseFloat(match[0].replace(',', '.'));
+  }
+
+  // ── ARMAS ──────────────────────────────────────────
+  const _armaEstado = { categoria: 'todos', tipoAtaque: 'todos', busca: '', modo: 'cards' };
+
+  function renderArmaCard(a) {
+    const card = document.createElement('div');
+    card.className = 'eq-card';
+    card.dataset.id = a.id;
+    const habsHtml = a.habilidades.length
+      ? `<div class="eq-habilidades-mini">${a.habilidades.map(h => `<span class="eq-hab-tag">${HABILIDADE_ARMA_LABEL[h] || h}</span>`).join('')}</div>` : '';
+    card.innerHTML = `
+      <div class="eq-card-top">
+        <span class="eq-categoria-tag">${CATEGORIA_ARMA_INFO[a.categoria].label}</span>
+        <span class="eq-preco-tag">${a.preco || 'Grátis'}</span>
+      </div>
+      <div class="eq-nome">${a.nome}</div>
+      <div class="eq-footer">
+        <span class="eq-stat-mini"><i class="ti ti-swords" aria-hidden="true"></i>${a.dano || '—'}</span>
+        <span class="eq-stat-mini"><i class="ti ti-target" aria-hidden="true"></i>${a.critico || '—'}</span>
+        ${a.alcance ? `<span class="eq-stat-mini"><i class="ti ti-arrows-horizontal" aria-hidden="true"></i>${a.alcance}</span>` : ''}
+        <span class="rc-badge badge-fonte">Tormenta 20</span>
+      </div>
+      ${habsHtml}`;
+    card.addEventListener('click', () => abrirDetalheEquip('arma', a.id));
+    return card;
+  }
+
+  function renderArmasNaSecao() {
+    const grid = document.getElementById('armasGrid');
+    if (!grid) return;
+    let lista = window.ARMAS || [];
+    if (_armaEstado.categoria !== 'todos') lista = lista.filter(a => a.categoria === _armaEstado.categoria);
+    if (_armaEstado.tipoAtaque !== 'todos') lista = lista.filter(a => a.tipoAtaque === _armaEstado.tipoAtaque);
+    if (_armaEstado.busca) {
+      const t = _armaEstado.busca;
+      lista = lista.filter(a => a.nome.toLowerCase().includes(t) || a.descricao.toLowerCase().includes(t));
+    }
+    const countEl = document.getElementById('armasCount');
+    if (countEl) countEl.textContent = lista.length + (lista.length !== 1 ? ' armas' : ' arma');
+
+    if (_armaEstado.modo === 'tabela') {
+      document.getElementById('armasGrid').style.display = 'none';
+      document.getElementById('armasTabelaWrap').style.display = '';
+      document.getElementById('armasTabelaWrap').innerHTML = renderArmasTabela(lista);
+      return;
+    }
+    document.getElementById('armasGrid').style.display = '';
+    document.getElementById('armasTabelaWrap').style.display = 'none';
+    grid.innerHTML = '';
+    if (!lista.length) {
+      grid.innerHTML = `<div class="cp-poderes-vazio" style="grid-column:1/-1">Nenhuma arma encontrada.</div>`;
+      return;
+    }
+    lista.forEach(a => grid.appendChild(renderArmaCard(a)));
+  }
+
+  function renderArmasTabela(lista) {
+    const linhas = lista.map(a => `
+      <tr onclick="abrirDetalheEquip('arma','${a.id}')">
+        <td>${a.nome}</td>
+        <td>${CATEGORIA_ARMA_INFO[a.categoria].label}</td>
+        <td>${a.dano || '—'}</td>
+        <td>${a.critico || '—'}</td>
+        <td>${a.alcance || '—'}</td>
+        <td>${a.tipoDano || '—'}</td>
+        <td>${a.espacos}</td>
+        <td>${a.preco || 'Grátis'}</td>
+      </tr>`).join('');
+    return `
+      <div class="eq-tabela-scroll">
+        <table class="eq-tabela">
+          <thead><tr><th>Nome</th><th>Categoria</th><th>Dano</th><th>Crítico</th><th>Alcance</th><th>Tipo</th><th>Espaços</th><th>Preço</th></tr></thead>
+          <tbody>${linhas}</tbody>
+        </table>
+      </div>`;
+  }
+
+  window.setFiltroArma = (eixo, btn, valor) => {
+    const grupoId = eixo === 'categoria' ? 'armasFiltroCategoria' : 'armasFiltroTipo';
+    document.querySelectorAll(`#${grupoId} .filtro-btn`).forEach(b => b.classList.remove('a'));
+    btn.classList.add('a');
+    _armaEstado[eixo] = valor;
+    renderArmasNaSecao();
+  };
+
+  window.setModoVisualArmas = (modo) => {
+    _armaEstado.modo = modo;
+    document.getElementById('armasModoCards').classList.toggle('a', modo === 'cards');
+    document.getElementById('armasModoTabela').classList.toggle('a', modo === 'tabela');
+    renderArmasNaSecao();
+  };
+
+  // ── ARMADURAS ──────────────────────────────────────────
+  const _armaduraEstado = { categoria: 'todos', busca: '', modo: 'cards' };
+
+  function renderArmaduraCard(a) {
+    const card = document.createElement('div');
+    card.className = 'eq-card';
+    card.dataset.id = a.id;
+    card.innerHTML = `
+      <div class="eq-card-top">
+        <span class="eq-categoria-tag">${CATEGORIA_ARMADURA_INFO[a.categoria].label}</span>
+        <span class="eq-preco-tag">${a.preco}</span>
+      </div>
+      <div class="eq-nome">${a.nome}</div>
+      <div class="eq-footer">
+        <span class="eq-stat-mini"><i class="ti ti-shield-check" aria-hidden="true"></i>+${a.bonusDefesa} Defesa</span>
+        <span class="eq-stat-mini"><i class="ti ti-alert-triangle" aria-hidden="true"></i>${a.penalidadeArmadura}</span>
+        <span class="eq-stat-mini"><i class="ti ti-briefcase" aria-hidden="true"></i>${a.espacos} esp.</span>
+        <span class="rc-badge badge-fonte">Tormenta 20</span>
+      </div>`;
+    card.addEventListener('click', () => abrirDetalheEquip('armadura', a.id));
+    return card;
+  }
+
+  function renderArmadurasNaSecao() {
+    const grid = document.getElementById('armadurasGrid');
+    if (!grid) return;
+    let lista = window.ARMADURAS || [];
+    if (_armaduraEstado.categoria !== 'todos') lista = lista.filter(a => a.categoria === _armaduraEstado.categoria);
+    if (_armaduraEstado.busca) {
+      const t = _armaduraEstado.busca;
+      lista = lista.filter(a => a.nome.toLowerCase().includes(t) || a.descricao.toLowerCase().includes(t));
+    }
+    const countEl = document.getElementById('armadurasCount');
+    if (countEl) countEl.textContent = lista.length + (lista.length !== 1 ? ' itens' : ' item');
+
+    if (_armaduraEstado.modo === 'tabela') {
+      document.getElementById('armadurasGrid').style.display = 'none';
+      document.getElementById('armadurasTabelaWrap').style.display = '';
+      document.getElementById('armadurasTabelaWrap').innerHTML = renderArmadurasTabela(lista);
+      return;
+    }
+    document.getElementById('armadurasGrid').style.display = '';
+    document.getElementById('armadurasTabelaWrap').style.display = 'none';
+    grid.innerHTML = '';
+    if (!lista.length) {
+      grid.innerHTML = `<div class="cp-poderes-vazio" style="grid-column:1/-1">Nenhuma armadura ou escudo encontrado.</div>`;
+      return;
+    }
+    lista.forEach(a => grid.appendChild(renderArmaduraCard(a)));
+  }
+
+  function renderArmadurasTabela(lista) {
+    const linhas = lista.map(a => `
+      <tr onclick="abrirDetalheEquip('armadura','${a.id}')">
+        <td>${a.nome}</td>
+        <td>${CATEGORIA_ARMADURA_INFO[a.categoria].label}</td>
+        <td>+${a.bonusDefesa}</td>
+        <td>${a.penalidadeArmadura}</td>
+        <td>${a.espacos}</td>
+        <td>${a.preco}</td>
+      </tr>`).join('');
+    return `
+      <div class="eq-tabela-scroll">
+        <table class="eq-tabela">
+          <thead><tr><th>Nome</th><th>Categoria</th><th>Defesa</th><th>Penalidade</th><th>Espaços</th><th>Preço</th></tr></thead>
+          <tbody>${linhas}</tbody>
+        </table>
+      </div>`;
+  }
+
+  window.setFiltroArmadura = (btn, valor) => {
+    document.querySelectorAll('#armadurasFiltroCategoria .filtro-btn').forEach(b => b.classList.remove('a'));
+    btn.classList.add('a');
+    _armaduraEstado.categoria = valor;
+    renderArmadurasNaSecao();
+  };
+
+  window.setModoVisualArmaduras = (modo) => {
+    _armaduraEstado.modo = modo;
+    document.getElementById('armadurasModoCards').classList.toggle('a', modo === 'cards');
+    document.getElementById('armadurasModoTabela').classList.toggle('a', modo === 'tabela');
+    renderArmadurasNaSecao();
+  };
+
+  // ── ITENS GERAIS ──────────────────────────────────────────
+  const _itemGeralEstado = { categoria: 'todos', preco: 'todos', busca: '' };
+
+  function renderItemGeralCard(it) {
+    const card = document.createElement('div');
+    card.className = 'eq-card';
+    card.dataset.id = it.id;
+    card.innerHTML = `
+      <div class="eq-card-top">
+        <span class="eq-categoria-tag">${CATEGORIA_ITEM_GERAL_INFO[it.categoria] || it.categoria}</span>
+        <span class="eq-preco-tag">${it.preco}</span>
+      </div>
+      <div class="eq-nome">${it.nome}</div>
+      <div class="eq-desc">${truncarTexto(it.descricao, 90)}</div>
+      <div class="eq-footer">
+        ${it.espacos != null ? `<span class="eq-stat-mini"><i class="ti ti-briefcase" aria-hidden="true"></i>${it.espacos} esp.</span>` : ''}
+        <span class="rc-badge badge-fonte">Tormenta 20</span>
+      </div>`;
+    card.addEventListener('click', () => abrirDetalheEquip('item-geral', it.id));
+    return card;
+  }
+
+  function renderItensGeraisNaSecao() {
+    const grid = document.getElementById('itensGeraisGrid');
+    if (!grid) return;
+    let lista = window.ITENS_GERAIS || [];
+    if (_itemGeralEstado.categoria !== 'todos') lista = lista.filter(i => i.categoria === _itemGeralEstado.categoria);
+    if (_itemGeralEstado.preco !== 'todos') {
+      lista = lista.filter(i => {
+        const p = precoParaNumero(i.preco);
+        if (_itemGeralEstado.preco === 'ate-1') return p <= 1;
+        if (_itemGeralEstado.preco === 'ate-10') return p <= 10;
+        if (_itemGeralEstado.preco === 'ate-100') return p <= 100;
+        if (_itemGeralEstado.preco === 'acima-100') return p > 100;
+        return true;
+      });
+    }
+    if (_itemGeralEstado.busca) {
+      const t = _itemGeralEstado.busca;
+      lista = lista.filter(i => i.nome.toLowerCase().includes(t) || i.descricao.toLowerCase().includes(t));
+    }
+    const countEl = document.getElementById('itensGeraisCount');
+    if (countEl) countEl.textContent = lista.length + (lista.length !== 1 ? ' itens' : ' item');
+    grid.innerHTML = '';
+    if (!lista.length) {
+      grid.innerHTML = `<div class="cp-poderes-vazio" style="grid-column:1/-1">Nenhum item encontrado.</div>`;
+      return;
+    }
+    lista.forEach(i => grid.appendChild(renderItemGeralCard(i)));
+  }
+
+  window.setFiltroItemGeral = (eixo, btn, valor) => {
+    const grupoId = eixo === 'categoria' ? 'itensGeraisFiltroCategoria' : 'itensGeraisFiltroPreco';
+    document.querySelectorAll(`#${grupoId} .filtro-btn`).forEach(b => b.classList.remove('a'));
+    btn.classList.add('a');
+    _itemGeralEstado[eixo] = valor;
+    renderItensGeraisNaSecao();
+  };
+
+  // ── MELHORIAS ──────────────────────────────────────────
+  const _melhoriaEstado = { categoria: 'todos', busca: '' };
+
+  function renderMelhoriaCard(m) {
+    const card = document.createElement('div');
+    card.className = 'eq-card';
+    card.dataset.id = m.id;
+    card.innerHTML = `
+      <div class="eq-card-top">
+        <span class="eq-categoria-tag">${m.categorias.map(c => c === 'qualquer' ? 'Qualquer' : (CATEGORIA_ARMA_INFO[c]?.label || CATEGORIA_ARMADURA_INFO[c]?.label || c)).join(', ')}</span>
+      </div>
+      <div class="eq-nome">${m.nome}</div>
+      <div class="eq-desc">${truncarTexto(m.descricao, 100)}</div>
+      ${m.preRequisito ? `<div class="eq-footer"><span class="eq-hab-tag">Requer: ${m.preRequisito}</span></div>` : ''}`;
+    card.addEventListener('click', () => abrirDetalheEquip('melhoria', m.id));
+    return card;
+  }
+
+  function renderMelhoriasNaSecao() {
+    const grid = document.getElementById('melhoriasGrid');
+    if (!grid) return;
+    let lista = window.MELHORIAS || [];
+    if (_melhoriaEstado.categoria !== 'todos') {
+      lista = lista.filter(m => m.categorias.includes(_melhoriaEstado.categoria) || m.categorias.includes('qualquer'));
+    }
+    if (_melhoriaEstado.busca) {
+      const t = _melhoriaEstado.busca;
+      lista = lista.filter(m => m.nome.toLowerCase().includes(t) || m.descricao.toLowerCase().includes(t));
+    }
+    const countEl = document.getElementById('melhoriasCount');
+    if (countEl) countEl.textContent = lista.length + (lista.length !== 1 ? ' melhorias' : ' melhoria');
+    grid.innerHTML = '';
+    if (!lista.length) {
+      grid.innerHTML = `<div class="cp-poderes-vazio" style="grid-column:1/-1">Nenhuma melhoria encontrada.</div>`;
+      return;
+    }
+    lista.forEach(m => grid.appendChild(renderMelhoriaCard(m)));
+  }
+
+  window.setFiltroMelhoria = (btn, valor) => {
+    document.querySelectorAll('#melhoriasFiltroCategoria .filtro-btn').forEach(b => b.classList.remove('a'));
+    btn.classList.add('a');
+    _melhoriaEstado.categoria = valor;
+    renderMelhoriasNaSecao();
+  };
+
+  // ── MATERIAIS ESPECIAIS ──────────────────────────────────────────
+  function renderMaterialCard(m) {
+    const card = document.createElement('div');
+    card.className = 'eq-card';
+    card.dataset.id = m.id;
+    card.innerHTML = `
+      <div class="eq-nome">${m.nome}</div>
+      <div class="eq-desc">${truncarTexto(m.descricao, 110)}</div>
+      <div class="eq-footer"><span class="rc-badge badge-fonte">Tormenta 20</span></div>`;
+    card.addEventListener('click', () => abrirDetalheEquip('material', m.id));
+    return card;
+  }
+
+  function renderMateriaisEspeciaisNaSecao() {
+    const grid = document.getElementById('materiaisEspeciaisGrid');
+    if (!grid) return;
+    grid.innerHTML = '';
+    (window.MATERIAIS_ESPECIAIS || []).forEach(m => grid.appendChild(renderMaterialCard(m)));
+  }
+
+  // ── PAINEL DE DETALHE (compartilhado) ──────────────────────────────
+  let _equipAtual = null; // { tipo, item }
+
+  const EQUIP_SECOES_TODAS = ['secao-armas', 'secao-armaduras', 'secao-itens-gerais', 'secao-melhorias', 'secao-materiais-especiais'];
+
+  // ── CALCULADORA DE ITEM SUPERIOR (melhorias + material especial) ──
+  let _equipMelhoriasSelecionadas = new Set();
+  let _equipMaterialSelecionado = null;
+
+  function melhoriasCompativeis(tipo, item) {
+    return (window.MELHORIAS || []).filter(m => {
+      const categoriaOk = m.categorias.includes('qualquer')
+        || (tipo === 'arma' && m.categorias.includes('arma'))
+        || (tipo === 'armadura' && item.categoria === 'escudo' && m.categorias.includes('escudo'))
+        || (tipo === 'armadura' && item.categoria !== 'escudo' && m.categorias.includes('armadura'));
+      if (!categoriaOk) return false;
+      const r = m.restricao;
+      if (!r) return true;
+      if (r.requerTipoAtaque && item.tipoAtaque !== r.requerTipoAtaque) return false;
+      if (r.excluirArmaIds && r.excluirArmaIds.includes(item.id)) return false;
+      if (r.requerCategoriaArmadura && item.categoria !== r.requerCategoriaArmadura) return false;
+      return true;
+    });
+  }
+
+  function melhoriaHabilitada(m) {
+    // Pré-requisito nomeado (ex: Pungente exige Certeira já marcada)
+    if (m.preRequisito && m.preRequisito !== 'outra melhoria qualquer') {
+      const prereqMelhoria = (window.MELHORIAS || []).find(x => x.nome === m.preRequisito);
+      if (prereqMelhoria && !_equipMelhoriasSelecionadas.has(prereqMelhoria.id)) return false;
+    }
+    // "Harmonizada" exige QUALQUER outra melhoria já marcada
+    if (m.restricao?.requerQualquerOutra && _equipMelhoriasSelecionadas.size === 0) return false;
+    return true;
+  }
+
+  function precoAdicionalMaterial(materialId, tipo, item) {
+    const mat = (window.MATERIAIS_ESPECIAIS || []).find(x => x.id === materialId);
+    if (!mat) return 0;
+    if (tipo === 'arma') return mat.precoAdicional.arma || 0;
+    if (item.categoria === 'escudo') return mat.precoAdicional.escudo || 0;
+    if (item.categoria === 'leve') return mat.precoAdicional.armaduraLeve || 0;
+    if (item.categoria === 'pesada') return mat.precoAdicional.armaduraPesada || 0;
+    return 0;
+  }
+
+  function calcularTotalItemSuperior(tipo, item) {
+    const n = _equipMelhoriasSelecionadas.size;
+    const precoBase = precoParaNumero(item.preco);
+    const faixa = PRECO_POR_MELHORIA[Math.min(n, 4) - 1];
+    let adicional = n > 0 ? faixa.aumentoPreco : 0;
+    let cdAdicional = n > 0 ? faixa.aumentoCD : 0;
+    if (_equipMelhoriasSelecionadas.has('material-especial') && _equipMaterialSelecionado) {
+      adicional += precoAdicionalMaterial(_equipMaterialSelecionado, tipo, item);
+    }
+    return { precoTotal: precoBase + adicional, precoAdicional: adicional, cdAdicional, n };
+  }
+
+  function renderCalculadoraItemSuperior(tipo, item) {
+    const compativeis = melhoriasCompativeis(tipo, item);
+    if (!compativeis.length) return '';
+    const linhas = compativeis.map(m => {
+      const sel = _equipMelhoriasSelecionadas.has(m.id);
+      const habilitada = sel || melhoriaHabilitada(m);
+      let materialPills = '';
+      if (m.id === 'material-especial' && sel) {
+        const materiais = window.MATERIAIS_ESPECIAIS || [];
+        const pills = materiais.map(mat => {
+          const ativa = _equipMaterialSelecionado === mat.id;
+          return `<button class="mg-opcao-pill ${ativa ? 'ativa' : ''}" onclick="event.stopPropagation(); selecionarMaterialEquip('${mat.id}')">${mat.nome}</button>`;
+        }).join('');
+        const escolhido = materiais.find(mat => mat.id === _equipMaterialSelecionado);
+        const precoMat = escolhido ? precoAdicionalMaterial(escolhido.id, tipo, item) : null;
+        materialPills = `
+          <div class="mg-opcoes-pills" style="margin-top:8px;margin-bottom:0;">${pills}</div>
+          ${escolhido ? `<div class="eq-melhoria-texto" style="margin-top:6px;">+T$ ${precoMat.toLocaleString('pt-BR')} nesse item</div>` : ''}`;
+      }
+      return `
+        <div class="eq-melhoria-linha ${sel ? 'selecionada' : ''}" style="${habilitada ? '' : 'opacity:.4;cursor:not-allowed;'}" onclick="${habilitada ? `toggleMelhoriaEquip('${m.id}')` : ''}">
+          <div class="eq-melhoria-check">${sel ? '<i class="ti ti-check" aria-hidden="true"></i>' : ''}</div>
+          <div class="eq-melhoria-corpo">
+            <div class="eq-melhoria-nome">${m.nome}${m.preRequisito ? `<span class="eq-melhoria-prereq">Requer: ${m.preRequisito}</span>` : ''}</div>
+            <div class="eq-melhoria-texto">${m.efeito}</div>
+            ${materialPills}
+          </div>
+        </div>`;
+    }).join('');
+    const totais = calcularTotalItemSuperior(tipo, item);
+    return `
+      <div class="dp-secao">Item Superior — Adicionar Melhorias</div>
+      <div class="eq-melhorias-wrap" id="eqMelhoriasWrap">${linhas}</div>
+      <div class="eq-total-box">
+        <span>${totais.n} melhoria${totais.n === 1 ? '' : 's'} · +T$ ${totais.precoAdicional.toLocaleString('pt-BR')} · +${totais.cdAdicional} CD</span>
+        <span class="valor">T$ ${totais.precoTotal.toLocaleString('pt-BR')}</span>
+      </div>`;
+  }
+
+  window.toggleMelhoriaEquip = function(melhoriaId) {
+    const m = (window.MELHORIAS || []).find(x => x.id === melhoriaId);
+    if (_equipMelhoriasSelecionadas.has(melhoriaId)) {
+      _equipMelhoriasSelecionadas.delete(melhoriaId);
+      if (melhoriaId === 'material-especial') _equipMaterialSelecionado = null;
+    } else {
+      if (m && !melhoriaHabilitada(m)) return; // bloqueada: pré-requisito não atendido
+      if (m?.restricao?.exclusivaCom) _equipMelhoriasSelecionadas.delete(m.restricao.exclusivaCom);
+      _equipMelhoriasSelecionadas.add(melhoriaId);
+    }
+    renderCorpoEquip();
+  };
+
+  window.selecionarMaterialEquip = function(materialId) {
+    _equipMaterialSelecionado = materialId || null;
+    renderCorpoEquip();
+  };
+
+  function renderCorpoEquip() {
+    const { tipo, item } = _equipAtual;
+    const kw = typeof processarKeywords === 'function' ? processarKeywords : (t) => t;
+    const body = document.getElementById('eqBody');
+
+    if (tipo === 'arma') {
+      const municaoInfo = item.municao ? (window.MUNICOES || []).find(m => m.id === item.municao) : null;
+      body.innerHTML = `
+        <div class="dp-linha"></div>
+        <div class="dp-badges">
+          <span class="dp-badge" style="background:rgba(139,0,0,.1);color:#cc4444;border:.5px solid rgba(139,0,0,.3)">Tormenta 20</span>
+          <span class="eq-categoria-tag">${CATEGORIA_ARMA_INFO[item.categoria].label}</span>
+          ${item.habilidades.map(h => `<span class="eq-hab-tag">${HABILIDADE_ARMA_LABEL[h] || h}</span>`).join('')}
+        </div>
+        <div class="eq-stats-grid">
+          <div><div class="eq-stat-l">Preço</div><div class="eq-stat-v preco">${item.preco || 'Grátis'}</div></div>
+          <div><div class="eq-stat-l">Espaços</div><div class="eq-stat-v">${item.espacos}</div></div>
+          <div><div class="eq-stat-l">Dano</div><div class="eq-stat-v">${item.dano || '—'}</div></div>
+          <div><div class="eq-stat-l">Crítico</div><div class="eq-stat-v">${item.critico || '—'}</div></div>
+          <div><div class="eq-stat-l">Alcance</div><div class="eq-stat-v">${item.alcance || 'Corpo a corpo'}</div></div>
+          <div><div class="eq-stat-l">Tipo de Dano</div><div class="eq-stat-v">${item.tipoDano || '—'}</div></div>
+        </div>
+        ${municaoInfo ? `
+        <div class="eq-municao-box">
+          <i class="ti ti-package" aria-hidden="true"></i>
+          <span>Usa <strong>${municaoInfo.nome}</strong> (${municaoInfo.preco}, ${municaoInfo.espacos} espaço) — clique pra ver detalhes</span>
+        </div>` : ''}
+        <p class="dp-desc">${kw(item.descricao)}</p>
+        ${renderCalculadoraItemSuperior('arma', item)}
+      `;
+      if (municaoInfo) {
+        body.querySelector('.eq-municao-box').style.cursor = 'pointer';
+        body.querySelector('.eq-municao-box').onclick = () => abrirDetalheEquip('item-geral', municaoInfo.id, true);
+      }
+      return;
+    }
+
+    if (tipo === 'armadura') {
+      body.innerHTML = `
+        <div class="dp-linha"></div>
+        <div class="dp-badges">
+          <span class="dp-badge" style="background:rgba(139,0,0,.1);color:#cc4444;border:.5px solid rgba(139,0,0,.3)">Tormenta 20</span>
+          <span class="eq-categoria-tag">${CATEGORIA_ARMADURA_INFO[item.categoria].label}</span>
+        </div>
+        <div class="eq-stats-grid">
+          <div><div class="eq-stat-l">Preço</div><div class="eq-stat-v preco">${item.preco}</div></div>
+          <div><div class="eq-stat-l">Espaços</div><div class="eq-stat-v">${item.espacos}</div></div>
+          <div><div class="eq-stat-l">Bônus na Defesa</div><div class="eq-stat-v">+${item.bonusDefesa}</div></div>
+          <div><div class="eq-stat-l">Penalidade de Armadura</div><div class="eq-stat-v">${item.penalidadeArmadura}</div></div>
+        </div>
+        <p class="dp-desc">${kw(item.descricao)}</p>
+        ${renderCalculadoraItemSuperior('armadura', item)}
+      `;
+      return;
+    }
+
+    if (tipo === 'item-geral') {
+      body.innerHTML = `
+        <div class="dp-linha"></div>
+        <div class="dp-badges">
+          <span class="dp-badge" style="background:rgba(139,0,0,.1);color:#cc4444;border:.5px solid rgba(139,0,0,.3)">Tormenta 20</span>
+          <span class="eq-categoria-tag">${CATEGORIA_ITEM_GERAL_INFO[item.categoria] || item.categoria}</span>
+        </div>
+        <div class="eq-stats-grid">
+          <div><div class="eq-stat-l">Preço</div><div class="eq-stat-v preco">${item.preco}</div></div>
+          <div><div class="eq-stat-l">Espaços</div><div class="eq-stat-v">${item.espacos != null ? item.espacos : '—'}</div></div>
+        </div>
+        <p class="dp-desc">${kw(item.descricao)}</p>
+      `;
+      return;
+    }
+
+    if (tipo === 'melhoria') {
+      body.innerHTML = `
+        <div class="dp-linha"></div>
+        <div class="dp-badges">
+          <span class="dp-badge" style="background:rgba(139,0,0,.1);color:#cc4444;border:.5px solid rgba(139,0,0,.3)">Tormenta 20</span>
+          ${item.categorias.map(c => `<span class="eq-categoria-tag">${c === 'qualquer' ? 'Qualquer categoria' : (CATEGORIA_ARMA_INFO[c]?.label || CATEGORIA_ARMADURA_INFO[c]?.label || c)}</span>`).join('')}
+        </div>
+        ${item.preRequisito ? `<div class="eq-melhoria-prereq" style="margin-bottom:10px;">Pré-requisito: ${item.preRequisito}</div>` : ''}
+        <p class="dp-desc">${kw(item.descricao)}</p>
+      `;
+      return;
+    }
+
+    if (tipo === 'material') {
+      body.innerHTML = `
+        <div class="dp-linha"></div>
+        <p class="dp-desc">${kw(item.descricao)}</p>
+        <div class="dp-secao">Efeito em Armas</div>
+        <p class="dp-desc" style="margin-bottom:10px;">${kw(item.efeitos.arma)} <span class="eq-hab-tag">+T$ ${item.precoAdicional.arma}</span></p>
+        <div class="dp-secao">Efeito em Armaduras &amp; Escudos</div>
+        <p class="dp-desc" style="margin-bottom:10px;">${kw(item.efeitos.armaduraEscudo)} <span class="eq-hab-tag">Leve/Escudo +T$ ${item.precoAdicional.armaduraLeve ?? '—'} · Pesada +T$ ${item.precoAdicional.armaduraPesada ?? '—'}</span></p>
+        <div class="dp-secao">Efeito em Esotéricos</div>
+        <p class="dp-desc">${kw(item.efeitos.esoterico)} <span class="eq-hab-tag">+T$ ${item.precoAdicional.esoterico}</span></p>
+      `;
+      return;
+    }
+  }
+
+  window.abrirDetalheEquip = function(tipo, id) {
+    let item = null;
+    let icone = 'ti-diamond', tipoLabel = 'Equipamento';
+    if (tipo === 'arma') { item = (window.ARMAS || []).find(x => x.id === id); icone = 'ti-sword'; tipoLabel = 'Arma'; }
+    else if (tipo === 'armadura') { item = (window.ARMADURAS || []).find(x => x.id === id); icone = 'ti-shield'; tipoLabel = 'Armadura/Escudo'; }
+    else if (tipo === 'item-geral') { item = (window.ITENS_GERAIS || []).find(x => x.id === id); icone = 'ti-backpack'; tipoLabel = 'Item Geral'; }
+    else if (tipo === 'melhoria') { item = (window.MELHORIAS || []).find(x => x.id === id); icone = 'ti-star'; tipoLabel = 'Melhoria'; }
+    else if (tipo === 'material') { item = (window.MATERIAIS_ESPECIAIS || []).find(x => x.id === id); icone = 'ti-atom'; tipoLabel = 'Material Especial'; }
+    if (!item) return;
+
+    _equipAtual = { tipo, item };
+    _equipMelhoriasSelecionadas = new Set();
+    _equipMaterialSelecionado = null;
+
+    document.getElementById('eqHeroIcon').className = `ti ${icone} dp-hero-icon`;
+    document.getElementById('eqTipo').innerHTML = `<i class="ti ${icone}" aria-hidden="true"></i> ${tipoLabel}`;
+    document.getElementById('eqNome').textContent = item.nome;
+    document.getElementById('eqSub').textContent = item.preco || (item.categorias ? item.categorias.join(', ') : '');
+
+    renderCorpoEquip();
+
+    document.querySelectorAll('.eq-card').forEach(c => c.classList.remove('selecionado'));
+    document.querySelector(`.eq-card[data-id="${id}"]`)?.classList.add('selecionado');
+
+    document.getElementById('equipPainel').classList.add('aberto');
+    EQUIP_SECOES_TODAS.forEach(s => {
+      const el = document.getElementById(s);
+      if (el && el.style.display !== 'none') {
+        el.querySelector('.cards-area')?.classList.add('encolhido');
+      }
+    });
+  };
+
+  window.fecharDetalheEquip = function() {
+    document.getElementById('equipPainel').classList.remove('aberto');
+    EQUIP_SECOES_TODAS.forEach(s => {
+      document.getElementById(s)?.querySelector('.cards-area')?.classList.remove('encolhido');
+    });
+    document.querySelectorAll('.eq-card').forEach(c => c.classList.remove('selecionado'));
+  };
 
   // ══════════════════ MAGIAS ══════════════════
 
@@ -1760,7 +2343,7 @@ document.addEventListener('DOMContentLoaded', () => {
       <div class="dp-habilidade ${h.tipo === 'penalidade' ? 'penalidade' : ''}"
            style="--hc:${h.tipo === 'penalidade' ? '#8B0000' : cor}">
         <div class="dp-hab-nome">${h.nome}</div>
-        <div class="dp-hab-desc">${h.descricao}</div>
+        <div class="dp-hab-desc">${processarKeywords(h.descricao)}</div>
       </div>`).join('');
 
     // Classes recomendadas
@@ -2314,6 +2897,28 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // ── BUSCA DE PODERES GERAIS (por categoria) ─────────────────
+  // ── BUSCA DE EQUIPAMENTOS ──────────────────────────────
+  const buscaArmasEl = document.getElementById('buscaArmas');
+  if (buscaArmasEl) buscaArmasEl.addEventListener('input', () => {
+    _armaEstado.busca = buscaArmasEl.value.trim().toLowerCase();
+    renderArmasNaSecao();
+  });
+  const buscaArmadurasEl = document.getElementById('buscaArmaduras');
+  if (buscaArmadurasEl) buscaArmadurasEl.addEventListener('input', () => {
+    _armaduraEstado.busca = buscaArmadurasEl.value.trim().toLowerCase();
+    renderArmadurasNaSecao();
+  });
+  const buscaItensGeraisEl = document.getElementById('buscaItensGerais');
+  if (buscaItensGeraisEl) buscaItensGeraisEl.addEventListener('input', () => {
+    _itemGeralEstado.busca = buscaItensGeraisEl.value.trim().toLowerCase();
+    renderItensGeraisNaSecao();
+  });
+  const buscaMelhoriasEl = document.getElementById('buscaMelhorias');
+  if (buscaMelhoriasEl) buscaMelhoriasEl.addEventListener('input', () => {
+    _melhoriaEstado.busca = buscaMelhoriasEl.value.trim().toLowerCase();
+    renderMelhoriasNaSecao();
+  });
+
   // ── BUSCA DE MAGIAS (4 seções) ──────────────────────────────
   ['todas', 'arcana', 'divina', 'universal'].forEach(secaoTipo => {
     const ids = MAGIA_SECAO_IDS[secaoTipo];
@@ -2413,6 +3018,11 @@ document.addEventListener('DOMContentLoaded', () => {
   if (window.PERICIAS) renderPericias(window.PERICIAS);
   if (window.ORIGENS) renderOrigens(window.ORIGENS);
   if (window.DEUSES) renderDeuses(window.DEUSES);
+  if (window.ARMAS) renderArmasNaSecao();
+  if (window.ARMADURAS) renderArmadurasNaSecao();
+  if (window.ITENS_GERAIS) renderItensGeraisNaSecao();
+  if (window.MELHORIAS) renderMelhoriasNaSecao();
+  if (window.MATERIAIS_ESPECIAIS) renderMateriaisEspeciaisNaSecao();
   if (window.MAGIAS) {
     renderMagiasNaSecao('todas');
     renderMagiasNaSecao('arcana');

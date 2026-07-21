@@ -194,7 +194,7 @@
 
     <!-- ── EQUIPAMENTOS ── -->
     <div class="nav-grupo" data-grupo="equipamentos">
-      <div class="nav-grupo-header" onclick="toggleGrupo(this)">
+      <div class="nav-grupo-header" onclick="toggleGrupo(this); mostrarSecao('armas');">
         <i class="ti ti-diamond grupo-icone" aria-hidden="true"></i>
         <span class="grupo-label">Equipamentos</span>
         <i class="ti ti-chevron-right seta" aria-hidden="true"></i>
@@ -208,44 +208,27 @@
         <div class="nav-sub-item" data-secao="armaduras"
              onclick="toggleSubItem(this,'armaduras')">
           <i class="ti ti-shield" aria-hidden="true"></i>
-          <span class="sub-label">Armaduras</span>
-        </div>
-        <div class="nav-sub-item" data-secao="escudos"
-             onclick="toggleSubItem(this,'escudos')">
-          <i class="ti ti-shield-half" aria-hidden="true"></i>
-          <span class="sub-label">Escudos</span>
-        </div>
-        <div class="nav-sub-item" data-secao="acessorios"
-             onclick="toggleSubItem(this,'acessorios')">
-          <i class="ti ti-crown" aria-hidden="true"></i>
-          <span class="sub-label">Acessórios</span>
+          <span class="sub-label">Armaduras &amp; Escudos</span>
         </div>
         <div class="nav-sub-item" data-secao="itens-gerais"
              onclick="toggleSubItem(this,'itens-gerais')">
           <i class="ti ti-backpack" aria-hidden="true"></i>
           <span class="sub-label">Itens Gerais</span>
         </div>
-        <div class="nav-sub-item tem-filhos" data-secao="itens-superiores"
-             onclick="toggleSubItem(this,'itens-superiores')">
+        <div class="nav-sub-item" data-secao="melhorias"
+             onclick="toggleSubItem(this,'melhorias')">
           <i class="ti ti-star" aria-hidden="true"></i>
-          <span class="sub-label">Itens Superiores</span>
-          <i class="ti ti-chevron-right seta" style="margin-left:auto;font-size:10px" aria-hidden="true"></i>
+          <span class="sub-label">Melhorias</span>
         </div>
-        <div class="nav-sub-sub" style="display:none">
-          <div class="nav-sub-sub-item" data-secao="modificadores" onclick="mostrarSecao('modificadores')">
-            <span>Modificadores</span>
-          </div>
+        <div class="nav-sub-item" data-secao="materiais-especiais"
+             onclick="toggleSubItem(this,'materiais-especiais')">
+          <i class="ti ti-atom" aria-hidden="true"></i>
+          <span class="sub-label">Materiais Especiais</span>
         </div>
-        <div class="nav-sub-item tem-filhos" data-secao="itens-magicos"
+        <div class="nav-sub-item" data-secao="itens-magicos"
              onclick="toggleSubItem(this,'itens-magicos')">
           <i class="ti ti-wand" aria-hidden="true"></i>
           <span class="sub-label">Itens Mágicos</span>
-          <i class="ti ti-chevron-right seta" style="margin-left:auto;font-size:10px" aria-hidden="true"></i>
-        </div>
-        <div class="nav-sub-sub" style="display:none">
-          <div class="nav-sub-sub-item" data-secao="encantamentos" onclick="mostrarSecao('encantamentos')">
-            <span>Encantamentos</span>
-          </div>
         </div>
         <div class="nav-sub-item" data-secao="artefatos"
              onclick="toggleSubItem(this,'artefatos')">
@@ -826,35 +809,186 @@
       </div>
 
     </div><!-- /secao-poderes-tormenta -->
-    <div id="secao-armas"           class="secao-conteudo placeholder-area" style="display:none">
-      <i class="ti ti-sword" aria-hidden="true"></i><h2>Armas</h2><p>Em breve</p>
-    </div>
-    <div id="secao-armaduras"       class="secao-conteudo placeholder-area" style="display:none">
-      <i class="ti ti-shield" aria-hidden="true"></i><h2>Armaduras</h2><p>Em breve</p>
-    </div>
-    <div id="secao-escudos"         class="secao-conteudo placeholder-area" style="display:none">
-      <i class="ti ti-shield-half" aria-hidden="true"></i><h2>Escudos</h2><p>Em breve</p>
-    </div>
-    <div id="secao-acessorios"      class="secao-conteudo placeholder-area" style="display:none">
-      <i class="ti ti-crown" aria-hidden="true"></i><h2>Acessórios</h2><p>Em breve</p>
-    </div>
-    <div id="secao-itens-gerais"    class="secao-conteudo placeholder-area" style="display:none">
-      <i class="ti ti-backpack" aria-hidden="true"></i><h2>Itens Gerais</h2><p>Em breve</p>
-    </div>
-    <div id="secao-itens-superiores" class="secao-conteudo placeholder-area" style="display:none">
-      <i class="ti ti-star" aria-hidden="true"></i><h2>Itens Superiores</h2><p>Em breve</p>
-    </div>
-    <div id="secao-modificadores"   class="secao-conteudo placeholder-area" style="display:none">
-      <i class="ti ti-settings" aria-hidden="true"></i><h2>Modificadores</h2><p>Em breve</p>
-    </div>
+
+    <div id="secao-armas" class="secao-conteudo" style="display:none;flex-direction:column;flex:1;overflow:hidden;">
+      <div class="section-hero">
+        <div class="section-hero-bg"></div>
+        <h1>Armas</h1>
+        <p>Simples, marciais, exóticas e de fogo — 40 armas com dano, crítico, alcance e munição.</p>
+      </div>
+      <div class="toolbar" style="flex-direction:column;align-items:stretch;gap:8px;">
+        <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
+          <div class="search-inline">
+            <i class="ti ti-search" aria-hidden="true"></i>
+            <input type="text" id="buscaArmas" placeholder="Buscar arma…" />
+          </div>
+          <div style="display:flex;gap:6px;margin-left:auto;">
+            <button class="pg-modo-btn a" id="armasModoCards" onclick="setModoVisualArmas('cards')" title="Ver como cards">
+              <i class="ti ti-layout-grid" aria-hidden="true"></i>
+            </button>
+            <button class="pg-modo-btn" id="armasModoTabela" onclick="setModoVisualArmas('tabela')" title="Ver como tabela">
+              <i class="ti ti-table" aria-hidden="true"></i>
+            </button>
+          </div>
+          <span class="filtro-count" id="armasCount">40 armas</span>
+        </div>
+        <div id="armasFiltroCategoria" style="display:flex;gap:8px;flex-wrap:wrap;">
+          <button class="filtro-btn a" onclick="setFiltroArma('categoria',this,'todos')">Todas</button>
+          <button class="filtro-btn" onclick="setFiltroArma('categoria',this,'simples')">Simples</button>
+          <button class="filtro-btn" onclick="setFiltroArma('categoria',this,'marcial')">Marciais</button>
+          <button class="filtro-btn" onclick="setFiltroArma('categoria',this,'exotica')">Exóticas</button>
+          <button class="filtro-btn" onclick="setFiltroArma('categoria',this,'fogo')">Fogo</button>
+        </div>
+        <div id="armasFiltroTipo" style="display:flex;gap:8px;flex-wrap:wrap;">
+          <button class="filtro-btn a" onclick="setFiltroArma('tipoAtaque',this,'todos')">Corpo a corpo e à distância</button>
+          <button class="filtro-btn" onclick="setFiltroArma('tipoAtaque',this,'corpo-a-corpo')">Corpo a corpo</button>
+          <button class="filtro-btn" onclick="setFiltroArma('tipoAtaque',this,'distancia')">À distância</button>
+        </div>
+      </div>
+      <div class="cards-area">
+        <div class="cards-grid" id="armasGrid"></div>
+        <div id="armasTabelaWrap" style="display:none"></div>
+      </div>
+    </div><!-- /secao-armas -->
+
+    <div id="secao-armaduras" class="secao-conteudo" style="display:none;flex-direction:column;flex:1;overflow:hidden;">
+      <div class="section-hero">
+        <div class="section-hero-bg"></div>
+        <h1>Armaduras &amp; Escudos</h1>
+        <p>Leves, pesadas e escudos — bônus na Defesa, penalidade de armadura e espaço de carga.</p>
+      </div>
+      <div class="toolbar" style="flex-direction:column;align-items:stretch;gap:8px;">
+        <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
+          <div class="search-inline">
+            <i class="ti ti-search" aria-hidden="true"></i>
+            <input type="text" id="buscaArmaduras" placeholder="Buscar armadura ou escudo…" />
+          </div>
+          <div style="display:flex;gap:6px;margin-left:auto;">
+            <button class="pg-modo-btn a" id="armadurasModoCards" onclick="setModoVisualArmaduras('cards')" title="Ver como cards">
+              <i class="ti ti-layout-grid" aria-hidden="true"></i>
+            </button>
+            <button class="pg-modo-btn" id="armadurasModoTabela" onclick="setModoVisualArmaduras('tabela')" title="Ver como tabela">
+              <i class="ti ti-table" aria-hidden="true"></i>
+            </button>
+          </div>
+          <span class="filtro-count" id="armadurasCount">12 itens</span>
+        </div>
+        <div id="armadurasFiltroCategoria" style="display:flex;gap:8px;flex-wrap:wrap;">
+          <button class="filtro-btn a" onclick="setFiltroArmadura(this,'todos')">Todas</button>
+          <button class="filtro-btn" onclick="setFiltroArmadura(this,'leve')">Leves</button>
+          <button class="filtro-btn" onclick="setFiltroArmadura(this,'pesada')">Pesadas</button>
+          <button class="filtro-btn" onclick="setFiltroArmadura(this,'escudo')">Escudos</button>
+        </div>
+      </div>
+      <div class="cards-area">
+        <div class="cards-grid" id="armadurasGrid"></div>
+        <div id="armadurasTabelaWrap" style="display:none"></div>
+      </div>
+    </div><!-- /secao-armaduras -->
+
+    <div id="secao-itens-gerais" class="secao-conteudo" style="display:none;flex-direction:column;flex:1;overflow:hidden;">
+      <div class="section-hero">
+        <div class="section-hero-bg"></div>
+        <h1>Itens Gerais</h1>
+        <p>121 itens em 9 categorias — de uma corda a um veleiro.</p>
+      </div>
+      <div class="toolbar" style="flex-direction:column;align-items:stretch;gap:8px;">
+        <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
+          <div class="search-inline">
+            <i class="ti ti-search" aria-hidden="true"></i>
+            <input type="text" id="buscaItensGerais" placeholder="Buscar item…" />
+          </div>
+          <span class="filtro-count" id="itensGeraisCount" style="margin-left:auto;">121 itens</span>
+        </div>
+        <div id="itensGeraisFiltroCategoria" style="display:flex;gap:8px;flex-wrap:wrap;">
+          <button class="filtro-btn a" onclick="setFiltroItemGeral('categoria',this,'todos')">Todas</button>
+          <button class="filtro-btn" onclick="setFiltroItemGeral('categoria',this,'aventura')">Aventura</button>
+          <button class="filtro-btn" onclick="setFiltroItemGeral('categoria',this,'ferramentas')">Ferramentas</button>
+          <button class="filtro-btn" onclick="setFiltroItemGeral('categoria',this,'vestuario')">Vestuário</button>
+          <button class="filtro-btn" onclick="setFiltroItemGeral('categoria',this,'esotericos')">Esotéricos</button>
+          <button class="filtro-btn" onclick="setFiltroItemGeral('categoria',this,'alquimicos-preparados')">Preparados</button>
+          <button class="filtro-btn" onclick="setFiltroItemGeral('categoria',this,'alquimicos-catalisadores')">Catalisadores</button>
+          <button class="filtro-btn" onclick="setFiltroItemGeral('categoria',this,'alquimicos-venenos')">Venenos</button>
+          <button class="filtro-btn" onclick="setFiltroItemGeral('categoria',this,'alimentacao')">Alimentação</button>
+          <button class="filtro-btn" onclick="setFiltroItemGeral('categoria',this,'animais')">Animais</button>
+          <button class="filtro-btn" onclick="setFiltroItemGeral('categoria',this,'veiculos')">Veículos</button>
+          <button class="filtro-btn" onclick="setFiltroItemGeral('categoria',this,'servicos')">Serviços</button>
+        </div>
+        <div id="itensGeraisFiltroPreco" style="display:flex;gap:8px;flex-wrap:wrap;">
+          <button class="filtro-btn a" onclick="setFiltroItemGeral('preco',this,'todos')">Qualquer preço</button>
+          <button class="filtro-btn" onclick="setFiltroItemGeral('preco',this,'ate-1')">Até T$ 1</button>
+          <button class="filtro-btn" onclick="setFiltroItemGeral('preco',this,'ate-10')">Até T$ 10</button>
+          <button class="filtro-btn" onclick="setFiltroItemGeral('preco',this,'ate-100')">Até T$ 100</button>
+          <button class="filtro-btn" onclick="setFiltroItemGeral('preco',this,'acima-100')">Acima de T$ 100</button>
+        </div>
+      </div>
+      <div class="cards-area">
+        <div class="cards-grid" id="itensGeraisGrid"></div>
+      </div>
+    </div><!-- /secao-itens-gerais -->
+
+    <div id="secao-melhorias" class="secao-conteudo" style="display:none;flex-direction:column;flex:1;overflow:hidden;">
+      <div class="section-hero">
+        <div class="section-hero-bg"></div>
+        <h1>Melhorias</h1>
+        <p>29 melhorias de item superior — dá pra aplicar direto no painel de uma arma ou armadura também.</p>
+      </div>
+      <div class="toolbar" style="flex-direction:column;align-items:stretch;gap:8px;">
+        <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
+          <div class="search-inline">
+            <i class="ti ti-search" aria-hidden="true"></i>
+            <input type="text" id="buscaMelhorias" placeholder="Buscar melhoria…" />
+          </div>
+          <span class="filtro-count" id="melhoriasCount" style="margin-left:auto;">29 melhorias</span>
+        </div>
+        <div id="melhoriasFiltroCategoria" style="display:flex;gap:8px;flex-wrap:wrap;">
+          <button class="filtro-btn a" onclick="setFiltroMelhoria(this,'todos')">Todas</button>
+          <button class="filtro-btn" onclick="setFiltroMelhoria(this,'arma')">Armas</button>
+          <button class="filtro-btn" onclick="setFiltroMelhoria(this,'armadura')">Armaduras</button>
+          <button class="filtro-btn" onclick="setFiltroMelhoria(this,'escudo')">Escudos</button>
+          <button class="filtro-btn" onclick="setFiltroMelhoria(this,'esoterico')">Esotéricos</button>
+          <button class="filtro-btn" onclick="setFiltroMelhoria(this,'ferramenta')">Ferramentas/Vestuário</button>
+          <button class="filtro-btn" onclick="setFiltroMelhoria(this,'qualquer')">Qualquer categoria</button>
+        </div>
+      </div>
+      <div class="cards-area">
+        <div class="cards-grid" id="melhoriasGrid"></div>
+      </div>
+    </div><!-- /secao-melhorias -->
+
+    <div id="secao-materiais-especiais" class="secao-conteudo" style="display:none;flex-direction:column;flex:1;overflow:hidden;">
+      <div class="section-hero">
+        <div class="section-hero-bg"></div>
+        <h1>Materiais Especiais</h1>
+        <p>6 materiais — Aço-Rubi, Adamante, Gelo Eterno, Madeira Tollon, Matéria Vermelha e Mitral.</p>
+      </div>
+      <div class="cards-area">
+        <div class="cards-grid" id="materiaisEspeciaisGrid"></div>
+      </div>
+    </div><!-- /secao-materiais-especiais -->
+
     <div id="secao-itens-magicos"   class="secao-conteudo placeholder-area" style="display:none">
       <i class="ti ti-wand" aria-hidden="true"></i><h2>Itens Mágicos</h2><p>Em breve</p>
     </div>
-    <div id="secao-encantamentos"   class="secao-conteudo placeholder-area" style="display:none">
-      <i class="ti ti-sparkles" aria-hidden="true"></i><h2>Encantamentos</h2><p>Em breve</p>
-    </div>
     <div id="secao-artefatos"       class="secao-conteudo placeholder-area" style="display:none">
       <i class="ti ti-flame" aria-hidden="true"></i><h2>Artefatos</h2><p>Em breve</p>
+    </div>
+
+    <!-- Painel de detalhe compartilhado por Armas, Armaduras, Melhorias e Materiais -->
+    <div class="detalhe-painel" id="equipPainel">
+      <div class="dp-hero" id="eqHero">
+        <div class="dp-hero-bg" id="eqHeroBg"></div>
+        <i class="ti ti-sword dp-hero-icon" id="eqHeroIcon" aria-hidden="true"></i>
+        <div class="dp-hero-content">
+          <div class="dp-tipo" id="eqTipo"><i class="ti ti-diamond" aria-hidden="true"></i> Equipamento</div>
+          <div class="dp-nome" id="eqNome">—</div>
+          <div class="dp-sub" id="eqSub">—</div>
+        </div>
+        <button class="dp-fechar" onclick="fecharDetalheEquip()">
+          <i class="ti ti-x" aria-hidden="true"></i>
+        </button>
+      </div>
+      <div class="dp-body" id="eqBody"></div>
     </div>
     <div id="secao-magias-todas" class="secao-conteudo" style="display:none;flex-direction:column;flex:1;overflow:hidden;">
 
@@ -1084,6 +1218,11 @@
 <script src="../js/data/deuses.js"></script>
 <script src="../js/data/poderes_gerais.js"></script>
 <script src="../js/data/magias.js"></script>
+<script src="../js/data/armas.js"></script>
+<script src="../js/data/armaduras.js"></script>
+<script src="../js/data/itens_gerais.js"></script>
+<script src="../js/data/melhorias.js"></script>
+<script src="../js/data/materiais_especiais.js"></script>
 <script src="../js/keywords.js"></script>
 <script src="../js/compendio.js"></script>
 

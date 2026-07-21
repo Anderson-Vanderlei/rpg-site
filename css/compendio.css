@@ -624,6 +624,85 @@ html, body {
   font-size:11px; color:#999; line-height:1.6; background:rgba(255,255,255,.02);
   border:.5px solid #1a1a1a; border-left:2px solid #c9a84c; border-radius:0 4px 4px 0; padding:9px 12px;
 }
+
+/* ══════════════════ EQUIPAMENTOS ══════════════════ */
+
+.eq-card {
+  background: #0d0a0a; border: .5px solid #1e1e1e; border-radius: 6px;
+  padding: 10px 12px; cursor: pointer; transition: border-color .2s, transform .2s, box-shadow .2s;
+  display: flex; flex-direction: column;
+}
+.eq-card:hover { border-color: rgba(201,168,76,.4); transform: translateY(-2px); box-shadow: 0 6px 20px rgba(0,0,0,.5); }
+.eq-card.selecionado { border-color: rgba(201,168,76,.5); box-shadow: 0 0 0 1px rgba(201,168,76,.15); }
+.eq-card-top { display:flex; justify-content:space-between; align-items:center; margin-bottom:6px; gap:6px; }
+.eq-categoria-tag {
+  font-family:'Cinzel',serif; font-size:7px; padding:1px 6px; border-radius:2px; letter-spacing:.06em;
+  background:rgba(201,168,76,.1); color:#c9a84c; border:.5px solid rgba(201,168,76,.3); flex-shrink:0;
+}
+.eq-preco-tag { font-size:9px; color:#7ec8a0; white-space:nowrap; }
+.eq-nome { font-family:'Cinzel',serif; font-size:13px; color:#e8e8e8; letter-spacing:.04em; margin-bottom:4px; }
+.eq-desc { font-size:10.5px; color:#666; line-height:1.5; margin-bottom:8px; flex:1; }
+.eq-footer { display:flex; align-items:center; gap:9px; font-size:9px; color:#777; flex-wrap:wrap; }
+.eq-footer .rc-badge { margin-left:auto; }
+.eq-stat-mini { display:flex; align-items:center; gap:3px; }
+.eq-stat-mini i { font-size:11px; color:#666; }
+.eq-habilidades-mini { display:flex; gap:4px; flex-wrap:wrap; margin-top:4px; }
+.eq-hab-tag { font-size:8px; color:#8a7440; background:rgba(201,168,76,.06); border-radius:2px; padding:1px 5px; }
+
+.eq-stats-grid {
+  display:grid; grid-template-columns:1fr 1fr; gap:8px 16px;
+  background:rgba(255,255,255,.02); border:.5px solid #1a1a1a; border-radius:5px;
+  padding:10px 12px; margin-bottom:12px;
+}
+.eq-stat-l { font-size:7px; color:#666; letter-spacing:.08em; text-transform:uppercase; margin-bottom:2px; }
+.eq-stat-v { font-size:11px; color:#ccc; }
+.eq-stat-v.preco { color:#7ec8a0; }
+
+.eq-municao-box {
+  display:flex; align-items:center; gap:8px; background:rgba(68,170,238,.06); border:.5px solid rgba(68,170,238,.2);
+  border-radius:5px; padding:8px 10px; margin-bottom:12px; font-size:11px; color:#999;
+}
+.eq-municao-box i { color:#44aaee; font-size:15px; }
+.eq-municao-box strong { color:#44aaee; }
+
+/* Tabela comparativa (toggle cards/tabela) */
+.eq-tabela-scroll { overflow-x:auto; max-width:900px; margin:0 auto; }
+.eq-tabela { width:100%; border-collapse:collapse; font-size:11px; }
+.eq-tabela th {
+  text-align:left; font-family:'Cinzel',serif; font-size:9px; letter-spacing:.05em; color:#c9a84c;
+  padding:8px 10px; border-bottom:1px solid rgba(201,168,76,.25); white-space:nowrap; cursor:pointer;
+  user-select:none;
+}
+.eq-tabela th:hover { color:#e8c878; }
+.eq-tabela th i { font-size:9px; margin-left:3px; opacity:.5; }
+.eq-tabela td { padding:7px 10px; border-bottom:.5px solid #1a1a1a; color:#aaa; white-space:nowrap; }
+.eq-tabela tr { cursor:pointer; transition:background .15s; }
+.eq-tabela tr:hover td { background:rgba(201,168,76,.04); color:#ddd; }
+.eq-tabela td:first-child { color:#e8e8e8; font-family:'Cinzel',serif; font-size:11px; }
+
+/* Painel — melhorias aplicáveis (calculadora de item superior) */
+.eq-melhorias-wrap { margin-top:4px; }
+.eq-melhoria-linha {
+  display:flex; gap:9px; align-items:flex-start; padding:8px 10px; margin-bottom:6px;
+  border:.5px solid #222; border-radius:4px; transition:all .15s; cursor:pointer;
+}
+.eq-melhoria-linha:hover { border-color:#333; }
+.eq-melhoria-linha.selecionada { background:rgba(201,168,76,.06); border-color:rgba(201,168,76,.25); }
+.eq-melhoria-check {
+  width:14px; height:14px; border-radius:3px; border:1px solid #444; flex-shrink:0; margin-top:1px;
+  display:flex; align-items:center; justify-content:center;
+}
+.eq-melhoria-linha.selecionada .eq-melhoria-check { background:#c9a84c; border-color:#c9a84c; color:#0a0a0a; font-size:10px; }
+.eq-melhoria-corpo { flex:1; }
+.eq-melhoria-nome { font-family:'Cinzel',serif; font-size:11px; color:#ddd; margin-bottom:2px; }
+.eq-melhoria-texto { font-size:10px; color:#888; line-height:1.5; }
+.eq-melhoria-prereq { font-size:8px; color:#8a7440; margin-left:6px; }
+
+.eq-total-box {
+  display:flex; align-items:center; justify-content:space-between; margin-top:10px; padding:10px 12px;
+  border-top:.5px solid rgba(201,168,76,.2); background:rgba(201,168,76,.04); border-radius:5px; font-size:11px; color:#999;
+}
+.eq-total-box .valor { color:#c9a84c; font-size:15px; font-family:'Cinzel',serif; }
 .mg-aprim-texto { font-size:10.5px; color:#999; line-height:1.55; }
 
 .mg-pm-total {
@@ -1257,6 +1336,12 @@ html, body {
   #secao-deuses .cards-area.encolhido { margin-right: 460px; }
   #deusPainel { width: 460px; }
   #magiaPainel { width: 460px; }
+  #equipPainel { width: 460px; }
+  #secao-armas .cards-area.encolhido,
+  #secao-armaduras .cards-area.encolhido,
+  #secao-itens-gerais .cards-area.encolhido,
+  #secao-melhorias .cards-area.encolhido,
+  #secao-materiais-especiais .cards-area.encolhido { margin-right: 460px; }
   [id^="secao-magias"] .cards-area.encolhido { margin-right: 460px; }
 }
 

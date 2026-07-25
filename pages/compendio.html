@@ -225,10 +225,25 @@
           <i class="ti ti-atom" aria-hidden="true"></i>
           <span class="sub-label">Materiais Especiais</span>
         </div>
-        <div class="nav-sub-item" data-secao="itens-magicos"
-             onclick="toggleSubItem(this,'itens-magicos')">
+        <div class="nav-sub-item" data-secao="armas-magicas"
+             onclick="toggleSubItem(this,'armas-magicas')">
           <i class="ti ti-wand" aria-hidden="true"></i>
-          <span class="sub-label">Itens Mágicos</span>
+          <span class="sub-label">Armas Mágicas</span>
+        </div>
+        <div class="nav-sub-item" data-secao="armaduras-magicas"
+             onclick="toggleSubItem(this,'armaduras-magicas')">
+          <i class="ti ti-shield-half" aria-hidden="true"></i>
+          <span class="sub-label">Armaduras Mágicas</span>
+        </div>
+        <div class="nav-sub-item" data-secao="pocoes-pergaminhos"
+             onclick="toggleSubItem(this,'pocoes-pergaminhos')">
+          <i class="ti ti-flask" aria-hidden="true"></i>
+          <span class="sub-label">Poções &amp; Pergaminhos</span>
+        </div>
+        <div class="nav-sub-item" data-secao="acessorios"
+             onclick="toggleSubItem(this,'acessorios')">
+          <i class="ti ti-jewelry" aria-hidden="true"></i>
+          <span class="sub-label">Acessórios</span>
         </div>
         <div class="nav-sub-item" data-secao="artefatos"
              onclick="toggleSubItem(this,'artefatos')">
@@ -967,12 +982,119 @@
       </div>
     </div><!-- /secao-materiais-especiais -->
 
-    <div id="secao-itens-magicos"   class="secao-conteudo placeholder-area" style="display:none">
-      <i class="ti ti-wand" aria-hidden="true"></i><h2>Itens Mágicos</h2><p>Em breve</p>
-    </div>
-    <div id="secao-artefatos"       class="secao-conteudo placeholder-area" style="display:none">
-      <i class="ti ti-flame" aria-hidden="true"></i><h2>Artefatos</h2><p>Em breve</p>
-    </div>
+    <div id="secao-armas-magicas" class="secao-conteudo" style="display:none;flex-direction:column;flex:1;overflow:hidden;">
+      <div class="section-hero">
+        <div class="section-hero-bg"></div>
+        <h1>Armas Mágicas</h1>
+        <p>28 encantos de arma + 18 armas específicas lendárias — Cap. 8, pp. 333-337.</p>
+      </div>
+      <div class="toolbar" style="flex-direction:column;align-items:stretch;gap:8px;">
+        <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
+          <div class="search-inline">
+            <i class="ti ti-search" aria-hidden="true"></i>
+            <input type="text" id="buscaArmasMagicas" placeholder="Buscar encanto ou arma específica…" />
+          </div>
+          <span class="filtro-count" id="armasMagicasCount" style="margin-left:auto;">28 encantos</span>
+        </div>
+        <div id="armasMagicasFiltro" style="display:flex;gap:8px;flex-wrap:wrap;">
+          <button class="filtro-btn a" onclick="setModoArmasMagicas(this,'encantos')">Encantos</button>
+          <button class="filtro-btn" onclick="setModoArmasMagicas(this,'especificas')">Armas Específicas</button>
+        </div>
+      </div>
+      <div class="cards-area">
+        <div class="cards-grid" id="armasMagicasGrid"></div>
+      </div>
+    </div><!-- /secao-armas-magicas -->
+
+    <div id="secao-armaduras-magicas" class="secao-conteudo" style="display:none;flex-direction:column;flex:1;overflow:hidden;">
+      <div class="section-hero">
+        <div class="section-hero-bg"></div>
+        <h1>Armaduras Mágicas</h1>
+        <p>25 encantos de armadura/escudo + 13 itens específicos lendários — Cap. 8, pp. 337-340.</p>
+      </div>
+      <div class="toolbar" style="flex-direction:column;align-items:stretch;gap:8px;">
+        <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
+          <div class="search-inline">
+            <i class="ti ti-search" aria-hidden="true"></i>
+            <input type="text" id="buscaArmadurasMagicas" placeholder="Buscar encanto ou item específico…" />
+          </div>
+          <span class="filtro-count" id="armadurasMagicasCount" style="margin-left:auto;">25 encantos</span>
+        </div>
+        <div id="armadurasMagicasFiltro" style="display:flex;gap:8px;flex-wrap:wrap;">
+          <button class="filtro-btn a" onclick="setModoArmadurasMagicas(this,'encantos')">Encantos</button>
+          <button class="filtro-btn" onclick="setModoArmadurasMagicas(this,'especificas')">Itens Específicos</button>
+        </div>
+      </div>
+      <div class="cards-area">
+        <div class="cards-grid" id="armadurasMagicasGrid"></div>
+      </div>
+    </div><!-- /secao-armaduras-magicas -->
+    <div id="secao-pocoes-pergaminhos" class="secao-conteudo" style="display:none;flex-direction:column;flex:1;overflow:hidden;">
+      <div class="section-hero">
+        <div class="section-hero-bg"></div>
+        <h1>Poções &amp; Pergaminhos</h1>
+        <p>Magias empacotadas — catálogo do livro ou crie a sua com qualquer uma das 197 magias.</p>
+      </div>
+      <div class="toolbar" style="flex-direction:column;align-items:stretch;gap:8px;">
+        <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
+          <span class="filtro-count" id="pocoesCount" style="margin-left:auto;">38 no catálogo</span>
+        </div>
+        <div id="pocoesModoFiltro" style="display:flex;gap:8px;flex-wrap:wrap;">
+          <button class="filtro-btn a" onclick="setModoPocoes(this,'catalogo')">Catálogo do Livro</button>
+          <button class="filtro-btn" onclick="setModoPocoes(this,'gerador')">Criar Poção/Pergaminho</button>
+        </div>
+      </div>
+
+      <!-- Catálogo (Tabela 8-12) -->
+      <div class="cards-area" id="pocoesCatalogoArea">
+        <div class="cards-grid" id="pocoesCatalogoGrid"></div>
+      </div>
+
+      <!-- Gerador dinâmico -->
+      <div class="cards-area" id="pocoesGeradorArea" style="display:none;flex-direction:column;align-items:flex-start;padding:20px;">
+        <div class="search-inline" style="width:400px;max-width:100%;flex:none;margin-bottom:16px;">
+          <i class="ti ti-search" aria-hidden="true"></i>
+          <input type="text" id="buscaMagiaGerador" placeholder="Buscar magia pelo nome…" />
+        </div>
+        <div id="pocaoGeradorResultados" style="width:100%;max-width:500px;"></div>
+        <div id="pocaoGeradorCorpo" style="width:100%;max-width:640px;"></div>
+      </div>
+    </div><!-- /secao-pocoes-pergaminhos -->
+    <div id="secao-acessorios" class="secao-conteudo" style="display:none;flex-direction:column;flex:1;overflow:hidden;">
+      <div class="section-hero">
+        <div class="section-hero-bg"></div>
+        <h1>Acessórios</h1>
+        <p>65 itens mágicos — amuletos, anéis, botas, mantos e mais — Cap. 8, pp. 341-345.</p>
+      </div>
+      <div class="toolbar" style="flex-direction:column;align-items:stretch;gap:8px;">
+        <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
+          <div class="search-inline">
+            <i class="ti ti-search" aria-hidden="true"></i>
+            <input type="text" id="buscaAcessorios" placeholder="Buscar acessório…" />
+          </div>
+          <span class="filtro-count" id="acessoriosCount" style="margin-left:auto;">65 acessórios</span>
+        </div>
+        <div id="acessoriosFiltro" style="display:flex;gap:8px;flex-wrap:wrap;">
+          <button class="filtro-btn a" onclick="setFiltroAcessorio(this,'todos')">Todos</button>
+          <button class="filtro-btn" onclick="setFiltroAcessorio(this,'menor')">Menores</button>
+          <button class="filtro-btn" onclick="setFiltroAcessorio(this,'medio')">Médios</button>
+          <button class="filtro-btn" onclick="setFiltroAcessorio(this,'maior')">Maiores</button>
+        </div>
+      </div>
+      <div class="cards-area">
+        <div class="cards-grid" id="acessoriosGrid"></div>
+      </div>
+    </div><!-- /secao-acessorios -->
+    <div id="secao-artefatos" class="secao-conteudo" style="display:none;flex-direction:column;flex:1;overflow:hidden;">
+      <div class="section-hero">
+        <div class="section-hero-bg"></div>
+        <h1>Artefatos</h1>
+        <p>5 relíquias lendárias e únicas — sem preço, sem CD de fabricação, só decisão do mestre. Cap. 8, pp. 345-349.</p>
+      </div>
+      <div class="cards-area">
+        <div class="cards-grid" id="artefatosGrid"></div>
+      </div>
+    </div><!-- /secao-artefatos -->
 
     <!-- Painel de detalhe compartilhado por Armas, Armaduras, Melhorias e Materiais -->
     <div class="detalhe-painel" id="equipPainel">
@@ -1223,6 +1345,11 @@
 <script src="../js/data/itens_gerais.js"></script>
 <script src="../js/data/melhorias.js"></script>
 <script src="../js/data/materiais_especiais.js"></script>
+<script src="../js/data/armas_magicas.js"></script>
+<script src="../js/data/armaduras_magicas.js"></script>
+<script src="../js/data/pocoes_pergaminhos.js"></script>
+<script src="../js/data/acessorios.js"></script>
+<script src="../js/data/artefatos.js"></script>
 <script src="../js/keywords.js"></script>
 <script src="../js/compendio.js"></script>
 

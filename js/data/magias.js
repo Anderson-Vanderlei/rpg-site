@@ -186,6 +186,17 @@ const MAGIAS = [
     ],
   },
   {
+    id: 'compreensao', nome: 'Compreensão', tipo: 'universal', escola: 'adivinhacao', circulo: 1,
+    execucao: 'padrão', alcance: 'toque', alvoArea: '1 criatura ou texto', duracao: 'cena', resistencia: 'Vontade anula (veja descrição)',
+    descricao: 'Essa magia lhe confere compreensão sobrenatural. Você pode tocar um texto e entender as palavras mesmo que não conheça o idioma. Se tocar numa criatura inteligente, pode se comunicar com ela mesmo que não tenham um idioma em comum. Se tocar uma criatura não inteligente, como um animal, pode perceber seus sentimentos. Você também pode gastar uma ação de movimento para ouvir os pensamentos de uma criatura tocada (você "ouve" o que o alvo está pensando), mas um alvo involuntário tem direito a um teste de Vontade para proteger seus pensamentos e evitar este efeito.',
+    aprimoramentos: [
+      { custoPM: 1, tipo: 'muda', efeito: 'muda o alcance para curto.' },
+      { custoPM: 2, tipo: 'muda', efeito: 'muda o alcance para curto e o alvo para criaturas escolhidas. Você pode entender todas as criaturas afetadas, mas só pode ouvir os pensamentos de uma por vez.' },
+      { custoPM: 2, tipo: 'muda', efeito: 'muda o alvo para 1 criatura. Em vez do normal, pode vasculhar os pensamentos do alvo para extrair informações. O alvo tem direito a um teste de Vontade para anular este efeito. O mestre decide se a criatura sabe ou não a informação que você procura. Requer 2º círculo.' },
+      { custoPM: 5, tipo: 'muda', efeito: 'muda o alcance para pessoal e o alvo para você. Em vez do normal, você pode falar, entender e escrever qualquer idioma. Requer 3º círculo.' },
+    ],
+  },
+  {
     id: 'concentracao-de-combate', nome: 'Concentração de Combate', tipo: 'arcana', escola: 'adivinhacao', circulo: 1,
     execucao: 'livre', alcance: 'pessoal', alvoArea: 'você', duracao: '1 rodada', resistencia: null,
     descricao: 'Você amplia sua percepção, antecipando movimentos dos inimigos e achando brechas em sua defesa. Quando faz um teste de ataque, você rola dois dados e usa o melhor resultado.',

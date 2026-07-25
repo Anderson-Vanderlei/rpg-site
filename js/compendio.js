@@ -1460,6 +1460,337 @@ document.addEventListener('DOMContentLoaded', () => {
     renderMelhoriasNaSecao();
   };
 
+  // ── ARMAS MÁGICAS (encantos + armas específicas) ──────────────────────
+  const _armasMagicasEstado = { modo: 'encantos', busca: '' };
+
+  function renderEncantoArmaCard(e) {
+    const card = document.createElement('div');
+    card.className = 'eq-card';
+    card.dataset.id = e.id;
+    card.innerHTML = `
+      <div class="eq-card-top">
+        <span class="eq-categoria-tag">${e.custoEncantos === 2 ? '2 encantos' : '1 encanto'}</span>
+      </div>
+      <div class="eq-nome">${e.nome}</div>
+      <div class="eq-desc">${e.efeito}</div>
+      ${e.preRequisito ? `<div class="eq-footer"><span class="eq-hab-tag">Requer: ${e.preRequisito}</span></div>` : ''}`;
+    card.addEventListener('click', () => abrirDetalheEquip('encanto-arma', e.id));
+    return card;
+  }
+
+  function renderArmaEspecificaCard(a) {
+    const card = document.createElement('div');
+    card.className = 'eq-card';
+    card.dataset.id = a.id;
+    card.innerHTML = `
+      <div class="eq-card-top">
+        <span class="eq-categoria-tag">${a.tipoArmaBase}</span>
+        <span class="eq-preco-tag">${a.preco}</span>
+      </div>
+      <div class="eq-nome">${a.nome}</div>
+      <div class="eq-desc">${truncarTexto(a.descricao, 100)}</div>
+      <div class="eq-footer"><span class="rc-badge badge-fonte">Tormenta 20</span></div>`;
+    card.addEventListener('click', () => abrirDetalheEquip('arma-especifica', a.id));
+    return card;
+  }
+
+  function renderArmasMagicasNaSecao() {
+    const grid = document.getElementById('armasMagicasGrid');
+    if (!grid) return;
+    const ehEncantos = _armasMagicasEstado.modo === 'encantos';
+    let lista = ehEncantos ? (window.ENCANTOS_ARMA || []) : (window.ARMAS_ESPECIFICAS || []);
+    if (_armasMagicasEstado.busca) {
+      const t = _armasMagicasEstado.busca;
+      lista = lista.filter(x => x.nome.toLowerCase().includes(t) || (x.descricao || x.efeito || '').toLowerCase().includes(t));
+    }
+    const countEl = document.getElementById('armasMagicasCount');
+    if (countEl) countEl.textContent = lista.length + (ehEncantos ? ' encantos' : ' armas específicas');
+    grid.innerHTML = '';
+    if (!lista.length) {
+      grid.innerHTML = `<div class="cp-poderes-vazio" style="grid-column:1/-1">Nada encontrado.</div>`;
+      return;
+    }
+    lista.forEach(x => grid.appendChild(ehEncantos ? renderEncantoArmaCard(x) : renderArmaEspecificaCard(x)));
+  }
+
+  window.setModoArmasMagicas = (btn, modo) => {
+    document.querySelectorAll('#armasMagicasFiltro .filtro-btn').forEach(b => b.classList.remove('a'));
+    btn.classList.add('a');
+    _armasMagicasEstado.modo = modo;
+    renderArmasMagicasNaSecao();
+  };
+
+  // ── ARMADURAS MÁGICAS (encantos + itens específicos) ──────────────────────
+  const _armadurasMagicasEstado = { modo: 'encantos', busca: '' };
+
+  function renderEncantoArmaduraCard(e) {
+    const card = document.createElement('div');
+    card.className = 'eq-card';
+    card.dataset.id = e.id;
+    const soCard = e.aplicavel.length === 1 ? `<div class="eq-footer"><span class="eq-hab-tag">Só ${e.aplicavel[0] === 'escudo' ? 'escudos' : 'armaduras'}</span></div>` : '';
+    card.innerHTML = `
+      <div class="eq-card-top">
+        <span class="eq-categoria-tag">${e.custoEncantos === 2 ? '2 encantos' : '1 encanto'}</span>
+      </div>
+      <div class="eq-nome">${e.nome}</div>
+      <div class="eq-desc">${e.efeito}</div>
+      ${e.preRequisito ? `<div class="eq-footer"><span class="eq-hab-tag">Requer: ${e.preRequisito}</span></div>` : soCard}`;
+    card.addEventListener('click', () => abrirDetalheEquip('encanto-armadura', e.id));
+    return card;
+  }
+
+  function renderArmaduraEspecificaCard(a) {
+    const card = document.createElement('div');
+    card.className = 'eq-card';
+    card.dataset.id = a.id;
+    card.innerHTML = `
+      <div class="eq-card-top">
+        <span class="eq-categoria-tag">${a.tipoBase}</span>
+        <span class="eq-preco-tag">${a.preco}</span>
+      </div>
+      <div class="eq-nome">${a.nome}</div>
+      <div class="eq-desc">${truncarTexto(a.descricao, 100)}</div>
+      <div class="eq-footer"><span class="rc-badge badge-fonte">Tormenta 20</span></div>`;
+    card.addEventListener('click', () => abrirDetalheEquip('armadura-especifica', a.id));
+    return card;
+  }
+
+  function renderArmadurasMagicasNaSecao() {
+    const grid = document.getElementById('armadurasMagicasGrid');
+    if (!grid) return;
+    const ehEncantos = _armadurasMagicasEstado.modo === 'encantos';
+    let lista = ehEncantos ? (window.ENCANTOS_ARMADURA || []) : (window.ARMADURAS_ESCUDOS_ESPECIFICOS || []);
+    if (_armadurasMagicasEstado.busca) {
+      const t = _armadurasMagicasEstado.busca;
+      lista = lista.filter(x => x.nome.toLowerCase().includes(t) || (x.descricao || x.efeito || '').toLowerCase().includes(t));
+    }
+    const countEl = document.getElementById('armadurasMagicasCount');
+    if (countEl) countEl.textContent = lista.length + (ehEncantos ? ' encantos' : ' itens específicos');
+    grid.innerHTML = '';
+    if (!lista.length) {
+      grid.innerHTML = `<div class="cp-poderes-vazio" style="grid-column:1/-1">Nada encontrado.</div>`;
+      return;
+    }
+    lista.forEach(x => grid.appendChild(ehEncantos ? renderEncantoArmaduraCard(x) : renderArmaduraEspecificaCard(x)));
+  }
+
+  window.setModoArmadurasMagicas = (btn, modo) => {
+    document.querySelectorAll('#armadurasMagicasFiltro .filtro-btn').forEach(b => b.classList.remove('a'));
+    btn.classList.add('a');
+    _armadurasMagicasEstado.modo = modo;
+    renderArmadurasMagicasNaSecao();
+  };
+
+  // ── POÇÕES & PERGAMINHOS (catálogo + gerador dinâmico) ──────────────────────
+  const _pocoesEstado = { modo: 'catalogo' };
+  const FORMATO_ICONE = { 'óleo': 'ti-droplet', granada: 'ti-bomb', 'poção': 'ti-flask' };
+
+  function renderPocaoCatalogoCard(entry) {
+    const m = entry.magiaId ? (window.MAGIAS || []).find(x => x.id === entry.magiaId) : null;
+    const card = document.createElement('div');
+    card.className = 'eq-card';
+    card.dataset.id = entry.id;
+    card.innerHTML = `
+      <div class="eq-card-top">
+        <span class="eq-categoria-tag"><i class="ti ${FORMATO_ICONE[entry.formato] || 'ti-flask'}" aria-hidden="true"></i> ${entry.formato}</span>
+        <span class="eq-preco-tag">${entry.preco}</span>
+      </div>
+      <div class="eq-nome">${m ? m.nome : '(magia não identificada)'}</div>
+      ${entry.notaAprimoramento ? `<div class="eq-desc">Aprimoramento: ${entry.notaAprimoramento}</div>` : ''}
+      <div class="eq-footer">
+        ${m ? `<span class="eq-stat-mini"><i class="ti ti-circle-dot" aria-hidden="true"></i>${m.circulo}º círculo</span>` : ''}
+        <span class="rc-badge badge-fonte">Tormenta 20</span>
+      </div>`;
+    card.addEventListener('click', () => abrirDetalheEquip('pocao-catalogo', entry.id));
+    return card;
+  }
+
+  function renderPocoesCatalogoNaSecao() {
+    const grid = document.getElementById('pocoesCatalogoGrid');
+    if (!grid) return;
+    const lista = window.POCOES_CATALOGO || [];
+    const countEl = document.getElementById('pocoesCount');
+    if (countEl) countEl.textContent = lista.length + ' no catálogo';
+    grid.innerHTML = '';
+    lista.forEach(entry => grid.appendChild(renderPocaoCatalogoCard(entry)));
+  }
+
+  window.setModoPocoes = (btn, modo) => {
+    document.querySelectorAll('#pocoesModoFiltro .filtro-btn').forEach(b => b.classList.remove('a'));
+    btn.classList.add('a');
+    _pocoesEstado.modo = modo;
+    fecharDetalheEquip();
+    document.getElementById('pocoesCatalogoArea').style.display = modo === 'catalogo' ? '' : 'none';
+    document.getElementById('pocoesGeradorArea').style.display = modo === 'gerador' ? 'flex' : 'none';
+  };
+
+  // ── Gerador dinâmico: qualquer uma das 197 magias vira poção/pergaminho ──
+  const _pocaoGerador = { magiaId: null, selecionados: {} }; // selecionados[i] = qtd (aumenta) ou true (muda/truque)
+
+  window.buscarMagiaGerador = function(termo) {
+    const resultadosEl = document.getElementById('pocaoGeradorResultados');
+    if (!termo || termo.length < 2) { resultadosEl.innerHTML = ''; return; }
+    const t = termo.toLowerCase();
+    const achados = (window.MAGIAS || []).filter(m => m.nome.toLowerCase().includes(t)).slice(0, 8);
+    resultadosEl.innerHTML = achados.map(m => `
+      <div class="eq-melhoria-linha" onclick="selecionarMagiaGerador('${m.id}')">
+        <div class="eq-melhoria-corpo">
+          <div class="eq-melhoria-nome">${m.nome}</div>
+          <div class="eq-melhoria-texto">${m.circulo}º círculo · ${m.tipo}</div>
+        </div>
+      </div>`).join('') || '<div class="eq-melhoria-texto">Nenhuma magia encontrada.</div>';
+  };
+
+  window.selecionarMagiaGerador = function(magiaId) {
+    _pocaoGerador.magiaId = magiaId;
+    _pocaoGerador.selecionados = {};
+    document.getElementById('pocaoGeradorResultados').innerHTML = '';
+    document.getElementById('buscaMagiaGerador').value = '';
+    renderCorpoGerador();
+  };
+
+  function calcularPMGerador() {
+    const m = (window.MAGIAS || []).find(x => x.id === _pocaoGerador.magiaId);
+    if (!m) return 0;
+    let pm = (window.CUSTO_POR_CIRCULO || {})[m.circulo] || 1;
+    m.aprimoramentos.forEach((a, i) => {
+      const sel = _pocaoGerador.selecionados[i];
+      if (!sel) return;
+      if (a.tipo === 'aumenta') pm += a.custoPM * sel;
+      else pm += a.custoPM;
+    });
+    return pm;
+  }
+
+  window.toggleAprimGerador = function(i) {
+    const atual = _pocaoGerador.selecionados[i];
+    _pocaoGerador.selecionados[i] = atual ? false : true;
+    renderCorpoGerador();
+  };
+
+  window.alterarAprimGerador = function(i, delta) {
+    const atual = _pocaoGerador.selecionados[i] || 0;
+    _pocaoGerador.selecionados[i] = Math.max(0, atual + delta);
+    renderCorpoGerador();
+  };
+
+  function renderCorpoGerador() {
+    const corpo = document.getElementById('pocaoGeradorCorpo');
+    const m = (window.MAGIAS || []).find(x => x.id === _pocaoGerador.magiaId);
+    if (!m) { corpo.innerHTML = ''; return; }
+    const kw = typeof processarKeywords === 'function' ? processarKeywords : (t) => t;
+
+    const aprimHtml = m.aprimoramentos.map((a, i) => {
+      const sel = _pocaoGerador.selecionados[i];
+      if (a.tipo === 'aumenta') {
+        const qtd = sel || 0;
+        return `
+          <div class="mg-aprim ${qtd ? 'selecionado' : ''}">
+            <div class="mg-aprim-stepper">
+              <button onclick="alterarAprimGerador(${i}, -1)" ${qtd === 0 ? 'disabled' : ''}>−</button>
+              <span class="mg-aprim-qtd">${qtd}</span>
+              <button onclick="alterarAprimGerador(${i}, 1)">+</button>
+            </div>
+            <div class="mg-aprim-corpo">
+              <span class="mg-aprim-custo">+${a.custoPM} PM</span>
+              <span class="mg-aprim-texto">${kw(a.efeito)}</span>
+            </div>
+          </div>`;
+      }
+      return `
+        <div class="mg-aprim ${sel ? 'selecionado' : ''}">
+          <div class="mg-aprim-check" onclick="toggleAprimGerador(${i})">${sel ? '<i class="ti ti-check" aria-hidden="true"></i>' : ''}</div>
+          <div class="mg-aprim-corpo">
+            <span class="mg-aprim-custo">+${a.custoPM} PM</span>
+            <span class="mg-aprim-texto">${kw(a.efeito)}</span>
+          </div>
+        </div>`;
+    }).join('');
+
+    const pm = calcularPMGerador();
+    const preco = window.calcularPrecoPocaoPergaminho(pm);
+    const cd = window.calcularCDPocaoPergaminho(pm);
+    const categoria = window.categoriaPorCirculo(m.circulo);
+
+    corpo.innerHTML = `
+      <div class="dp-secao" style="margin-top:16px;">Magia escolhida</div>
+      <div class="eq-nome" style="margin-bottom:10px;">${m.nome} <span class="eq-categoria-tag">${m.circulo}º círculo</span></div>
+      <p class="dp-desc">${kw(m.descricao)}</p>
+      ${m.aprimoramentos.length ? `
+      <div class="dp-secao">Aprimoramentos (opcional)</div>
+      <div>${aprimHtml}</div>` : ''}
+      <div class="eq-total-box">
+        <span>${pm} PM total · categoria ${categoria} · CD ${cd}</span>
+        <span class="valor">T$ ${preco.toLocaleString('pt-BR')}</span>
+      </div>`;
+  }
+
+  // ── ACESSÓRIOS ──────────────────────────────────────────
+  const _acessorioEstado = { categoria: 'todos', busca: '' };
+  const CATEGORIA_ACESSORIO_INFO = { menor: 'Menor', medio: 'Médio', maior: 'Maior' };
+
+  function renderAcessorioCard(a) {
+    const card = document.createElement('div');
+    card.className = 'eq-card';
+    card.dataset.id = a.id;
+    card.innerHTML = `
+      <div class="eq-card-top">
+        <span class="eq-categoria-tag">${CATEGORIA_ACESSORIO_INFO[a.categoria]}</span>
+        <span class="eq-preco-tag">${a.preco}</span>
+      </div>
+      <div class="eq-nome">${a.nome}</div>
+      <div class="eq-desc">${truncarTexto(a.descricao, 100)}</div>
+      <div class="eq-footer"><span class="rc-badge badge-fonte">Tormenta 20</span></div>`;
+    card.addEventListener('click', () => abrirDetalheEquip('acessorio', a.id));
+    return card;
+  }
+
+  function renderAcessoriosNaSecao() {
+    const grid = document.getElementById('acessoriosGrid');
+    if (!grid) return;
+    let lista = window.ACESSORIOS || [];
+    if (_acessorioEstado.categoria !== 'todos') lista = lista.filter(a => a.categoria === _acessorioEstado.categoria);
+    if (_acessorioEstado.busca) {
+      const t = _acessorioEstado.busca;
+      lista = lista.filter(a => a.nome.toLowerCase().includes(t) || a.descricao.toLowerCase().includes(t));
+    }
+    const countEl = document.getElementById('acessoriosCount');
+    if (countEl) countEl.textContent = lista.length + (lista.length !== 1 ? ' acessórios' : ' acessório');
+    grid.innerHTML = '';
+    if (!lista.length) {
+      grid.innerHTML = `<div class="cp-poderes-vazio" style="grid-column:1/-1">Nenhum acessório encontrado.</div>`;
+      return;
+    }
+    lista.forEach(a => grid.appendChild(renderAcessorioCard(a)));
+  }
+
+  window.setFiltroAcessorio = (btn, valor) => {
+    document.querySelectorAll('#acessoriosFiltro .filtro-btn').forEach(b => b.classList.remove('a'));
+    btn.classList.add('a');
+    _acessorioEstado.categoria = valor;
+    renderAcessoriosNaSecao();
+  };
+
+  // ── ARTEFATOS ──────────────────────────────────────────
+  function renderArtefatoCard(a) {
+    const card = document.createElement('div');
+    card.className = 'eq-card';
+    card.dataset.id = a.id;
+    card.innerHTML = `
+      <div class="eq-nome">${a.nome}</div>
+      <div class="eq-desc">${truncarTexto(a.descricao, 130)}</div>
+      <div class="eq-footer"><span class="rc-badge badge-fonte">Tormenta 20</span></div>`;
+    card.addEventListener('click', () => abrirDetalheEquip('artefato', a.id));
+    return card;
+  }
+
+  function renderArtefatosNaSecao() {
+    const grid = document.getElementById('artefatosGrid');
+    if (!grid) return;
+    grid.innerHTML = '';
+    (window.ARTEFATOS || []).forEach(a => grid.appendChild(renderArtefatoCard(a)));
+  }
+
   // ── MATERIAIS ESPECIAIS ──────────────────────────────────────────
   function renderMaterialCard(m) {
     const card = document.createElement('div');
@@ -1693,6 +2024,117 @@ document.addEventListener('DOMContentLoaded', () => {
       `;
       return;
     }
+
+    if (tipo === 'encanto-arma') {
+      body.innerHTML = `
+        <div class="dp-linha"></div>
+        <div class="dp-badges">
+          <span class="dp-badge" style="background:rgba(139,0,0,.1);color:#cc4444;border:.5px solid rgba(139,0,0,.3)">Tormenta 20</span>
+          <span class="eq-categoria-tag">${item.custoEncantos === 2 ? 'Conta como 2 encantos' : '1 encanto'}</span>
+        </div>
+        <div class="eq-stats-grid" style="grid-template-columns:1fr;">
+          <div><div class="eq-stat-l">Efeito resumido</div><div class="eq-stat-v">${item.efeito}</div></div>
+        </div>
+        ${item.preRequisito ? `<div class="eq-melhoria-prereq" style="margin-bottom:10px;">Pré-requisito: ${item.preRequisito}</div>` : ''}
+        <p class="dp-desc">${kw(item.descricao)}</p>
+      `;
+      return;
+    }
+
+    if (tipo === 'arma-especifica') {
+      body.innerHTML = `
+        <div class="dp-linha"></div>
+        <div class="dp-badges">
+          <span class="dp-badge" style="background:rgba(139,0,0,.1);color:#cc4444;border:.5px solid rgba(139,0,0,.3)">Tormenta 20</span>
+          <span class="eq-categoria-tag">Base: ${item.tipoArmaBase}</span>
+        </div>
+        <div class="eq-stats-grid" style="grid-template-columns:1fr;">
+          <div><div class="eq-stat-l">Preço</div><div class="eq-stat-v preco">${item.preco}</div></div>
+        </div>
+        <p class="dp-desc">${kw(item.descricao)}</p>
+      `;
+      return;
+    }
+
+    if (tipo === 'encanto-armadura') {
+      body.innerHTML = `
+        <div class="dp-linha"></div>
+        <div class="dp-badges">
+          <span class="dp-badge" style="background:rgba(139,0,0,.1);color:#cc4444;border:.5px solid rgba(139,0,0,.3)">Tormenta 20</span>
+          <span class="eq-categoria-tag">${item.custoEncantos === 2 ? 'Conta como 2 encantos' : '1 encanto'}</span>
+          ${item.aplicavel.length === 1 ? `<span class="eq-categoria-tag">Só ${item.aplicavel[0] === 'escudo' ? 'escudos' : 'armaduras'}</span>` : ''}
+        </div>
+        <div class="eq-stats-grid" style="grid-template-columns:1fr;">
+          <div><div class="eq-stat-l">Efeito resumido</div><div class="eq-stat-v">${item.efeito}</div></div>
+        </div>
+        ${item.preRequisito ? `<div class="eq-melhoria-prereq" style="margin-bottom:10px;">Pré-requisito: ${item.preRequisito}</div>` : ''}
+        <p class="dp-desc">${kw(item.descricao)}</p>
+      `;
+      return;
+    }
+
+    if (tipo === 'armadura-especifica') {
+      body.innerHTML = `
+        <div class="dp-linha"></div>
+        <div class="dp-badges">
+          <span class="dp-badge" style="background:rgba(139,0,0,.1);color:#cc4444;border:.5px solid rgba(139,0,0,.3)">Tormenta 20</span>
+          <span class="eq-categoria-tag">${item.tipo === 'escudo' ? 'Escudo' : 'Armadura'}</span>
+          <span class="eq-categoria-tag">Base: ${item.tipoBase}</span>
+        </div>
+        <div class="eq-stats-grid" style="grid-template-columns:1fr;">
+          <div><div class="eq-stat-l">Preço</div><div class="eq-stat-v preco">${item.preco}</div></div>
+        </div>
+        <p class="dp-desc">${kw(item.descricao)}</p>
+      `;
+      return;
+    }
+
+    if (tipo === 'pocao-catalogo') {
+      const m = (window.MAGIAS || []).find(x => x.id === item.magiaId);
+      body.innerHTML = `
+        <div class="dp-linha"></div>
+        <div class="dp-badges">
+          <span class="dp-badge" style="background:rgba(139,0,0,.1);color:#cc4444;border:.5px solid rgba(139,0,0,.3)">Tormenta 20</span>
+          <span class="eq-categoria-tag"><i class="ti ${FORMATO_ICONE[item.formato] || 'ti-flask'}" aria-hidden="true"></i> ${item.formato}</span>
+          ${m ? `<span class="eq-categoria-tag">${m.circulo}º círculo</span>` : ''}
+        </div>
+        <div class="eq-stats-grid" style="grid-template-columns:1fr;">
+          <div><div class="eq-stat-l">Preço</div><div class="eq-stat-v preco">${item.preco}</div></div>
+        </div>
+        ${item.notaAprimoramento ? `<div class="eq-melhoria-prereq" style="margin-bottom:10px;">Aprimoramento aplicado: ${item.notaAprimoramento}</div>` : ''}
+        ${m ? `<p class="dp-desc">${kw(m.descricao)}</p>` : `<p class="dp-desc">Esta magia ainda não foi localizada na nossa base — pendência de extração, sem afetar o resto do catálogo.</p>`}
+      `;
+      return;
+    }
+
+    if (tipo === 'acessorio') {
+      body.innerHTML = `
+        <div class="dp-linha"></div>
+        <div class="dp-badges">
+          <span class="dp-badge" style="background:rgba(139,0,0,.1);color:#cc4444;border:.5px solid rgba(139,0,0,.3)">Tormenta 20</span>
+          <span class="eq-categoria-tag">${CATEGORIA_ACESSORIO_INFO[item.categoria]}</span>
+        </div>
+        <div class="eq-stats-grid" style="grid-template-columns:1fr;">
+          <div><div class="eq-stat-l">Preço</div><div class="eq-stat-v preco">${item.preco}</div></div>
+        </div>
+        <p class="dp-desc">${kw(item.descricao)}</p>
+      `;
+      return;
+    }
+
+    if (tipo === 'artefato') {
+      const paragrafos = item.descricao.split('\n\n').map(p => `<p class="dp-desc" style="margin-bottom:10px;">${kw(p)}</p>`).join('');
+      body.innerHTML = `
+        <div class="dp-linha"></div>
+        <div class="dp-badges">
+          <span class="dp-badge" style="background:rgba(139,0,0,.1);color:#cc4444;border:.5px solid rgba(139,0,0,.3)">Tormenta 20</span>
+          <span class="eq-categoria-tag">Artefato</span>
+        </div>
+        ${paragrafos}
+        ${item.tabela ? renderTabelaUso(item.tabela) : ''}
+      `;
+      return;
+    }
   }
 
   window.abrirDetalheEquip = function(tipo, id) {
@@ -1703,6 +2145,13 @@ document.addEventListener('DOMContentLoaded', () => {
     else if (tipo === 'item-geral') { item = (window.ITENS_GERAIS || []).find(x => x.id === id); icone = 'ti-backpack'; tipoLabel = 'Item Geral'; }
     else if (tipo === 'melhoria') { item = (window.MELHORIAS || []).find(x => x.id === id); icone = 'ti-star'; tipoLabel = 'Melhoria'; }
     else if (tipo === 'material') { item = (window.MATERIAIS_ESPECIAIS || []).find(x => x.id === id); icone = 'ti-atom'; tipoLabel = 'Material Especial'; }
+    else if (tipo === 'encanto-arma') { item = (window.ENCANTOS_ARMA || []).find(x => x.id === id); icone = 'ti-wand'; tipoLabel = 'Encanto de Arma'; }
+    else if (tipo === 'arma-especifica') { item = (window.ARMAS_ESPECIFICAS || []).find(x => x.id === id); icone = 'ti-sword'; tipoLabel = 'Arma Específica'; }
+    else if (tipo === 'encanto-armadura') { item = (window.ENCANTOS_ARMADURA || []).find(x => x.id === id); icone = 'ti-shield-half'; tipoLabel = 'Encanto de Armadura/Escudo'; }
+    else if (tipo === 'armadura-especifica') { item = (window.ARMADURAS_ESCUDOS_ESPECIFICOS || []).find(x => x.id === id); icone = 'ti-shield'; tipoLabel = 'Armadura/Escudo Específico'; }
+    else if (tipo === 'pocao-catalogo') { item = (window.POCOES_CATALOGO || []).find(x => x.id === id); icone = 'ti-flask'; tipoLabel = 'Poção/Pergaminho'; }
+    else if (tipo === 'acessorio') { item = (window.ACESSORIOS || []).find(x => x.id === id); icone = 'ti-jewelry'; tipoLabel = 'Acessório'; }
+    else if (tipo === 'artefato') { item = (window.ARTEFATOS || []).find(x => x.id === id); icone = 'ti-flame'; tipoLabel = 'Artefato'; }
     if (!item) return;
 
     _equipAtual = { tipo, item };
@@ -1711,8 +2160,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
     document.getElementById('eqHeroIcon').className = `ti ${icone} dp-hero-icon`;
     document.getElementById('eqTipo').innerHTML = `<i class="ti ${icone}" aria-hidden="true"></i> ${tipoLabel}`;
-    document.getElementById('eqNome').textContent = item.nome;
-    document.getElementById('eqSub').textContent = item.preco || (item.categorias ? item.categorias.join(', ') : '');
+    const nomeExibido = tipo === 'pocao-catalogo'
+      ? ((window.MAGIAS || []).find(m => m.id === item.magiaId)?.nome || '(magia não identificada)')
+      : item.nome;
+    document.getElementById('eqNome').textContent = nomeExibido;
+    document.getElementById('eqSub').textContent = item.preco || item.efeito || (item.categorias ? item.categorias.join(', ') : '');
 
     renderCorpoEquip();
 
@@ -2898,6 +3350,25 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // ── BUSCA DE PODERES GERAIS (por categoria) ─────────────────
   // ── BUSCA DE EQUIPAMENTOS ──────────────────────────────
+  const buscaArmasMagicasEl = document.getElementById('buscaArmasMagicas');
+  if (buscaArmasMagicasEl) buscaArmasMagicasEl.addEventListener('input', () => {
+    _armasMagicasEstado.busca = buscaArmasMagicasEl.value.trim().toLowerCase();
+    renderArmasMagicasNaSecao();
+  });
+  const buscaArmadurasMagicasEl = document.getElementById('buscaArmadurasMagicas');
+  if (buscaArmadurasMagicasEl) buscaArmadurasMagicasEl.addEventListener('input', () => {
+    _armadurasMagicasEstado.busca = buscaArmadurasMagicasEl.value.trim().toLowerCase();
+    renderArmadurasMagicasNaSecao();
+  });
+  const buscaMagiaGeradorEl = document.getElementById('buscaMagiaGerador');
+  if (buscaMagiaGeradorEl) buscaMagiaGeradorEl.addEventListener('input', () => {
+    buscarMagiaGerador(buscaMagiaGeradorEl.value.trim());
+  });
+  const buscaAcessoriosEl = document.getElementById('buscaAcessorios');
+  if (buscaAcessoriosEl) buscaAcessoriosEl.addEventListener('input', () => {
+    _acessorioEstado.busca = buscaAcessoriosEl.value.trim().toLowerCase();
+    renderAcessoriosNaSecao();
+  });
   const buscaArmasEl = document.getElementById('buscaArmas');
   if (buscaArmasEl) buscaArmasEl.addEventListener('input', () => {
     _armaEstado.busca = buscaArmasEl.value.trim().toLowerCase();
@@ -3023,6 +3494,11 @@ document.addEventListener('DOMContentLoaded', () => {
   if (window.ITENS_GERAIS) renderItensGeraisNaSecao();
   if (window.MELHORIAS) renderMelhoriasNaSecao();
   if (window.MATERIAIS_ESPECIAIS) renderMateriaisEspeciaisNaSecao();
+  if (window.ENCANTOS_ARMA) renderArmasMagicasNaSecao();
+  if (window.ENCANTOS_ARMADURA) renderArmadurasMagicasNaSecao();
+  if (window.POCOES_CATALOGO) renderPocoesCatalogoNaSecao();
+  if (window.ACESSORIOS) renderAcessoriosNaSecao();
+  if (window.ARTEFATOS) renderArtefatosNaSecao();
   if (window.MAGIAS) {
     renderMagiasNaSecao('todas');
     renderMagiasNaSecao('arcana');

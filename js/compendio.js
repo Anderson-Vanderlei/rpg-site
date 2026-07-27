@@ -200,6 +200,9 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function mostrarSecao(nome) {
+    if (secaoAtual.nome === 'pocoes-pergaminhos' && nome !== 'pocoes-pergaminhos' && typeof resetItensCriadosPocoes === 'function') {
+      resetItensCriadosPocoes();
+    }
     secaoAtual.nome = nome;
     document.querySelectorAll('.secao-conteudo').forEach(s => s.style.display = 'none');
     const el = document.getElementById('secao-' + nome);
@@ -1414,77 +1417,17 @@ document.addEventListener('DOMContentLoaded', () => {
     renderItensGeraisNaSecao();
   };
 
-  // ── MELHORIAS ──────────────────────────────────────────
-  const _melhoriaEstado = { categoria: 'todos', busca: '' };
-
-  function renderMelhoriaCard(m) {
-    const card = document.createElement('div');
-    card.className = 'eq-card';
-    card.dataset.id = m.id;
-    card.innerHTML = `
-      <div class="eq-card-top">
-        <span class="eq-categoria-tag">${m.categorias.map(c => c === 'qualquer' ? 'Qualquer' : (CATEGORIA_ARMA_INFO[c]?.label || CATEGORIA_ARMADURA_INFO[c]?.label || c)).join(', ')}</span>
-      </div>
-      <div class="eq-nome">${m.nome}</div>
-      <div class="eq-desc">${truncarTexto(m.descricao, 100)}</div>
-      ${m.preRequisito ? `<div class="eq-footer"><span class="eq-hab-tag">Requer: ${m.preRequisito}</span></div>` : ''}`;
-    card.addEventListener('click', () => abrirDetalheEquip('melhoria', m.id));
-    return card;
-  }
-
-  function renderMelhoriasNaSecao() {
-    const grid = document.getElementById('melhoriasGrid');
-    if (!grid) return;
-    let lista = window.MELHORIAS || [];
-    if (_melhoriaEstado.categoria !== 'todos') {
-      lista = lista.filter(m => m.categorias.includes(_melhoriaEstado.categoria) || m.categorias.includes('qualquer'));
-    }
-    if (_melhoriaEstado.busca) {
-      const t = _melhoriaEstado.busca;
-      lista = lista.filter(m => m.nome.toLowerCase().includes(t) || m.descricao.toLowerCase().includes(t));
-    }
-    const countEl = document.getElementById('melhoriasCount');
-    if (countEl) countEl.textContent = lista.length + (lista.length !== 1 ? ' melhorias' : ' melhoria');
-    grid.innerHTML = '';
-    if (!lista.length) {
-      grid.innerHTML = `<div class="cp-poderes-vazio" style="grid-column:1/-1">Nenhuma melhoria encontrada.</div>`;
-      return;
-    }
-    lista.forEach(m => grid.appendChild(renderMelhoriaCard(m)));
-  }
-
-  window.setFiltroMelhoria = (btn, valor) => {
-    document.querySelectorAll('#melhoriasFiltroCategoria .filtro-btn').forEach(b => b.classList.remove('a'));
-    btn.classList.add('a');
-    _melhoriaEstado.categoria = valor;
-    renderMelhoriasNaSecao();
-  };
-
-  // ── ARMAS MÁGICAS (encantos + armas específicas) ──────────────────────
-  const _armasMagicasEstado = { modo: 'encantos', busca: '' };
-
-  function renderEncantoArmaCard(e) {
-    const card = document.createElement('div');
-    card.className = 'eq-card';
-    card.dataset.id = e.id;
-    card.innerHTML = `
-      <div class="eq-card-top">
-        <span class="eq-categoria-tag">${e.custoEncantos === 2 ? '2 encantos' : '1 encanto'}</span>
-      </div>
-      <div class="eq-nome">${e.nome}</div>
-      <div class="eq-desc">${e.efeito}</div>
-      ${e.preRequisito ? `<div class="eq-footer"><span class="eq-hab-tag">Requer: ${e.preRequisito}</span></div>` : ''}`;
-    card.addEventListener('click', () => abrirDetalheEquip('encanto-arma', e.id));
-    return card;
-  }
+  // ── ARMAS MÁGICAS (armas específicas) ──────────────────────
+  const _armasMagicasEstado = { busca: '', modo: 'cards' };
 
   function renderArmaEspecificaCard(a) {
+    const base = (window.ARMAS || []).find(x => x.id === a.baseId);
     const card = document.createElement('div');
     card.className = 'eq-card';
     card.dataset.id = a.id;
     card.innerHTML = `
       <div class="eq-card-top">
-        <span class="eq-categoria-tag">${a.tipoArmaBase}</span>
+        <span class="eq-categoria-tag">Base: ${base ? base.nome : '—'}</span>
         <span class="eq-preco-tag">${a.preco}</span>
       </div>
       <div class="eq-nome">${a.nome}</div>
@@ -1494,58 +1437,75 @@ document.addEventListener('DOMContentLoaded', () => {
     return card;
   }
 
+  function renderArmasEspecificasTabela(lista) {
+    const linhas = lista.map(a => {
+      const base = (window.ARMAS || []).find(x => x.id === a.baseId);
+      return `
+      <tr onclick="abrirDetalheEquip('arma-especifica','${a.id}')">
+        <td>${a.nome}</td>
+        <td>${base ? base.nome : '—'}</td>
+        <td>${base ? (base.dano || '—') : '—'}</td>
+        <td>${base ? (base.critico || '—') : '—'}</td>
+        <td>${base ? (base.alcance || '—') : '—'}</td>
+        <td>${base ? (base.tipoDano || '—') : '—'}</td>
+        <td>${base ? base.espacos : '—'}</td>
+        <td>${a.preco}</td>
+      </tr>`;
+    }).join('');
+    return `
+      <div class="eq-tabela-scroll">
+        <table class="eq-tabela">
+          <thead><tr><th>Nome</th><th>Base</th><th>Dano</th><th>Crítico</th><th>Alcance</th><th>Tipo</th><th>Espaços</th><th>Preço</th></tr></thead>
+          <tbody>${linhas}</tbody>
+        </table>
+      </div>`;
+  }
+
   function renderArmasMagicasNaSecao() {
     const grid = document.getElementById('armasMagicasGrid');
     if (!grid) return;
-    const ehEncantos = _armasMagicasEstado.modo === 'encantos';
-    let lista = ehEncantos ? (window.ENCANTOS_ARMA || []) : (window.ARMAS_ESPECIFICAS || []);
+    let lista = window.ARMAS_ESPECIFICAS || [];
     if (_armasMagicasEstado.busca) {
       const t = _armasMagicasEstado.busca;
-      lista = lista.filter(x => x.nome.toLowerCase().includes(t) || (x.descricao || x.efeito || '').toLowerCase().includes(t));
+      lista = lista.filter(x => x.nome.toLowerCase().includes(t) || x.descricao.toLowerCase().includes(t));
     }
     const countEl = document.getElementById('armasMagicasCount');
-    if (countEl) countEl.textContent = lista.length + (ehEncantos ? ' encantos' : ' armas específicas');
+    if (countEl) countEl.textContent = lista.length + ' armas específicas';
+
+    if (_armasMagicasEstado.modo === 'tabela') {
+      document.getElementById('armasMagicasGrid').style.display = 'none';
+      document.getElementById('armasMagicasTabelaWrap').style.display = '';
+      document.getElementById('armasMagicasTabelaWrap').innerHTML = renderArmasEspecificasTabela(lista);
+      return;
+    }
+    document.getElementById('armasMagicasGrid').style.display = '';
+    document.getElementById('armasMagicasTabelaWrap').style.display = 'none';
     grid.innerHTML = '';
     if (!lista.length) {
       grid.innerHTML = `<div class="cp-poderes-vazio" style="grid-column:1/-1">Nada encontrado.</div>`;
       return;
     }
-    lista.forEach(x => grid.appendChild(ehEncantos ? renderEncantoArmaCard(x) : renderArmaEspecificaCard(x)));
+    lista.forEach(x => grid.appendChild(renderArmaEspecificaCard(x)));
   }
 
-  window.setModoArmasMagicas = (btn, modo) => {
-    document.querySelectorAll('#armasMagicasFiltro .filtro-btn').forEach(b => b.classList.remove('a'));
-    btn.classList.add('a');
+  window.setModoVisualArmasMagicas = (modo) => {
     _armasMagicasEstado.modo = modo;
+    document.getElementById('armasMagicasModoCards').classList.toggle('a', modo === 'cards');
+    document.getElementById('armasMagicasModoTabela').classList.toggle('a', modo === 'tabela');
     renderArmasMagicasNaSecao();
   };
 
-  // ── ARMADURAS MÁGICAS (encantos + itens específicos) ──────────────────────
-  const _armadurasMagicasEstado = { modo: 'encantos', busca: '' };
-
-  function renderEncantoArmaduraCard(e) {
-    const card = document.createElement('div');
-    card.className = 'eq-card';
-    card.dataset.id = e.id;
-    const soCard = e.aplicavel.length === 1 ? `<div class="eq-footer"><span class="eq-hab-tag">Só ${e.aplicavel[0] === 'escudo' ? 'escudos' : 'armaduras'}</span></div>` : '';
-    card.innerHTML = `
-      <div class="eq-card-top">
-        <span class="eq-categoria-tag">${e.custoEncantos === 2 ? '2 encantos' : '1 encanto'}</span>
-      </div>
-      <div class="eq-nome">${e.nome}</div>
-      <div class="eq-desc">${e.efeito}</div>
-      ${e.preRequisito ? `<div class="eq-footer"><span class="eq-hab-tag">Requer: ${e.preRequisito}</span></div>` : soCard}`;
-    card.addEventListener('click', () => abrirDetalheEquip('encanto-armadura', e.id));
-    return card;
-  }
+  // ── ARMADURAS MÁGICAS (só itens específicos — encantos foram pra Modificadores) ──
+  const _armadurasMagicasEstado = { busca: '', modo: 'cards' };
 
   function renderArmaduraEspecificaCard(a) {
+    const base = (window.ARMADURAS || []).find(x => x.id === a.baseId);
     const card = document.createElement('div');
     card.className = 'eq-card';
     card.dataset.id = a.id;
     card.innerHTML = `
       <div class="eq-card-top">
-        <span class="eq-categoria-tag">${a.tipoBase}</span>
+        <span class="eq-categoria-tag">Base: ${base ? base.nome : '—'}</span>
         <span class="eq-preco-tag">${a.preco}</span>
       </div>
       <div class="eq-nome">${a.nome}</div>
@@ -1555,30 +1515,203 @@ document.addEventListener('DOMContentLoaded', () => {
     return card;
   }
 
+  function renderArmadurasEspecificasTabela(lista) {
+    const linhas = lista.map(a => {
+      const base = (window.ARMADURAS || []).find(x => x.id === a.baseId);
+      return `
+      <tr onclick="abrirDetalheEquip('armadura-especifica','${a.id}')">
+        <td>${a.nome}</td>
+        <td>${base ? base.nome : '—'}</td>
+        <td>${base ? '+' + base.bonusDefesa : '—'}</td>
+        <td>${base ? base.penalidadeArmadura : '—'}</td>
+        <td>${base ? base.espacos : '—'}</td>
+        <td>${a.preco}</td>
+      </tr>`;
+    }).join('');
+    return `
+      <div class="eq-tabela-scroll">
+        <table class="eq-tabela">
+          <thead><tr><th>Nome</th><th>Base</th><th>Defesa</th><th>Penalidade</th><th>Espaços</th><th>Preço</th></tr></thead>
+          <tbody>${linhas}</tbody>
+        </table>
+      </div>`;
+  }
+
   function renderArmadurasMagicasNaSecao() {
     const grid = document.getElementById('armadurasMagicasGrid');
     if (!grid) return;
-    const ehEncantos = _armadurasMagicasEstado.modo === 'encantos';
-    let lista = ehEncantos ? (window.ENCANTOS_ARMADURA || []) : (window.ARMADURAS_ESCUDOS_ESPECIFICOS || []);
+    let lista = window.ARMADURAS_ESCUDOS_ESPECIFICOS || [];
     if (_armadurasMagicasEstado.busca) {
       const t = _armadurasMagicasEstado.busca;
-      lista = lista.filter(x => x.nome.toLowerCase().includes(t) || (x.descricao || x.efeito || '').toLowerCase().includes(t));
+      lista = lista.filter(x => x.nome.toLowerCase().includes(t) || x.descricao.toLowerCase().includes(t));
     }
     const countEl = document.getElementById('armadurasMagicasCount');
-    if (countEl) countEl.textContent = lista.length + (ehEncantos ? ' encantos' : ' itens específicos');
+    if (countEl) countEl.textContent = lista.length + ' itens específicos';
+
+    if (_armadurasMagicasEstado.modo === 'tabela') {
+      document.getElementById('armadurasMagicasGrid').style.display = 'none';
+      document.getElementById('armadurasMagicasTabelaWrap').style.display = '';
+      document.getElementById('armadurasMagicasTabelaWrap').innerHTML = renderArmadurasEspecificasTabela(lista);
+      return;
+    }
+    document.getElementById('armadurasMagicasGrid').style.display = '';
+    document.getElementById('armadurasMagicasTabelaWrap').style.display = 'none';
     grid.innerHTML = '';
     if (!lista.length) {
       grid.innerHTML = `<div class="cp-poderes-vazio" style="grid-column:1/-1">Nada encontrado.</div>`;
       return;
     }
-    lista.forEach(x => grid.appendChild(ehEncantos ? renderEncantoArmaduraCard(x) : renderArmaduraEspecificaCard(x)));
+    lista.forEach(x => grid.appendChild(renderArmaduraEspecificaCard(x)));
   }
 
-  window.setModoArmadurasMagicas = (btn, modo) => {
-    document.querySelectorAll('#armadurasMagicasFiltro .filtro-btn').forEach(b => b.classList.remove('a'));
-    btn.classList.add('a');
+  window.setModoVisualArmadurasMagicas = (modo) => {
     _armadurasMagicasEstado.modo = modo;
+    document.getElementById('armadurasMagicasModoCards').classList.toggle('a', modo === 'cards');
+    document.getElementById('armadurasMagicasModoTabela').classList.toggle('a', modo === 'tabela');
     renderArmadurasMagicasNaSecao();
+  };
+
+  // ── MODIFICADORES (melhorias + encantamentos + materiais especiais + maldições) ──────────────────────
+  const _modificadorEstado = { categoria: 'melhoria', tipo: 'todos', busca: '' };
+
+  const MOD_TAG_CLASSE = {
+    melhoria: 'mod-tag-melhoria',
+    encantamento: 'mod-tag-encantamento',
+    material: 'mod-tag-material',
+    maldicao: 'mod-tag-maldicao',
+  };
+
+  const MOD_TIPO_FILTROS = {
+    melhoria: [],
+    encantamento: [
+      { valor: 'todos', label: 'Todos' },
+      { valor: 'arma', label: 'Armas' },
+      { valor: 'armadura', label: 'Armaduras' },
+    ],
+    material: [],
+    maldicao: [],
+  };
+
+  function listaModificadoresPorCategoria(categoria) {
+    if (categoria === 'melhoria') return window.MELHORIAS || [];
+    if (categoria === 'material') return window.MATERIAIS_ESPECIAIS || [];
+    if (categoria === 'encantamento') {
+      const armas = (window.ENCANTOS_ARMA || []).map(e => ({ ...e, _tipoEncanto: 'arma' }));
+      const armaduras = (window.ENCANTOS_ARMADURA || []).map(e => ({ ...e, _tipoEncanto: 'armadura' }));
+      let lista = armas.concat(armaduras);
+      if (_modificadorEstado.tipo !== 'todos') {
+        lista = lista.filter(e => e._tipoEncanto === _modificadorEstado.tipo);
+      }
+      return lista;
+    }
+    return [];
+  }
+
+  const MOD_BORDA_CLASSE = { melhoria: 'mod-borda-melhoria', encantamento: 'mod-borda-encantamento', material: 'mod-borda-material', maldicao: 'mod-borda-maldicao' };
+  const BADGE_T20 = '<span class="rc-badge badge-fonte">Tormenta 20</span>';
+
+  function renderModificadorCard(item, categoria) {
+    const card = document.createElement('div');
+    card.className = `eq-card ${MOD_BORDA_CLASSE[categoria]}`;
+    card.dataset.id = item.id;
+    if (categoria === 'melhoria') {
+      card.innerHTML = `
+        <div class="eq-card-top">
+          <span class="eq-categoria-tag ${MOD_TAG_CLASSE.melhoria}">Melhoria</span>
+        </div>
+        <div class="eq-nome">${item.nome}</div>
+        <div class="eq-desc">${item.efeito}</div>
+        <div class="eq-footer">
+          ${item.preRequisito ? `<span class="eq-hab-tag">Requer: ${item.preRequisito}</span>` : ''}
+          ${BADGE_T20}
+        </div>`;
+      card.addEventListener('click', () => abrirDetalheEquip('melhoria', item.id));
+    } else if (categoria === 'encantamento') {
+      const soTag = item.aplicavel && item.aplicavel.length === 1 ? `<span class="eq-hab-tag">Só ${item.aplicavel[0] === 'escudo' ? 'escudos' : 'armaduras'}</span>` : '';
+      card.innerHTML = `
+        <div class="eq-card-top">
+          <span class="eq-categoria-tag ${MOD_TAG_CLASSE.encantamento}">Encantamento</span>
+          <span class="eq-preco-tag">${item.custoEncantos === 2 ? '2 encantos' : '1 encanto'}</span>
+        </div>
+        <div class="eq-nome">${item.nome}</div>
+        <div class="eq-desc">${item.efeito}</div>
+        <div class="eq-footer">
+          ${item.preRequisito ? `<span class="eq-hab-tag">Requer: ${item.preRequisito}</span>` : soTag}
+          ${BADGE_T20}
+        </div>`;
+      card.addEventListener('click', () => abrirDetalheEquip(item._origem === 'escudo' || item._origem === 'armadura' ? 'encanto-armadura' : 'encanto-arma', item.id));
+    } else if (categoria === 'material') {
+      card.innerHTML = `
+        <div class="eq-card-top">
+          <span class="eq-categoria-tag ${MOD_TAG_CLASSE.material}">Material Especial</span>
+        </div>
+        <div class="eq-nome">${item.nome}</div>
+        <div class="eq-desc">${truncarTexto(item.descricao, 110)}</div>
+        <div class="eq-footer">${BADGE_T20}</div>`;
+      card.addEventListener('click', () => abrirDetalheEquip('material', item.id));
+    }
+    return card;
+  }
+
+  function renderModificadoresNaSecao() {
+    const grid = document.getElementById('modificadoresGrid');
+    if (!grid) return;
+    const categoria = _modificadorEstado.categoria;
+    let lista = listaModificadoresPorCategoria(categoria);
+    if (_modificadorEstado.busca) {
+      const t = _modificadorEstado.busca;
+      lista = lista.filter(x => x.nome.toLowerCase().includes(t) || (x.descricao || x.efeito || '').toLowerCase().includes(t));
+    }
+    const countEl = document.getElementById('modificadoresCount');
+    const label = { melhoria: 'melhorias', encantamento: 'encantamentos', material: 'materiais especiais', maldicao: 'maldições' }[categoria];
+    if (countEl) countEl.textContent = lista.length + ' ' + label;
+    grid.innerHTML = '';
+    if (!lista.length) {
+      grid.innerHTML = `<div class="cp-poderes-vazio" style="grid-column:1/-1">Nenhum modificador encontrado.</div>`;
+      return;
+    }
+    lista.forEach(item => grid.appendChild(renderModificadorCard(item, categoria)));
+  }
+
+  function renderTipoFiltroModificador() {
+    const container = document.getElementById('modificadoresTipoFiltro');
+    if (!container) return;
+    const filtros = MOD_TIPO_FILTROS[_modificadorEstado.categoria] || [];
+    container.innerHTML = '';
+    if (!filtros.length) return;
+    filtros.forEach(f => {
+      const btn = document.createElement('button');
+      btn.className = 'filtro-btn' + (f.valor === _modificadorEstado.tipo ? ' a' : '');
+      btn.textContent = f.label;
+      btn.addEventListener('click', () => window.setTipoFiltroModificador(btn, f.valor));
+      container.appendChild(btn);
+    });
+  }
+
+  // Clique num sub-item do menu expansível "Modificadores" (Melhorias/
+  // Encantamentos/Materiais Especiais) leva direto pra Modificadores já
+  // com aquela categoria selecionada, sem precisar clicar de novo lá dentro.
+  window.irParaModificadorCategoria = function(categoria) {
+    mostrarSecao('modificadores');
+    const grupo = document.getElementById('modificadoresCategoriaFiltro');
+    const btn = grupo?.querySelector(`[onclick*="'${categoria}'"]`);
+    if (btn) setCategoriaModificador(btn, categoria);
+  };
+
+  window.setCategoriaModificador = (btn, categoria) => {
+    document.querySelectorAll('#modificadoresCategoriaFiltro .filtro-btn').forEach(b => b.classList.remove('a'));
+    btn.classList.add('a');
+    _modificadorEstado.categoria = categoria;
+    _modificadorEstado.tipo = 'todos';
+    renderTipoFiltroModificador();
+    renderModificadoresNaSecao();
+  };
+
+  window.setTipoFiltroModificador = (btn, tipo) => {
+    document.querySelectorAll('#modificadoresTipoFiltro .filtro-btn').forEach(b => b.classList.remove('a'));
+    btn.classList.add('a');
+    _modificadorEstado.tipo = tipo;
+    renderModificadoresNaSecao();
   };
 
   // ── POÇÕES & PERGAMINHOS (catálogo + gerador dinâmico) ──────────────────────
@@ -1719,14 +1852,81 @@ document.addEventListener('DOMContentLoaded', () => {
       ${m.aprimoramentos.length ? `
       <div class="dp-secao">Aprimoramentos (opcional)</div>
       <div>${aprimHtml}</div>` : ''}
+      <div class="dp-secao">Formato</div>
+      <div style="display:flex;gap:8px;margin-bottom:12px;">
+        <button class="mg-opcao-pill ${_pocaoGerador.formato === 'pocao' ? 'ativa' : ''}" onclick="setFormatoGerador('pocao')"><i class="ti ti-flask" aria-hidden="true"></i> Poção</button>
+        <button class="mg-opcao-pill ${_pocaoGerador.formato === 'pergaminho' ? 'ativa' : ''}" onclick="setFormatoGerador('pergaminho')"><i class="ti ti-scroll" aria-hidden="true"></i> Pergaminho</button>
+      </div>
       <div class="eq-total-box">
         <span>${pm} PM total · categoria ${categoria} · CD ${cd}</span>
         <span class="valor">T$ ${preco.toLocaleString('pt-BR')}</span>
-      </div>`;
+      </div>
+      <button class="pg-modo-btn" style="width:100%;margin-top:10px;padding:9px;" onclick="criarItemGerado()">
+        <i class="ti ti-plus" aria-hidden="true"></i> Criar item
+      </button>`;
+  }
+
+  window.setFormatoGerador = function(formato) {
+    _pocaoGerador.formato = formato;
+    renderCorpoGerador();
+  };
+
+  window.criarItemGerado = function() {
+    const m = (window.MAGIAS || []).find(x => x.id === _pocaoGerador.magiaId);
+    if (!m) return;
+    const pm = calcularPMGerador();
+    const item = {
+      id: _proximoIdItemCriado++,
+      magiaId: m.id,
+      magiaNome: m.nome,
+      circulo: m.circulo,
+      formato: _pocaoGerador.formato,
+      pm,
+      preco: window.calcularPrecoPocaoPergaminho(pm),
+      cd: window.calcularCDPocaoPergaminho(pm),
+      categoria: window.categoriaPorCirculo(m.circulo),
+    };
+    _itensCriadosPocoes.push(item);
+    renderItensCriadosArea();
+  };
+
+  window.removerItemCriado = function(id) {
+    _itensCriadosPocoes = _itensCriadosPocoes.filter(x => x.id !== id);
+    renderItensCriadosArea();
+  };
+
+  function resetItensCriadosPocoes() {
+    _itensCriadosPocoes = [];
+    renderItensCriadosArea();
+  }
+
+  function renderItensCriadosArea() {
+    const wrap = document.getElementById('pocoesItensCriadosWrap');
+    const grid = document.getElementById('pocoesItensCriadosGrid');
+    if (!wrap || !grid) return;
+    if (!_itensCriadosPocoes.length) {
+      wrap.style.display = 'none';
+      grid.innerHTML = '';
+      return;
+    }
+    wrap.style.display = '';
+    grid.innerHTML = _itensCriadosPocoes.map(item => `
+      <div class="eq-card" onclick="abrirDetalheEquip('pocao-criada', ${item.id})">
+        <div class="eq-card-top">
+          <span class="eq-categoria-tag"><i class="ti ${item.formato === 'pergaminho' ? 'ti-scroll' : 'ti-flask'}" aria-hidden="true"></i> ${item.formato === 'pergaminho' ? 'Pergaminho' : 'Poção'}</span>
+          <span class="eq-preco-tag">T$ ${item.preco.toLocaleString('pt-BR')}</span>
+        </div>
+        <div class="eq-nome">${item.magiaNome}</div>
+        <div class="eq-desc">${item.circulo}º círculo · ${item.pm} PM · categoria ${item.categoria} · CD ${item.cd}</div>
+        <div class="eq-footer">
+          <span class="rc-badge badge-fonte">Tormenta 20</span>
+          <button class="mg-opcao-pill" style="margin-left:auto;" onclick="event.stopPropagation(); removerItemCriado(${item.id})"><i class="ti ti-x" aria-hidden="true"></i></button>
+        </div>
+      </div>`).join('');
   }
 
   // ── ACESSÓRIOS ──────────────────────────────────────────
-  const _acessorioEstado = { categoria: 'todos', busca: '' };
+  const _acessorioEstado = { categoria: 'todos', busca: '', modo: 'cards' };
   const CATEGORIA_ACESSORIO_INFO = { menor: 'Menor', medio: 'Médio', maior: 'Maior' };
 
   function renderAcessorioCard(a) {
@@ -1745,6 +1945,22 @@ document.addEventListener('DOMContentLoaded', () => {
     return card;
   }
 
+  function renderAcessoriosTabela(lista) {
+    const linhas = lista.map(a => `
+      <tr onclick="abrirDetalheEquip('acessorio','${a.id}')">
+        <td>${a.nome}</td>
+        <td>${CATEGORIA_ACESSORIO_INFO[a.categoria]}</td>
+        <td>${a.preco}</td>
+      </tr>`).join('');
+    return `
+      <div class="eq-tabela-scroll">
+        <table class="eq-tabela">
+          <thead><tr><th>Nome</th><th>Categoria</th><th>Preço</th></tr></thead>
+          <tbody>${linhas}</tbody>
+        </table>
+      </div>`;
+  }
+
   function renderAcessoriosNaSecao() {
     const grid = document.getElementById('acessoriosGrid');
     if (!grid) return;
@@ -1756,6 +1972,15 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     const countEl = document.getElementById('acessoriosCount');
     if (countEl) countEl.textContent = lista.length + (lista.length !== 1 ? ' acessórios' : ' acessório');
+
+    if (_acessorioEstado.modo === 'tabela') {
+      document.getElementById('acessoriosGrid').style.display = 'none';
+      document.getElementById('acessoriosTabelaWrap').style.display = '';
+      document.getElementById('acessoriosTabelaWrap').innerHTML = renderAcessoriosTabela(lista);
+      return;
+    }
+    document.getElementById('acessoriosGrid').style.display = '';
+    document.getElementById('acessoriosTabelaWrap').style.display = 'none';
     grid.innerHTML = '';
     if (!lista.length) {
       grid.innerHTML = `<div class="cp-poderes-vazio" style="grid-column:1/-1">Nenhum acessório encontrado.</div>`;
@@ -1763,6 +1988,13 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     lista.forEach(a => grid.appendChild(renderAcessorioCard(a)));
   }
+
+  window.setModoVisualAcessorios = (modo) => {
+    _acessorioEstado.modo = modo;
+    document.getElementById('acessoriosModoCards').classList.toggle('a', modo === 'cards');
+    document.getElementById('acessoriosModoTabela').classList.toggle('a', modo === 'tabela');
+    renderAcessoriosNaSecao();
+  };
 
   window.setFiltroAcessorio = (btn, valor) => {
     document.querySelectorAll('#acessoriosFiltro .filtro-btn').forEach(b => b.classList.remove('a'));
@@ -1791,37 +2023,27 @@ document.addEventListener('DOMContentLoaded', () => {
     (window.ARTEFATOS || []).forEach(a => grid.appendChild(renderArtefatoCard(a)));
   }
 
-  // ── MATERIAIS ESPECIAIS ──────────────────────────────────────────
-  function renderMaterialCard(m) {
-    const card = document.createElement('div');
-    card.className = 'eq-card';
-    card.dataset.id = m.id;
-    card.innerHTML = `
-      <div class="eq-nome">${m.nome}</div>
-      <div class="eq-desc">${truncarTexto(m.descricao, 110)}</div>
-      <div class="eq-footer"><span class="rc-badge badge-fonte">Tormenta 20</span></div>`;
-    card.addEventListener('click', () => abrirDetalheEquip('material', m.id));
-    return card;
-  }
-
-  function renderMateriaisEspeciaisNaSecao() {
-    const grid = document.getElementById('materiaisEspeciaisGrid');
-    if (!grid) return;
-    grid.innerHTML = '';
-    (window.MATERIAIS_ESPECIAIS || []).forEach(m => grid.appendChild(renderMaterialCard(m)));
-  }
-
   // ── PAINEL DE DETALHE (compartilhado) ──────────────────────────────
   let _equipAtual = null; // { tipo, item }
 
-  const EQUIP_SECOES_TODAS = ['secao-armas', 'secao-armaduras', 'secao-itens-gerais', 'secao-melhorias', 'secao-materiais-especiais'];
+  const EQUIP_SECOES_TODAS = ['secao-armas', 'secao-armaduras', 'secao-itens-gerais', 'secao-modificadores', 'secao-armas-magicas', 'secao-armaduras-magicas', 'secao-pocoes-pergaminhos', 'secao-acessorios', 'secao-artefatos'];
 
   // ── CALCULADORA DE ITEM SUPERIOR (melhorias + material especial) ──
   let _equipMelhoriasSelecionadas = new Set();
-  let _equipMaterialSelecionado = null;
+  let _equipMateriaisSelecionados = new Set();
+  let _equipEncantosSelecionados = new Set();
+  let _equipModCalcTab = 'melhorias';
+
+  const LIMITE_MELHORIAS = 4;
+  const LIMITE_ENCANTOS = 3; // Tabela 8-7 oficial só vai até 3
+
+  function limiteMateriais(tipo, item) {
+    return (tipo === 'arma' && item.habilidades && item.habilidades.includes('dupla')) ? 2 : 1;
+  }
 
   function melhoriasCompativeis(tipo, item) {
     return (window.MELHORIAS || []).filter(m => {
+      if (m.id === 'material-especial') return false;
       const categoriaOk = m.categorias.includes('qualquer')
         || (tipo === 'arma' && m.categorias.includes('arma'))
         || (tipo === 'armadura' && item.categoria === 'escudo' && m.categorias.includes('escudo'))
@@ -1836,13 +2058,26 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
+  function encantosCompativeis(tipo, item) {
+    if (tipo === 'arma') return window.ENCANTOS_ARMA || [];
+    return (window.ENCANTOS_ARMADURA || []).filter(e =>
+      item.categoria === 'escudo' ? e.aplicavel.includes('escudo') : e.aplicavel.includes('armadura')
+    );
+  }
+
+  function encantoHabilitado(e, lista) {
+    if (e.preRequisito) {
+      const prereq = lista.find(x => x.nome === e.preRequisito);
+      if (prereq && !_equipEncantosSelecionados.has(prereq.id)) return false;
+    }
+    return true;
+  }
+
   function melhoriaHabilitada(m) {
-    // Pré-requisito nomeado (ex: Pungente exige Certeira já marcada)
     if (m.preRequisito && m.preRequisito !== 'outra melhoria qualquer') {
       const prereqMelhoria = (window.MELHORIAS || []).find(x => x.nome === m.preRequisito);
       if (prereqMelhoria && !_equipMelhoriasSelecionadas.has(prereqMelhoria.id)) return false;
     }
-    // "Harmonizada" exige QUALQUER outra melhoria já marcada
     if (m.restricao?.requerQualquerOutra && _equipMelhoriasSelecionadas.size === 0) return false;
     return true;
   }
@@ -1858,52 +2093,150 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function calcularTotalItemSuperior(tipo, item) {
-    const n = _equipMelhoriasSelecionadas.size;
     const precoBase = precoParaNumero(item.preco);
-    const faixa = PRECO_POR_MELHORIA[Math.min(n, 4) - 1];
-    let adicional = n > 0 ? faixa.aumentoPreco : 0;
-    let cdAdicional = n > 0 ? faixa.aumentoCD : 0;
-    if (_equipMelhoriasSelecionadas.has('material-especial') && _equipMaterialSelecionado) {
-      adicional += precoAdicionalMaterial(_equipMaterialSelecionado, tipo, item);
-    }
-    return { precoTotal: precoBase + adicional, precoAdicional: adicional, cdAdicional, n };
+    const nMelhoriasPuras = _equipMelhoriasSelecionadas.size;
+    const nMateriais = _equipMateriaisSelecionados.size;
+    const nMelhorias = nMelhoriasPuras + nMateriais; // material especial conta como melhoria pro limite e pra faixa de preço
+    const listaEncantos = tipo === 'arma' ? (window.ENCANTOS_ARMA || []) : (window.ENCANTOS_ARMADURA || []);
+    const nEncantos = [..._equipEncantosSelecionados].reduce((soma, id) => {
+      const e = listaEncantos.find(x => x.id === id);
+      return soma + (e ? e.custoEncantos : 1);
+    }, 0);
+
+    const faixaM = nMelhorias > 0 ? PRECO_POR_MELHORIA[Math.min(nMelhorias, 4) - 1] : null;
+    const melhoriaAdicional = faixaM ? faixaM.aumentoPreco : 0;
+    const melhoriaCd = faixaM ? faixaM.aumentoCD : 0;
+
+    const faixaE = nEncantos > 0 ? PRECO_POR_ENCANTO[Math.min(nEncantos, 3) - 1] : null;
+    const encantoAdicional = faixaE ? faixaE.aumentoPreco : 0;
+    const encantoCd = faixaE ? faixaE.aumentoCD : 0;
+
+    const materialAdicional = [..._equipMateriaisSelecionados].reduce((soma, id) => soma + precoAdicionalMaterial(id, tipo, item), 0);
+
+    const adicional = melhoriaAdicional + encantoAdicional + materialAdicional;
+    return {
+      precoTotal: precoBase + adicional, precoAdicional: adicional,
+      cdAdicional: melhoriaCd + encantoCd, n: nMelhorias, nEnc: nEncantos, nMat: nMateriais,
+    };
   }
 
-  function renderCalculadoraItemSuperior(tipo, item) {
-    const compativeis = melhoriasCompativeis(tipo, item);
-    if (!compativeis.length) return '';
-    const linhas = compativeis.map(m => {
-      const sel = _equipMelhoriasSelecionadas.has(m.id);
-      const habilitada = sel || melhoriaHabilitada(m);
-      let materialPills = '';
-      if (m.id === 'material-especial' && sel) {
-        const materiais = window.MATERIAIS_ESPECIAIS || [];
-        const pills = materiais.map(mat => {
-          const ativa = _equipMaterialSelecionado === mat.id;
-          return `<button class="mg-opcao-pill ${ativa ? 'ativa' : ''}" onclick="event.stopPropagation(); selecionarMaterialEquip('${mat.id}')">${mat.nome}</button>`;
-        }).join('');
-        const escolhido = materiais.find(mat => mat.id === _equipMaterialSelecionado);
-        const precoMat = escolhido ? precoAdicionalMaterial(escolhido.id, tipo, item) : null;
-        materialPills = `
-          <div class="mg-opcoes-pills" style="margin-top:8px;margin-bottom:0;">${pills}</div>
-          ${escolhido ? `<div class="eq-melhoria-texto" style="margin-top:6px;">+T$ ${precoMat.toLocaleString('pt-BR')} nesse item</div>` : ''}`;
-      }
-      return `
-        <div class="eq-melhoria-linha ${sel ? 'selecionada' : ''}" style="${habilitada ? '' : 'opacity:.4;cursor:not-allowed;'}" onclick="${habilitada ? `toggleMelhoriaEquip('${m.id}')` : ''}">
-          <div class="eq-melhoria-check">${sel ? '<i class="ti ti-check" aria-hidden="true"></i>' : ''}</div>
-          <div class="eq-melhoria-corpo">
-            <div class="eq-melhoria-nome">${m.nome}${m.preRequisito ? `<span class="eq-melhoria-prereq">Requer: ${m.preRequisito}</span>` : ''}</div>
-            <div class="eq-melhoria-texto">${m.efeito}</div>
-            ${materialPills}
-          </div>
-        </div>`;
-    }).join('');
-    const totais = calcularTotalItemSuperior(tipo, item);
+  function renderLinhaMelhoria(m) {
+    const sel = _equipMelhoriasSelecionadas.has(m.id);
+    const noLimite = !sel && (_equipMelhoriasSelecionadas.size + _equipMateriaisSelecionados.size) >= LIMITE_MELHORIAS;
+    const habilitada = sel || (melhoriaHabilitada(m) && !noLimite);
     return `
-      <div class="dp-secao">Item Superior — Adicionar Melhorias</div>
-      <div class="eq-melhorias-wrap" id="eqMelhoriasWrap">${linhas}</div>
+      <div class="eq-melhoria-linha ${sel ? 'selecionada' : ''}" style="${habilitada ? '' : 'opacity:.4;cursor:not-allowed;'}" onclick="${habilitada ? `toggleMelhoriaEquip('${m.id}')` : ''}">
+        <div class="eq-melhoria-check">${sel ? '<i class="ti ti-check" aria-hidden="true"></i>' : ''}</div>
+        <div class="eq-melhoria-corpo">
+          <div class="eq-melhoria-nome">${m.nome}${m.preRequisito ? `<span class="eq-melhoria-prereq">Requer: ${m.preRequisito}</span>` : ''}</div>
+          <div class="eq-melhoria-texto">${m.efeito}</div>
+        </div>
+      </div>`;
+  }
+
+  function renderLinhaEncanto(e, lista) {
+    const sel = _equipEncantosSelecionados.has(e.id);
+    const pesoAtual = [..._equipEncantosSelecionados].reduce((soma, id) => {
+      const x = lista.find(y => y.id === id);
+      return soma + (x ? x.custoEncantos : 1);
+    }, 0);
+    const estouraLimite = !sel && (pesoAtual + e.custoEncantos > LIMITE_ENCANTOS);
+    const habilitada = sel || (encantoHabilitado(e, lista) && !estouraLimite);
+    return `
+      <div class="eq-melhoria-linha ${sel ? 'selecionada' : ''}" style="${habilitada ? '' : 'opacity:.4;cursor:not-allowed;'}" onclick="${habilitada ? `toggleEncantoEquip('${e.id}')` : ''}">
+        <div class="eq-melhoria-check">${sel ? '<i class="ti ti-check" aria-hidden="true"></i>' : ''}</div>
+        <div class="eq-melhoria-corpo">
+          <div class="eq-melhoria-nome">${e.nome}${e.custoEncantos === 2 ? ' <span class="eq-hab-tag">2 encantos</span>' : ''}${e.preRequisito ? `<span class="eq-melhoria-prereq">Requer: ${e.preRequisito}</span>` : ''}</div>
+          <div class="eq-melhoria-texto">${e.efeito}</div>
+        </div>
+      </div>`;
+  }
+
+  function materialAplicavel(mat, tipo, item) {
+    if (tipo === 'arma') return mat.precoAdicional.arma != null;
+    if (item.categoria === 'escudo') return mat.precoAdicional.escudo != null;
+    if (item.categoria === 'leve') return mat.precoAdicional.armaduraLeve != null;
+    if (item.categoria === 'pesada') return mat.precoAdicional.armaduraPesada != null;
+    return false;
+  }
+
+  function renderSeletorMaterialTab(tipo, item) {
+    const materiais = (window.MATERIAIS_ESPECIAIS || []).filter(mat => materialAplicavel(mat, tipo, item));
+    const limite = limiteMateriais(tipo, item);
+    const combinadoNoLimite = (_equipMelhoriasSelecionadas.size + _equipMateriaisSelecionados.size) >= LIMITE_MELHORIAS;
+    const pills = materiais.map(mat => {
+      const ativa = _equipMateriaisSelecionados.has(mat.id);
+      const noLimite = !ativa && (_equipMateriaisSelecionados.size >= limite || combinadoNoLimite);
+      return `<button class="mg-opcao-pill ${ativa ? 'ativa' : ''}" style="${noLimite ? 'opacity:.4;cursor:not-allowed;' : ''}" onclick="${noLimite ? '' : `selecionarMaterialEquip('${mat.id}')`}">${mat.nome}</button>`;
+    }).join('');
+    const selecionados = [..._equipMateriaisSelecionados].map(id => materiais.find(m => m.id === id)).filter(Boolean);
+    const notaDupla = limite === 2 ? ' Esta arma tem a habilidade dupla — pode escolher até 2 materiais (um pra cada ponta).' : '';
+    const linhaTexto = selecionados.length
+      ? selecionados.map(m => `${m.nome} (+T$ ${precoAdicionalMaterial(m.id, tipo, item).toLocaleString('pt-BR')})`).join(' + ')
+      : 'Nenhum material selecionado.';
+    return `
+      <div class="mg-opcoes-pills">${pills}</div>
+      <div class="eq-melhoria-texto" style="margin-top:8px;">${linhaTexto}${notaDupla} <span style="color:#666">(conta como melhoria)</span></div>`;
+  }
+
+  window.setModCalcTab = function(btn, cat) {
+    if (cat === 'maldicoes') return;
+    _equipModCalcTab = cat;
+    renderCorpoEquip();
+  };
+
+  window.toggleEncantoEquip = function(encantoId) {
+    const lista = _equipAtual.tipo === 'arma' ? (window.ENCANTOS_ARMA || []) : (window.ENCANTOS_ARMADURA || []);
+    const e = lista.find(x => x.id === encantoId);
+    if (_equipEncantosSelecionados.has(encantoId)) {
+      _equipEncantosSelecionados.delete(encantoId);
+    } else {
+      if (e && !encantoHabilitado(e, lista)) return;
+      const pesoAtual = [..._equipEncantosSelecionados].reduce((soma, id) => {
+        const x = lista.find(y => y.id === id);
+        return soma + (x ? x.custoEncantos : 1);
+      }, 0);
+      if (pesoAtual + (e ? e.custoEncantos : 1) > LIMITE_ENCANTOS) return;
+      _equipEncantosSelecionados.add(encantoId);
+    }
+    renderCorpoEquip();
+  };
+
+  function renderCalculadoraItemSuperior(tipo, item) {
+    const totais = calcularTotalItemSuperior(tipo, item);
+    const limiteMat = limiteMateriais(tipo, item);
+
+    const tabsHtml = `
+      <div class="eq-modtabs">
+        <button class="eq-modtab-btn ${_equipModCalcTab === 'melhorias' ? 'a' : ''}" data-cat="melhorias" onclick="setModCalcTab(this,'melhorias')">Melhorias <span class="eq-modtab-contador">${totais.n}/${LIMITE_MELHORIAS}</span></button>
+        <button class="eq-modtab-btn ${_equipModCalcTab === 'encantamentos' ? 'a' : ''}" data-cat="encantamentos" onclick="setModCalcTab(this,'encantamentos')">Encantamentos <span class="eq-modtab-contador">${totais.nEnc}/${LIMITE_ENCANTOS}</span></button>
+        <button class="eq-modtab-btn ${_equipModCalcTab === 'materiais' ? 'a' : ''}" data-cat="materiais" onclick="setModCalcTab(this,'materiais')">Materiais Especiais <span class="eq-modtab-contador">${totais.nMat}/${limiteMat}</span></button>
+        <button class="eq-modtab-btn desabilitado" data-cat="maldicoes" title="Em breve">Maldições</button>
+      </div>`;
+
+    let corpoAba;
+    if (_equipModCalcTab === 'encantamentos') {
+      const lista = tipo === 'arma' ? (window.ENCANTOS_ARMA || []) : (window.ENCANTOS_ARMADURA || []);
+      const compat = encantosCompativeis(tipo, item);
+      const notaDuplaEncanto = (tipo === 'arma' && item.habilidades && item.habilidades.includes('dupla'))
+        ? '<div class="eq-melhoria-texto" style="margin-bottom:8px;">Esta arma tem a habilidade dupla — você pode aplicar encantamentos diferentes em cada ponta, mas o total ainda conta pro mesmo limite de 3 encantamentos.</div>'
+        : '';
+      corpoAba = notaDuplaEncanto + (compat.length ? compat.map(e => renderLinhaEncanto(e, lista)).join('') : '<div class="eq-melhoria-texto">Nenhum encantamento aplicável a este item.</div>');
+    } else if (_equipModCalcTab === 'materiais') {
+      corpoAba = renderSeletorMaterialTab(tipo, item);
+    } else if (_equipModCalcTab === 'maldicoes') {
+      corpoAba = '<div class="eq-melhoria-texto">Em breve.</div>';
+    } else {
+      const compat = melhoriasCompativeis(tipo, item);
+      corpoAba = compat.length ? compat.map(m => renderLinhaMelhoria(m)).join('') : '<div class="eq-melhoria-texto">Nenhuma melhoria aplicável a este item.</div>';
+    }
+
+    return `
+      <div class="dp-secao">Modificar Item</div>
+      ${tabsHtml}
+      <div class="eq-melhorias-wrap" id="eqMelhoriasWrap">${corpoAba}</div>
       <div class="eq-total-box">
-        <span>${totais.n} melhoria${totais.n === 1 ? '' : 's'} · +T$ ${totais.precoAdicional.toLocaleString('pt-BR')} · +${totais.cdAdicional} CD</span>
+        <span>+${totais.cdAdicional} CD de fabricação</span>
         <span class="valor">T$ ${totais.precoTotal.toLocaleString('pt-BR')}</span>
       </div>`;
   }
@@ -1912,9 +2245,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const m = (window.MELHORIAS || []).find(x => x.id === melhoriaId);
     if (_equipMelhoriasSelecionadas.has(melhoriaId)) {
       _equipMelhoriasSelecionadas.delete(melhoriaId);
-      if (melhoriaId === 'material-especial') _equipMaterialSelecionado = null;
     } else {
-      if (m && !melhoriaHabilitada(m)) return; // bloqueada: pré-requisito não atendido
+      if (_equipMelhoriasSelecionadas.size + _equipMateriaisSelecionados.size >= LIMITE_MELHORIAS) return;
+      if (m && !melhoriaHabilitada(m)) return;
       if (m?.restricao?.exclusivaCom) _equipMelhoriasSelecionadas.delete(m.restricao.exclusivaCom);
       _equipMelhoriasSelecionadas.add(melhoriaId);
     }
@@ -1922,7 +2255,16 @@ document.addEventListener('DOMContentLoaded', () => {
   };
 
   window.selecionarMaterialEquip = function(materialId) {
-    _equipMaterialSelecionado = materialId || null;
+    const { tipo, item } = _equipAtual;
+    if (_equipMateriaisSelecionados.has(materialId)) {
+      _equipMateriaisSelecionados.delete(materialId);
+    } else {
+      const mat = (window.MATERIAIS_ESPECIAIS || []).find(x => x.id === materialId);
+      if (mat && !materialAplicavel(mat, tipo, item)) return;
+      if (_equipMateriaisSelecionados.size >= limiteMateriais(tipo, item)) return;
+      if (_equipMelhoriasSelecionadas.size + _equipMateriaisSelecionados.size >= LIMITE_MELHORIAS) return;
+      _equipMateriaisSelecionados.add(materialId);
+    }
     renderCorpoEquip();
   };
 
@@ -1930,6 +2272,17 @@ document.addEventListener('DOMContentLoaded', () => {
     const { tipo, item } = _equipAtual;
     const kw = typeof processarKeywords === 'function' ? processarKeywords : (t) => t;
     const body = document.getElementById('eqBody');
+    const precoFixoEl = document.getElementById('eqPrecoFixo');
+    if (precoFixoEl) {
+      if (tipo === 'arma' || tipo === 'armadura') {
+        const totais = calcularTotalItemSuperior(tipo, item);
+        precoFixoEl.classList.toggle('ativo', totais.precoAdicional > 0);
+        document.getElementById('eqPrecoFixoValor').textContent = `T$ ${totais.precoTotal.toLocaleString('pt-BR')}`;
+        document.getElementById('eqPrecoFixoBase').textContent = `(base ${item.preco || 'Grátis'})`;
+      } else {
+        precoFixoEl.classList.remove('ativo');
+      }
+    }
 
     if (tipo === 'arma') {
       const municaoInfo = item.municao ? (window.MUNICOES || []).find(m => m.id === item.municao) : null;
@@ -2041,17 +2394,41 @@ document.addEventListener('DOMContentLoaded', () => {
       return;
     }
 
+    function renderTagsFixas(item, tipoBase) {
+      const encantosLista = tipoBase === 'arma' ? (window.ENCANTOS_ARMA || []) : (window.ENCANTOS_ARMADURA || []);
+      const tagsEncantos = (item.encantosFixos || []).map(id => {
+        const e = encantosLista.find(x => x.id === id);
+        return e ? `<span class="eq-categoria-tag mod-tag-encantamento">${e.nome}</span>` : '';
+      }).join('');
+      const tagsMelhorias = (item.melhoriasFixas || []).map(id => {
+        const m = (window.MELHORIAS || []).find(x => x.id === id);
+        return m ? `<span class="eq-categoria-tag mod-tag-melhoria">${m.nome}</span>` : '';
+      }).join('');
+      const mat = item.materialFixo ? (window.MATERIAIS_ESPECIAIS || []).find(x => x.id === item.materialFixo) : null;
+      const tagMaterial = mat ? `<span class="eq-categoria-tag mod-tag-material">${mat.nome}</span>` : '';
+      return tagsEncantos + tagsMelhorias + tagMaterial;
+    }
+
     if (tipo === 'arma-especifica') {
+      const base = (window.ARMAS || []).find(x => x.id === item.baseId);
+      const tagsFixas = renderTagsFixas(item, 'arma');
       body.innerHTML = `
         <div class="dp-linha"></div>
         <div class="dp-badges">
           <span class="dp-badge" style="background:rgba(139,0,0,.1);color:#cc4444;border:.5px solid rgba(139,0,0,.3)">Tormenta 20</span>
-          <span class="eq-categoria-tag">Base: ${item.tipoArmaBase}</span>
+          <span class="eq-categoria-tag">Base: ${base ? base.nome : '—'}</span>
         </div>
-        <div class="eq-stats-grid" style="grid-template-columns:1fr;">
+        <div class="eq-stats-grid">
           <div><div class="eq-stat-l">Preço</div><div class="eq-stat-v preco">${item.preco}</div></div>
+          <div><div class="eq-stat-l">Espaços</div><div class="eq-stat-v">${base ? base.espacos : '—'}</div></div>
+          <div><div class="eq-stat-l">Dano</div><div class="eq-stat-v">${base ? (base.dano || '—') : '—'}</div></div>
+          <div><div class="eq-stat-l">Crítico</div><div class="eq-stat-v">${base ? (base.critico || '—') : '—'}</div></div>
+          <div><div class="eq-stat-l">Alcance</div><div class="eq-stat-v">${base ? (base.alcance || 'Corpo a corpo') : '—'}</div></div>
+          <div><div class="eq-stat-l">Tipo de Dano</div><div class="eq-stat-v">${base ? (base.tipoDano || '—') : '—'}</div></div>
         </div>
         <p class="dp-desc">${kw(item.descricao)}</p>
+        ${tagsFixas ? `<div class="eq-tags-fixas" style="margin:2px 0 12px;">${tagsFixas}</div>` : ''}
+        ${item.especial ? `<div class="dp-secao">Especial</div><p class="dp-desc">${kw(item.especial)}</p>` : ''}
       `;
       return;
     }
@@ -2074,17 +2451,24 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     if (tipo === 'armadura-especifica') {
+      const base = (window.ARMADURAS || []).find(x => x.id === item.baseId);
+      const tagsFixas = renderTagsFixas(item, 'armadura');
       body.innerHTML = `
         <div class="dp-linha"></div>
         <div class="dp-badges">
           <span class="dp-badge" style="background:rgba(139,0,0,.1);color:#cc4444;border:.5px solid rgba(139,0,0,.3)">Tormenta 20</span>
           <span class="eq-categoria-tag">${item.tipo === 'escudo' ? 'Escudo' : 'Armadura'}</span>
-          <span class="eq-categoria-tag">Base: ${item.tipoBase}</span>
+          <span class="eq-categoria-tag">Base: ${base ? base.nome : '—'}</span>
         </div>
-        <div class="eq-stats-grid" style="grid-template-columns:1fr;">
+        <div class="eq-stats-grid">
           <div><div class="eq-stat-l">Preço</div><div class="eq-stat-v preco">${item.preco}</div></div>
+          <div><div class="eq-stat-l">Espaços</div><div class="eq-stat-v">${base ? base.espacos : '—'}</div></div>
+          <div><div class="eq-stat-l">Bônus na Defesa</div><div class="eq-stat-v">+${base ? base.bonusDefesa : '—'}</div></div>
+          <div><div class="eq-stat-l">Penalidade de Armadura</div><div class="eq-stat-v">${base ? base.penalidadeArmadura : '—'}</div></div>
         </div>
         <p class="dp-desc">${kw(item.descricao)}</p>
+        ${tagsFixas ? `<div class="eq-tags-fixas" style="margin:2px 0 12px;">${tagsFixas}</div>` : ''}
+        ${item.especial ? `<div class="dp-secao">Especial</div><p class="dp-desc">${kw(item.especial)}</p>` : ''}
       `;
       return;
     }
@@ -2135,6 +2519,29 @@ document.addEventListener('DOMContentLoaded', () => {
       `;
       return;
     }
+
+    if (tipo === 'pocao-criada') {
+      const m = (window.MAGIAS || []).find(x => x.id === item.magiaId);
+      body.innerHTML = `
+        <div class="dp-linha"></div>
+        <div class="dp-badges">
+          <span class="dp-badge" style="background:rgba(94,200,216,.1);color:#5ec8d8;border:.5px solid rgba(94,200,216,.3)">Simulação da sessão</span>
+          <span class="eq-categoria-tag"><i class="ti ${item.formato === 'pergaminho' ? 'ti-scroll' : 'ti-flask'}" aria-hidden="true"></i> ${item.formato === 'pergaminho' ? 'Pergaminho' : 'Poção'}</span>
+          <span class="eq-categoria-tag">${item.circulo}º círculo</span>
+        </div>
+        <div class="eq-stats-grid">
+          <div><div class="eq-stat-l">Preço</div><div class="eq-stat-v preco">T$ ${item.preco.toLocaleString('pt-BR')}</div></div>
+          <div><div class="eq-stat-l">PM total</div><div class="eq-stat-v">${item.pm}</div></div>
+          <div><div class="eq-stat-l">Categoria</div><div class="eq-stat-v">${item.categoria}</div></div>
+          <div><div class="eq-stat-l">CD de fabricação</div><div class="eq-stat-v">${item.cd}</div></div>
+        </div>
+        ${m ? `<p class="dp-desc">${kw(m.descricao)}</p>` : `<p class="dp-desc">Esta magia não foi encontrada na nossa base.</p>`}
+        <button class="pg-modo-btn" style="width:100%;margin-top:10px;padding:9px;" onclick="removerItemCriado(${item.id}); fecharDetalheEquip();">
+          <i class="ti ti-trash" aria-hidden="true"></i> Remover este item
+        </button>
+      `;
+      return;
+    }
   }
 
   window.abrirDetalheEquip = function(tipo, id) {
@@ -2152,19 +2559,22 @@ document.addEventListener('DOMContentLoaded', () => {
     else if (tipo === 'pocao-catalogo') { item = (window.POCOES_CATALOGO || []).find(x => x.id === id); icone = 'ti-flask'; tipoLabel = 'Poção/Pergaminho'; }
     else if (tipo === 'acessorio') { item = (window.ACESSORIOS || []).find(x => x.id === id); icone = 'ti-jewelry'; tipoLabel = 'Acessório'; }
     else if (tipo === 'artefato') { item = (window.ARTEFATOS || []).find(x => x.id === id); icone = 'ti-flame'; tipoLabel = 'Artefato'; }
+    else if (tipo === 'pocao-criada') { item = _itensCriadosPocoes.find(x => x.id === id); icone = item?.formato === 'pergaminho' ? 'ti-scroll' : 'ti-flask'; tipoLabel = item?.formato === 'pergaminho' ? 'Pergaminho Criado' : 'Poção Criada'; }
     if (!item) return;
 
     _equipAtual = { tipo, item };
     _equipMelhoriasSelecionadas = new Set();
-    _equipMaterialSelecionado = null;
+    _equipMateriaisSelecionados = new Set();
+    _equipEncantosSelecionados = new Set();
+    _equipModCalcTab = 'melhorias';
 
     document.getElementById('eqHeroIcon').className = `ti ${icone} dp-hero-icon`;
     document.getElementById('eqTipo').innerHTML = `<i class="ti ${icone}" aria-hidden="true"></i> ${tipoLabel}`;
     const nomeExibido = tipo === 'pocao-catalogo'
       ? ((window.MAGIAS || []).find(m => m.id === item.magiaId)?.nome || '(magia não identificada)')
-      : item.nome;
+      : tipo === 'pocao-criada' ? item.magiaNome : item.nome;
     document.getElementById('eqNome').textContent = nomeExibido;
-    document.getElementById('eqSub').textContent = item.preco || item.efeito || (item.categorias ? item.categorias.join(', ') : '');
+    document.getElementById('eqSub').textContent = (tipo === 'arma' || tipo === 'armadura') ? '' : (tipo === 'pocao-criada' ? `T$ ${item.preco.toLocaleString('pt-BR')}` : (item.preco || item.efeito || (item.categorias ? item.categorias.join(', ') : '')));
 
     renderCorpoEquip();
 
@@ -2385,6 +2795,12 @@ document.addEventListener('DOMContentLoaded', () => {
     const kw = typeof processarKeywords === 'function' ? processarKeywords : (t) => t;
     const esc = ESCOLA_INFO[m.escola] || { label: m.escola, cor: '#888' };
     const tipoInfo = TIPO_MAGIA_INFO[m.tipo];
+    const pmFixoEl = document.getElementById('mgPmFixo');
+    if (pmFixoEl) {
+      const pmTotal = calcularPMTotalMagia();
+      pmFixoEl.classList.add('ativo');
+      document.getElementById('mgPmFixoValor').textContent = `${pmTotal} PM`;
+    }
 
     const aprimHtml = m.aprimoramentos.map((a, i) => renderLinhaAprimoramento(a, i)).join('');
 
@@ -3384,10 +3800,10 @@ document.addEventListener('DOMContentLoaded', () => {
     _itemGeralEstado.busca = buscaItensGeraisEl.value.trim().toLowerCase();
     renderItensGeraisNaSecao();
   });
-  const buscaMelhoriasEl = document.getElementById('buscaMelhorias');
-  if (buscaMelhoriasEl) buscaMelhoriasEl.addEventListener('input', () => {
-    _melhoriaEstado.busca = buscaMelhoriasEl.value.trim().toLowerCase();
-    renderMelhoriasNaSecao();
+  const buscaModificadoresEl = document.getElementById('buscaModificadores');
+  if (buscaModificadoresEl) buscaModificadoresEl.addEventListener('input', () => {
+    _modificadorEstado.busca = buscaModificadoresEl.value.trim().toLowerCase();
+    renderModificadoresNaSecao();
   });
 
   // ── BUSCA DE MAGIAS (4 seções) ──────────────────────────────
@@ -3492,10 +3908,9 @@ document.addEventListener('DOMContentLoaded', () => {
   if (window.ARMAS) renderArmasNaSecao();
   if (window.ARMADURAS) renderArmadurasNaSecao();
   if (window.ITENS_GERAIS) renderItensGeraisNaSecao();
-  if (window.MELHORIAS) renderMelhoriasNaSecao();
-  if (window.MATERIAIS_ESPECIAIS) renderMateriaisEspeciaisNaSecao();
-  if (window.ENCANTOS_ARMA) renderArmasMagicasNaSecao();
-  if (window.ENCANTOS_ARMADURA) renderArmadurasMagicasNaSecao();
+  if (window.ARMAS_ESPECIFICAS) renderArmasMagicasNaSecao();
+  if (window.ARMADURAS_ESCUDOS_ESPECIFICOS) renderArmadurasMagicasNaSecao();
+  if (window.MELHORIAS) { renderModificadoresNaSecao(); renderTipoFiltroModificador(); }
   if (window.POCOES_CATALOGO) renderPocoesCatalogoNaSecao();
   if (window.ACESSORIOS) renderAcessoriosNaSecao();
   if (window.ARTEFATOS) renderArtefatosNaSecao();

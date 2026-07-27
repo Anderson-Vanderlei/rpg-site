@@ -639,6 +639,55 @@ html, body {
   font-family:'Cinzel',serif; font-size:7px; padding:1px 6px; border-radius:2px; letter-spacing:.06em;
   background:rgba(201,168,76,.1); color:#c9a84c; border:.5px solid rgba(201,168,76,.3); flex-shrink:0;
 }
+
+/* Variantes de cor por categoria de Modificador — cada uma com sua
+   identidade visual própria, pra bater o olho e saber que tipo é. */
+.mod-tag-melhoria { background:rgba(201,168,76,.1); color:#c9a84c; border-color:rgba(201,168,76,.3); }
+.mod-tag-encantamento { background:rgba(136,136,255,.1); color:#8888ff; border-color:rgba(136,136,255,.35); }
+.mod-tag-material { background:rgba(94,200,216,.1); color:#5ec8d8; border-color:rgba(94,200,216,.35); }
+.mod-tag-maldicao { background:rgba(204,68,68,.1); color:#cc4444; border-color:rgba(204,68,68,.35); }
+.eq-card.mod-borda-melhoria { border-left:2px solid rgba(201,168,76,.4); }
+.eq-card.mod-borda-encantamento { border-left:2px solid rgba(136,136,255,.4); }
+.eq-card.mod-borda-material { border-left:2px solid rgba(94,200,216,.4); }
+.eq-card.mod-borda-maldicao { border-left:2px solid rgba(204,68,68,.4); }
+.filtro-btn.mod-tag-melhoria.a { background:rgba(201,168,76,.12); border-color:#c9a84c; color:#c9a84c; }
+.filtro-btn.mod-tag-encantamento.a { background:rgba(136,136,255,.12); border-color:#8888ff; color:#8888ff; }
+.filtro-btn.mod-tag-material.a { background:rgba(94,200,216,.12); border-color:#5ec8d8; color:#5ec8d8; }
+.filtro-btn.mod-tag-maldicao { opacity:.4; cursor:not-allowed; }
+
+.eq-modtabs { display:flex; gap:6px; flex-wrap:wrap; margin-bottom:10px; }
+.eq-modtab-btn {
+  font-family:'Cinzel',serif; font-size:9px; letter-spacing:.03em; padding:5px 10px;
+  border-radius:3px; border:.5px solid #333; background:transparent; color:#999; cursor:pointer; transition:all .15s;
+  display:flex; align-items:center; gap:5px;
+}
+.eq-modtab-btn:hover { border-color:#555; color:#ccc; }
+.eq-modtab-contador {
+  font-family:'Crimson Text',serif; font-size:9px; color:#666; background:rgba(255,255,255,.05);
+  border-radius:2px; padding:1px 5px;
+}
+.eq-modtab-btn.a { background:rgba(136,136,255,.1); border-color:#8888ff; color:#8888ff; }
+.eq-modtab-btn.a .eq-modtab-contador { color:#8888ff; background:rgba(136,136,255,.1); }
+.eq-modtab-btn.desabilitado { opacity:.35; cursor:not-allowed; }
+.eq-modtab-btn.desabilitado:hover { border-color:#333; color:#999; }
+
+/* Preço fixo no topo do painel de Equipamento, logo abaixo do nome */
+.eq-preco-fixo {
+  display:none; align-items:center; gap:6px; margin-top:4px; font-family:'Cinzel',serif;
+  font-size:15px; color:#7ec8a0;
+}
+.eq-preco-fixo.ativo { display:flex; }
+.eq-preco-fixo i { font-size:13px; }
+.eq-preco-fixo .base { font-size:10px; color:#666; font-family:'Crimson Text',serif; margin-left:4px; }
+
+/* Idem, mas pro PM total do painel de Magias — azul claro */
+.mg-pm-fixo {
+  display:none; align-items:center; gap:6px; margin-top:4px; font-family:'Cinzel',serif;
+  font-size:15px; color:#7ecaf0;
+}
+.mg-pm-fixo.ativo { display:flex; }
+.mg-pm-fixo i { font-size:13px; }
+
 .eq-preco-tag { font-size:9px; color:#7ec8a0; white-space:nowrap; }
 .eq-nome { font-family:'Cinzel',serif; font-size:13px; color:#e8e8e8; letter-spacing:.04em; margin-bottom:4px; }
 .eq-desc { font-size:10.5px; color:#666; line-height:1.5; margin-bottom:8px; flex:1; }
@@ -648,6 +697,7 @@ html, body {
 .eq-stat-mini i { font-size:11px; color:#666; }
 .eq-habilidades-mini { display:flex; gap:4px; flex-wrap:wrap; margin-top:4px; }
 .eq-hab-tag { font-size:8px; color:#8a7440; background:rgba(201,168,76,.06); border-radius:2px; padding:1px 5px; }
+.eq-tags-fixas { display:flex; flex-wrap:wrap; gap:6px; justify-content:flex-start; }
 
 .eq-stats-grid {
   display:grid; grid-template-columns:1fr 1fr; gap:8px 16px;
@@ -1340,8 +1390,12 @@ html, body {
   #secao-armas .cards-area.encolhido,
   #secao-armaduras .cards-area.encolhido,
   #secao-itens-gerais .cards-area.encolhido,
-  #secao-melhorias .cards-area.encolhido,
-  #secao-materiais-especiais .cards-area.encolhido { margin-right: 460px; }
+  #secao-modificadores .cards-area.encolhido,
+  #secao-armas-magicas .cards-area.encolhido,
+  #secao-armaduras-magicas .cards-area.encolhido,
+  #secao-pocoes-pergaminhos .cards-area.encolhido,
+  #secao-acessorios .cards-area.encolhido,
+  #secao-artefatos .cards-area.encolhido { margin-right: 460px; }
   [id^="secao-magias"] .cards-area.encolhido { margin-right: 460px; }
 }
 

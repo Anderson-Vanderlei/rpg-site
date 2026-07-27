@@ -215,15 +215,17 @@
           <i class="ti ti-backpack" aria-hidden="true"></i>
           <span class="sub-label">Itens Gerais</span>
         </div>
-        <div class="nav-sub-item" data-secao="melhorias"
-             onclick="toggleSubItem(this,'melhorias')">
-          <i class="ti ti-star" aria-hidden="true"></i>
-          <span class="sub-label">Melhorias</span>
+        <div class="nav-sub-item tem-filhos" data-secao="modificadores"
+             onclick="toggleSubItem(this,'modificadores')">
+          <i class="ti ti-adjustments" aria-hidden="true"></i>
+          <span class="sub-label">Modificadores</span>
+          <i class="ti ti-chevron-right seta" style="margin-left:auto;font-size:10px" aria-hidden="true"></i>
         </div>
-        <div class="nav-sub-item" data-secao="materiais-especiais"
-             onclick="toggleSubItem(this,'materiais-especiais')">
-          <i class="ti ti-atom" aria-hidden="true"></i>
-          <span class="sub-label">Materiais Especiais</span>
+        <div class="nav-sub-sub" style="display:none">
+          <div class="nav-sub-sub-item" data-secao="modificadores" onclick="irParaModificadorCategoria('melhoria')"><span>Melhorias</span></div>
+          <div class="nav-sub-sub-item" data-secao="modificadores" onclick="irParaModificadorCategoria('encantamento')"><span>Encantamentos</span></div>
+          <div class="nav-sub-sub-item" data-secao="modificadores" onclick="irParaModificadorCategoria('material')"><span>Materiais Especiais</span></div>
+          <div class="nav-sub-sub-item" style="opacity:.4;cursor:not-allowed;" title="Em breve"><span>Maldições</span></div>
         </div>
         <div class="nav-sub-item" data-secao="armas-magicas"
              onclick="toggleSubItem(this,'armas-magicas')">
@@ -942,67 +944,59 @@
       </div>
     </div><!-- /secao-itens-gerais -->
 
-    <div id="secao-melhorias" class="secao-conteudo" style="display:none;flex-direction:column;flex:1;overflow:hidden;">
+    <div id="secao-modificadores" class="secao-conteudo" style="display:none;flex-direction:column;flex:1;overflow:hidden;">
       <div class="section-hero">
         <div class="section-hero-bg"></div>
-        <h1>Melhorias</h1>
-        <p>29 melhorias de item superior — dá pra aplicar direto no painel de uma arma ou armadura também.</p>
+        <h1>Modificadores</h1>
+        <p>Tudo que altera uma arma ou armadura — melhorias, encantamentos, materiais especiais e (futuramente) maldições.</p>
       </div>
       <div class="toolbar" style="flex-direction:column;align-items:stretch;gap:8px;">
         <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
           <div class="search-inline">
             <i class="ti ti-search" aria-hidden="true"></i>
-            <input type="text" id="buscaMelhorias" placeholder="Buscar melhoria…" />
+            <input type="text" id="buscaModificadores" placeholder="Buscar modificador…" />
           </div>
-          <span class="filtro-count" id="melhoriasCount" style="margin-left:auto;">29 melhorias</span>
+          <span class="filtro-count" id="modificadoresCount" style="margin-left:auto;">29 melhorias</span>
         </div>
-        <div id="melhoriasFiltroCategoria" style="display:flex;gap:8px;flex-wrap:wrap;">
-          <button class="filtro-btn a" onclick="setFiltroMelhoria(this,'todos')">Todas</button>
-          <button class="filtro-btn" onclick="setFiltroMelhoria(this,'arma')">Armas</button>
-          <button class="filtro-btn" onclick="setFiltroMelhoria(this,'armadura')">Armaduras</button>
-          <button class="filtro-btn" onclick="setFiltroMelhoria(this,'escudo')">Escudos</button>
-          <button class="filtro-btn" onclick="setFiltroMelhoria(this,'esoterico')">Esotéricos</button>
-          <button class="filtro-btn" onclick="setFiltroMelhoria(this,'ferramenta')">Ferramentas/Vestuário</button>
-          <button class="filtro-btn" onclick="setFiltroMelhoria(this,'qualquer')">Qualquer categoria</button>
+        <div id="modificadoresCategoriaFiltro" style="display:flex;gap:8px;flex-wrap:wrap;">
+          <button class="filtro-btn a mod-tag-melhoria" onclick="setCategoriaModificador(this,'melhoria')">Melhorias</button>
+          <button class="filtro-btn mod-tag-encantamento" onclick="setCategoriaModificador(this,'encantamento')">Encantamentos</button>
+          <button class="filtro-btn mod-tag-material" onclick="setCategoriaModificador(this,'material')">Materiais Especiais</button>
+          <button class="filtro-btn mod-tag-maldicao" disabled title="Em breve">Maldições (em breve)</button>
         </div>
+        <div id="modificadoresTipoFiltro" style="display:flex;gap:8px;flex-wrap:wrap;"></div>
       </div>
       <div class="cards-area">
-        <div class="cards-grid" id="melhoriasGrid"></div>
+        <div class="cards-grid" id="modificadoresGrid"></div>
       </div>
-    </div><!-- /secao-melhorias -->
-
-    <div id="secao-materiais-especiais" class="secao-conteudo" style="display:none;flex-direction:column;flex:1;overflow:hidden;">
-      <div class="section-hero">
-        <div class="section-hero-bg"></div>
-        <h1>Materiais Especiais</h1>
-        <p>6 materiais — Aço-Rubi, Adamante, Gelo Eterno, Madeira Tollon, Matéria Vermelha e Mitral.</p>
-      </div>
-      <div class="cards-area">
-        <div class="cards-grid" id="materiaisEspeciaisGrid"></div>
-      </div>
-    </div><!-- /secao-materiais-especiais -->
+    </div><!-- /secao-modificadores -->
 
     <div id="secao-armas-magicas" class="secao-conteudo" style="display:none;flex-direction:column;flex:1;overflow:hidden;">
       <div class="section-hero">
         <div class="section-hero-bg"></div>
         <h1>Armas Mágicas</h1>
-        <p>28 encantos de arma + 18 armas específicas lendárias — Cap. 8, pp. 333-337.</p>
+        <p>18 armas específicas lendárias — Cap. 8, pp. 333-337. Os encantos ficaram em Modificadores.</p>
       </div>
       <div class="toolbar" style="flex-direction:column;align-items:stretch;gap:8px;">
         <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
           <div class="search-inline">
             <i class="ti ti-search" aria-hidden="true"></i>
-            <input type="text" id="buscaArmasMagicas" placeholder="Buscar encanto ou arma específica…" />
+            <input type="text" id="buscaArmasMagicas" placeholder="Buscar arma específica…" />
           </div>
-          <span class="filtro-count" id="armasMagicasCount" style="margin-left:auto;">28 encantos</span>
-        </div>
-        <div id="armasMagicasFiltro" style="display:flex;gap:8px;flex-wrap:wrap;">
-          <button class="filtro-btn a" onclick="setModoArmasMagicas(this,'encantos')">Encantos</button>
-          <button class="filtro-btn" onclick="setModoArmasMagicas(this,'especificas')">Armas Específicas</button>
+          <div style="display:flex;gap:6px;margin-left:auto;">
+            <button class="pg-modo-btn a" id="armasMagicasModoCards" onclick="setModoVisualArmasMagicas('cards')" title="Ver como cards">
+              <i class="ti ti-layout-grid" aria-hidden="true"></i>
+            </button>
+            <button class="pg-modo-btn" id="armasMagicasModoTabela" onclick="setModoVisualArmasMagicas('tabela')" title="Ver como tabela">
+              <i class="ti ti-table" aria-hidden="true"></i>
+            </button>
+          </div>
+          <span class="filtro-count" id="armasMagicasCount">18 armas específicas</span>
         </div>
       </div>
       <div class="cards-area">
         <div class="cards-grid" id="armasMagicasGrid"></div>
+        <div id="armasMagicasTabelaWrap" style="display:none"></div>
       </div>
     </div><!-- /secao-armas-magicas -->
 
@@ -1010,23 +1004,28 @@
       <div class="section-hero">
         <div class="section-hero-bg"></div>
         <h1>Armaduras Mágicas</h1>
-        <p>25 encantos de armadura/escudo + 13 itens específicos lendários — Cap. 8, pp. 337-340.</p>
+        <p>13 itens específicos lendários — Cap. 8, pp. 337-340. Os encantos ficaram em Modificadores.</p>
       </div>
       <div class="toolbar" style="flex-direction:column;align-items:stretch;gap:8px;">
         <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
           <div class="search-inline">
             <i class="ti ti-search" aria-hidden="true"></i>
-            <input type="text" id="buscaArmadurasMagicas" placeholder="Buscar encanto ou item específico…" />
+            <input type="text" id="buscaArmadurasMagicas" placeholder="Buscar item específico…" />
           </div>
-          <span class="filtro-count" id="armadurasMagicasCount" style="margin-left:auto;">25 encantos</span>
-        </div>
-        <div id="armadurasMagicasFiltro" style="display:flex;gap:8px;flex-wrap:wrap;">
-          <button class="filtro-btn a" onclick="setModoArmadurasMagicas(this,'encantos')">Encantos</button>
-          <button class="filtro-btn" onclick="setModoArmadurasMagicas(this,'especificas')">Itens Específicos</button>
+          <div style="display:flex;gap:6px;margin-left:auto;">
+            <button class="pg-modo-btn a" id="armadurasMagicasModoCards" onclick="setModoVisualArmadurasMagicas('cards')" title="Ver como cards">
+              <i class="ti ti-layout-grid" aria-hidden="true"></i>
+            </button>
+            <button class="pg-modo-btn" id="armadurasMagicasModoTabela" onclick="setModoVisualArmadurasMagicas('tabela')" title="Ver como tabela">
+              <i class="ti ti-table" aria-hidden="true"></i>
+            </button>
+          </div>
+          <span class="filtro-count" id="armadurasMagicasCount">13 itens específicos</span>
         </div>
       </div>
       <div class="cards-area">
         <div class="cards-grid" id="armadurasMagicasGrid"></div>
+        <div id="armadurasMagicasTabelaWrap" style="display:none"></div>
       </div>
     </div><!-- /secao-armaduras-magicas -->
     <div id="secao-pocoes-pergaminhos" class="secao-conteudo" style="display:none;flex-direction:column;flex:1;overflow:hidden;">
@@ -1058,6 +1057,10 @@
         </div>
         <div id="pocaoGeradorResultados" style="width:100%;max-width:500px;"></div>
         <div id="pocaoGeradorCorpo" style="width:100%;max-width:640px;"></div>
+        <div id="pocoesItensCriadosWrap" style="width:100%;max-width:900px;margin-top:24px;display:none;">
+          <div class="dp-secao" style="margin-top:0;">Itens criados nesta sessão <span style="color:#666;font-weight:normal;">(some ao sair da aba)</span></div>
+          <div class="cards-grid" id="pocoesItensCriadosGrid"></div>
+        </div>
       </div>
     </div><!-- /secao-pocoes-pergaminhos -->
     <div id="secao-acessorios" class="secao-conteudo" style="display:none;flex-direction:column;flex:1;overflow:hidden;">
@@ -1072,7 +1075,15 @@
             <i class="ti ti-search" aria-hidden="true"></i>
             <input type="text" id="buscaAcessorios" placeholder="Buscar acessório…" />
           </div>
-          <span class="filtro-count" id="acessoriosCount" style="margin-left:auto;">65 acessórios</span>
+          <div style="display:flex;gap:6px;margin-left:auto;">
+            <button class="pg-modo-btn a" id="acessoriosModoCards" onclick="setModoVisualAcessorios('cards')" title="Ver como cards">
+              <i class="ti ti-layout-grid" aria-hidden="true"></i>
+            </button>
+            <button class="pg-modo-btn" id="acessoriosModoTabela" onclick="setModoVisualAcessorios('tabela')" title="Ver como tabela">
+              <i class="ti ti-table" aria-hidden="true"></i>
+            </button>
+          </div>
+          <span class="filtro-count" id="acessoriosCount">65 acessórios</span>
         </div>
         <div id="acessoriosFiltro" style="display:flex;gap:8px;flex-wrap:wrap;">
           <button class="filtro-btn a" onclick="setFiltroAcessorio(this,'todos')">Todos</button>
@@ -1083,6 +1094,7 @@
       </div>
       <div class="cards-area">
         <div class="cards-grid" id="acessoriosGrid"></div>
+        <div id="acessoriosTabelaWrap" style="display:none"></div>
       </div>
     </div><!-- /secao-acessorios -->
     <div id="secao-artefatos" class="secao-conteudo" style="display:none;flex-direction:column;flex:1;overflow:hidden;">
@@ -1105,6 +1117,11 @@
           <div class="dp-tipo" id="eqTipo"><i class="ti ti-diamond" aria-hidden="true"></i> Equipamento</div>
           <div class="dp-nome" id="eqNome">—</div>
           <div class="dp-sub" id="eqSub">—</div>
+          <div class="eq-preco-fixo" id="eqPrecoFixo">
+            <i class="ti ti-coin" aria-hidden="true"></i>
+            <span id="eqPrecoFixoValor">T$ 0</span>
+            <span class="base" id="eqPrecoFixoBase"></span>
+          </div>
         </div>
         <button class="dp-fechar" onclick="fecharDetalheEquip()">
           <i class="ti ti-x" aria-hidden="true"></i>
@@ -1287,6 +1304,10 @@
           <div class="dp-tipo" id="mgTipo"><i class="ti ti-sparkles" aria-hidden="true"></i> Magia</div>
           <div class="dp-nome" id="mgNome">—</div>
           <div class="dp-sub" id="mgSub">—</div>
+          <div class="mg-pm-fixo" id="mgPmFixo">
+            <i class="ti ti-sparkles" aria-hidden="true"></i>
+            <span id="mgPmFixoValor">0 PM</span>
+          </div>
         </div>
         <button class="dp-fechar" onclick="fecharDetalheMagia()">
           <i class="ti ti-x" aria-hidden="true"></i>
@@ -1345,6 +1366,7 @@
 <script src="../js/data/itens_gerais.js"></script>
 <script src="../js/data/melhorias.js"></script>
 <script src="../js/data/materiais_especiais.js"></script>
+<script src="../js/data/encantamentos.js"></script>
 <script src="../js/data/armas_magicas.js"></script>
 <script src="../js/data/armaduras_magicas.js"></script>
 <script src="../js/data/pocoes_pergaminhos.js"></script>

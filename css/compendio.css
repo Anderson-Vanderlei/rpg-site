@@ -441,13 +441,13 @@ html, body {
 
 .oc-body { padding:0 .9rem .9rem; flex:1; display:flex; flex-direction:column; }
 .oc-nome { font-family:'Cinzel',serif; font-size:14px; color:#e8e8e8; letter-spacing:.06em; margin-bottom:3px; }
-.oc-hook { font-size:11px; color:#555; font-style:italic; line-height:1.5; margin-bottom:.7rem; }
+.oc-hook { font-size:11px; color:#555; font-style:italic; line-height:1.5; margin-bottom:.7rem; display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical; overflow:hidden; min-height:calc(1.5em * 3); }
 
 .oc-campo { margin-bottom:.5rem; }
 .oc-campo-l { font-family:'Cinzel',serif; font-size:7px; color:#8B0000; letter-spacing:.12em; text-transform:uppercase; margin-bottom:1px; }
-.oc-campo-v { font-size:11px; color:#777; line-height:1.4; }
+.oc-campo-v { font-size:11px; color:#777; line-height:1.4; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
 
-.oc-pericias { font-size:11px; margin-bottom:.7rem; display:flex; gap:6px; flex-wrap:wrap; }
+.oc-pericias { font-size:11px; margin-bottom:.7rem; display:flex; gap:6px; flex-wrap:wrap; min-height:20px; }
 
 .oc-poder-unico {
   display:flex; align-items:center; gap:6px;
@@ -496,11 +496,19 @@ html, body {
 .dc-desc { font-size:12px; color:#666; line-height:1.6; margin-bottom:.8rem; }
 .dc-footer { margin-top:auto; display:flex; gap:6px; }
 
-/* ── PAINEL DE DETALHES ──────────────────────────────────── */
+/* ── PAINEL DE DETALHES ──────────────────────────────────────────────
+   Largura ÚNICA pra todos os painéis de detalhe (Raça, Classe, Origem,
+   Deus, Criatura, Perigo, Ambiente, Equipamento, Magia) — antes cada um
+   tinha sua própria largura (340/460/clamp(380-600) conforme o tipo), e
+   como todos são position:absolute ancorados na direita, um painel mais
+   largo aberto por cima cobria por completo um mais estreito atrás dele,
+   quebrando a ideia de cascata. Com todos do mesmo tamanho, o recuo
+   visual (.ref-empilhado, mais abaixo) sempre revela uma tira do que
+   está atrás, não importa em que ordem os painéis foram abertos. */
 .detalhe-painel {
   position: absolute;
   top: 0; right: 0; bottom: 0;
-  width: 340px;
+  width: 460px;
   background: rgba(6,4,4,.98);
   border-left: 1px solid #1a1010;
   border-top: .5px solid rgba(139,0,0,.3);
@@ -512,6 +520,160 @@ html, body {
   backdrop-filter: blur(14px);
 }
 .detalhe-painel.aberto { transform: translateX(0); }
+
+/* Cor de identidade de cada tipo de painel — reaproveita as mesmas cores
+   já usadas nos links kw-* (keywords.js), só que aqui pintam a borda
+   esquerda do painel quando ele está recuado na pilha (ver
+   .ref-empilhado mais abaixo) e a etiqueta vertical com o nome. Mantém
+   uma cor por tipo em vez de uma só genérica pra ajudar a reconhecer de
+   relance qual painel é qual só pela lasca visível, feito baralho. */
+#detalhePainel        { --painel-cor: #c9a84c; } /* Raça — dourado */
+#classePainel          { --painel-cor: #d87878; } /* Classe — vermelho */
+#origemPainel          { --painel-cor: #78b0d8; } /* Origem — azul */
+#deusPainel            { --painel-cor: #e8c860; } /* Deus — amarelo */
+#criaturaPainel        { --painel-cor: #b06848; } /* Criatura — marrom */
+#perigoPainel,
+#perigoComplexoPainel  { --painel-cor: #cc5050; } /* Perigo — vermelho */
+#ambientePainel        { --painel-cor: #6ab090; } /* Ambiente — verde-água */
+#equipPainel           { --painel-cor: #7ec8a0; } /* Equipamento — verde */
+#magiaPainel           { --painel-cor: #5ec8d8; } /* Magia — ciano */
+
+/* ── MINI-PAINEL (Poder Geral / Poder de Classe / Perícia) ───────────
+   Versão pequena e flutuante do painel de detalhe — pra referências
+   citadas em texto que não têm um painel grande próprio. Some com
+   escala+opacidade ("pop") em vez de deslizar, pra reforçar que é uma
+   consulta rápida por cima do que já estava aberto, não uma tela nova. */
+.mini-painel {
+  position: absolute;
+  top: 70px; right: 24px;
+  width: clamp(340px, 30vw, 460px);
+  max-height: calc(100% - 100px);
+  background: rgba(10,7,7,.98);
+  border: 1px solid rgba(139,0,0,.35);
+  border-radius: 10px;
+  box-shadow: 0 12px 40px rgba(0,0,0,.55);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  z-index: 50;
+  backdrop-filter: blur(14px);
+  transform: scale(.92) translateY(6px);
+  opacity: 0;
+  pointer-events: none;
+  transition: transform .22s cubic-bezier(.4,0,.2,1), opacity .18s;
+}
+.mini-painel.aberto { transform: scale(1) translateY(0); opacity: 1; pointer-events: auto; }
+.mini-tipo {
+  font-family: 'Cinzel', serif; font-size: 8px; letter-spacing: .3em;
+  text-transform: uppercase; color: #8B0000;
+  padding: 14px 34px 0 16px;
+}
+.mini-nome {
+  font-family: 'Cinzel', serif; font-size: 18px; color: #e8e8e8;
+  letter-spacing: .06em; padding: 4px 16px 12px;
+  border-bottom: 1px solid #1a1010;
+}
+.mini-corpo { padding: 14px 18px 18px; overflow-y: auto; flex: 1; }
+.mini-corpo .dp-desc { font-size: 13px; }
+.mini-uso { margin-bottom: .6rem; }
+.mini-uso-nome { font-size: 13px; color: #ccc; font-weight: 600; }
+.mini-uso-cd { font-size: 10.5px; color: #8B0000; font-weight: normal; }
+.mini-uso-desc { font-size: 12px; color: #888; line-height: 1.45; }
+
+/* ── BADGE DE PROFUNDIDADE ──────────────────────────────────────────
+   Bolinha no canto do painel do topo da pilha, mostrando quantos
+   painéis estão empilhados por baixo dele. Clicar volta um nível —
+   atalho rápido pra quem não quer ler a trilha inteira. */
+.ref-prof-badge {
+  position: absolute; top: 10px; left: 10px; z-index: 60;
+  min-width: 20px; height: 20px; padding: 0 5px;
+  border-radius: 999px;
+  background: #8B0000; color: #f0e0e0;
+  font-family: 'Cinzel', serif; font-size: 10px; font-weight: bold;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(0,0,0,.5);
+  transition: background .15s;
+}
+.ref-prof-badge:hover { background: #b01818; }
+
+/* ── PILHA DE REFERÊNCIAS CRUZADAS (painel empilhado por trás) ───────
+   Quando um painel é aberto por referência de texto (clique num nome
+   citado em outra descrição), o painel que já estava aberto recua
+   visualmente pra trás em vez de desaparecer — dá a sensação de pilha
+   de cartas e deixa claro que dá pra voltar. --ref-prof é setado via JS
+   (1 = imediatamente atrás, 2 = mais atrás ainda, etc.).
+   Recuo bem maior que antes (era só 18px) — agora que todos os painéis
+   têm a MESMA largura, esse recuo maior sempre revela uma tira real do
+   painel de trás (com borda colorida + nome na vertical, ver
+   .ref-prof-label mais abaixo), efeito de baralho aberto em leque. */
+.detalhe-painel.aberto.ref-empilhado {
+  transform-origin: right center;
+  transform: translateX(calc(var(--ref-prof, 1) * -44px)) scale(calc(1 - var(--ref-prof, 1) * 0.045));
+  filter: brightness(.6) saturate(.8);
+  box-shadow: -16px 0 40px rgba(0,0,0,.6);
+  border-left: 4px solid var(--painel-cor, #8B0000);
+  pointer-events: none;
+}
+.detalhe-painel.aberto.ref-empilhado .ref-prof-label { pointer-events: auto; }
+
+/* Etiqueta vertical na tira visível de um painel recuado — mostra o
+   nome de quem está "por baixo" (ex: "Bárbaro") e é clicável, pulando
+   direto pra ele (mesma ideia da trilha, só que sempre visível em vez
+   de precisar abrir o menu). Só existe enquanto o painel está
+   .ref-empilhado — inserida/removida via JS em _aplicarEmpilhamentoVisual(). */
+.ref-prof-label {
+  position: absolute;
+  left: 0; top: 0; bottom: 0;
+  width: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  writing-mode: vertical-rl;
+  text-orientation: mixed;
+  font-family: 'Cinzel', serif;
+  font-size: 11px;
+  letter-spacing: .08em;
+  color: var(--painel-cor, #cc4444);
+  background: linear-gradient(90deg, rgba(0,0,0,.35), transparent);
+  cursor: pointer;
+  white-space: nowrap;
+  overflow: hidden;
+  transition: color .15s;
+}
+.ref-prof-label:hover { color: #fff; }
+
+/* Mini-painel recuado — mesma ideia, mas parte da própria transform de
+   "pop" dele (scale+translateY) em vez da de slide dos painéis grandes. */
+.mini-painel.aberto.ref-empilhado {
+  transform: scale(calc(1 - var(--ref-prof, 1) * 0.05)) translateY(calc(var(--ref-prof, 1) * 6px));
+  filter: brightness(.65) saturate(.8);
+  box-shadow: 0 8px 30px rgba(0,0,0,.6);
+  pointer-events: none;
+}
+
+/* Trilha de migalhas no topo do painel do topo da pilha — só aparece
+   quando há mais de um painel empilhado. */
+.ref-trilha {
+  display: flex; align-items: center; flex-wrap: wrap; gap: 4px;
+  padding: 8px 14px;
+  background: rgba(139,0,0,.08);
+  border-bottom: 1px solid rgba(139,0,0,.25);
+  font-family: 'Cinzel', serif;
+  font-size: 10px;
+  letter-spacing: .04em;
+  flex-shrink: 0;
+}
+.ref-trilha-item {
+  color: #888;
+  cursor: pointer;
+  transition: color .15s;
+  white-space: nowrap;
+}
+.ref-trilha-item:hover { color: #d8a0a0; text-decoration: underline; }
+.ref-trilha-atual { color: #e8e8e8; cursor: default; }
+.ref-trilha-atual:hover { text-decoration: none; }
+.ref-trilha-sep { font-size: 9px; color: #4a3030; }
 
 /* Hero do painel */
 .dp-hero {
@@ -774,6 +936,13 @@ html, body {
 .dp-penalidade { background:rgba(139,0,0,.08); border-color:rgba(139,0,0,.2); }
 .dp-penalidade .dp-atrib-v { color:#cc4444; }
 
+/* Cores de destaque das estatísticas do Bestiário */
+.dp-atrib-v.cr-v-pm { color:#4a90d9; font-size:13px; font-weight:600; }
+.dp-atrib-v.cr-v-pv { color:#cc4444; font-size:13px; font-weight:600; }
+.dp-atrib-v.cr-v-defesa { color:#c9a84c; font-size:13px; font-weight:600; }
+.dp-atrib-v.cr-v-desloc { color:#5cb85c; font-size:13px; font-weight:600; }
+.dp-atrib-v.cr-v-ini { color:#4a90d9; font-size:13px; font-weight:600; }
+
 /* Descrição */
 .dp-desc { font-size:13px; color:#666; line-height:1.75; font-style:italic; margin-bottom:.9rem; }
 .dp-historia { font-size:12px; color:#555; line-height:1.7; margin-bottom:.9rem; }
@@ -800,17 +969,16 @@ html, body {
 .dp-classe-tag { font-family:'Cinzel',serif; font-size:7px; padding:2px 8px; border-radius:2px; background:rgba(136,136,255,.07); color:#8888ff88; border:.5px solid rgba(136,136,255,.2); letter-spacing:.06em; }
 
 /* ── Painel de detalhe de Origem ── */
-.op-lista-chips { display:flex; gap:6px; flex-wrap:wrap; margin-bottom:.6rem; font-size:12px; }
-.op-poder-geral {
-  font-size:10px; color:#999; padding:2px 7px; border-radius:2px;
-  background:rgba(80,80,80,.1); border:.5px solid rgba(80,80,80,.28);
-}
-.op-escolha-livre {
-  display:flex; align-items:center; gap:6px; font-size:11px; color:#8a7440;
-  background:rgba(201,168,76,.05); border:.5px solid rgba(201,168,76,.15); border-radius:3px;
-  padding:6px 8px; margin-bottom:.9rem;
-}
-.op-escolha-livre i { font-size:12px; flex-shrink:0; color:#c9a84c; }
+/* Card de poder dentro do painel de Origem — reaproveita o MESMO card de
+   .cp-poder da página de Poderes Gerais (via renderPoderHtml no JS), só
+   embrulhado num wrapper clicável de seleção. A cor da borda já vem de
+   graça pelas classes .cp-poder-cat-* (definidas mais abaixo, DEPOIS da
+   regra base .cp-poder — importante ficarem nessa ordem, senão a base
+   sobrescreve a cor por empate de especificidade e ordem de origem). */
+.op-poder-wrap { margin-bottom: 8px; transition: opacity .15s; }
+.op-poder-wrap .cp-poder { transition: background .15s, border-color .15s; }
+.op-poder-wrap:hover .cp-poder { border-top-color: #333; border-right-color: #333; border-bottom-color: #333; }
+.op-poder-wrap.selecionada .cp-poder { background: rgba(201,168,76,.07); border-top-color: rgba(201,168,76,.4); border-right-color: rgba(201,168,76,.4); border-bottom-color: rgba(201,168,76,.4); }
 
 .op-poder-unico-painel {
   background: rgba(20,16,5,.35); border: .5px solid rgba(201,168,76,.3); border-radius: 5px;
@@ -845,8 +1013,6 @@ html, body {
   padding:7px 9px; margin-bottom:.9rem;
 }
 .dd-devoto-nota i { font-size:13px; flex-shrink:0; color:#c9a84c; }
-
-.dd-poder-chips { display:flex; gap:6px; flex-wrap:wrap; margin-bottom:.9rem; }
 
 /* Botões painel */
 .dp-btns { margin-top:1rem; display:flex; flex-direction:column; gap:6px; }
@@ -992,22 +1158,11 @@ html, body {
 .cc-desc { font-size: 12px; color: #555; line-height: 1.65; font-style: italic; margin-top: .5rem; flex: 1; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
 .cc-footer { margin-top: .75rem; display: flex; gap: 6px; }
 
-/* ── PAINEL DE DETALHES DE CLASSE (mais largo: 420px) ── */
-.classe-painel {
-  position: absolute;
-  top: 0; right: 0; bottom: 0;
-  width: clamp(380px, 33vw, 600px);
-  background: rgba(6,4,4,.98);
-  border-left: 1px solid #1a1010;
-  border-top: .5px solid rgba(139,0,0,.3);
-  transform: translateX(100%);
-  transition: transform .35s cubic-bezier(.4,0,.2,1);
-  display: flex;
-  flex-direction: column;
-  z-index: 50;
-  backdrop-filter: blur(14px);
-}
-.classe-painel.aberto { transform: translateX(0); }
+/* O painel de Classe usava sua própria classe (.classe-painel) com uma
+   largura maior (clamp 380–600px) — agora ele usa .detalhe-painel, igual
+   a todos os outros, pra manter a largura padronizada (ver comentário
+   acima de .detalhe-painel). Só o miolo interno (.cp-hero, .cp-poder
+   etc. abaixo) continua específico de Classe. */
 
 /* Hero do painel de classe */
 .cp-hero {
@@ -1098,8 +1253,12 @@ html, body {
 .kw-poder   { color: #9080d8; border-bottom: 1px dotted #9080d8; cursor: default; }
 .kw-poder-geral { color: #9080d8; border-bottom: 1px dotted #9080d8; }
 .kw-poder-geral:hover { color: #b0a0f0; border-bottom-color: #b0a0f0; }
+.kw-poder-classe { color: #a878c8; border-bottom: 1px dotted #a878c8; }
+.kw-poder-classe:hover { color: #c898e8; border-bottom-color: #c898e8; }
 .kw-magia { color: #5ec8d8; border-bottom: 1px dotted #5ec8d8; }
 .kw-magia:hover { color: #7ed8e8; border-bottom-color: #7ed8e8; }
+.kw-item { color: #7ec8a0; border-bottom: 1px dotted #7ec8a0; }
+.kw-item:hover { color: #9ee8c0; border-bottom-color: #9ee8c0; }
 .kw-cond    { color: #d06060; border-bottom: 1px dotted #d06060; cursor: default; }
 
 /* Highlights numéricos */
@@ -1113,6 +1272,15 @@ html, body {
   background: #0c0a0a; border: .5px solid #1a1a1a;
   border-radius: 4px; padding: 10px 12px; margin-bottom: 7px;
 }
+/* Cor por categoria de Poder Geral (borda esquerda) — igual ao que já
+   fazemos com Modificadores de Equipamentos, mesmo princípio: só a
+   borda muda de cor, nunca o fundo do card inteiro. */
+.cp-poder-cat-combate    { border-left: 2px solid #4caf7d; }
+.cp-poder-cat-destino    { border-left: 2px solid #9966cc; }
+.cp-poder-cat-magia      { border-left: 2px solid #5ec8d8; }
+.cp-poder-cat-concedidos { border-left: 2px solid #d87ea8; }
+.cp-poder-cat-tormenta   { border-left: 2px solid #cc4444; }
+.cp-poder-cat-origem     { border-left: 2px solid #c9a84c; } /* Poder Único / Escolha Livre */
 .cp-poder-head { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin-bottom: 4px; }
 .cp-poder-nome { font-family: 'Cinzel', serif; font-size: 10px; color: #ccc; letter-spacing: .05em; flex: 1; }
 .tag-ativo   { background: rgba(120,40,10,.2); color: #d07050; border-color: rgba(120,40,10,.5); }
@@ -1130,6 +1298,12 @@ html, body {
 .cp-poder-footer-direita { margin-left: auto; display: flex; align-items: center; gap: 6px; }
 .cp-tag-fonte { color: #8a1f1f; background: rgba(139,0,0,.10); border-color: rgba(139,0,0,.25); }
 .cp-tag-categoria { color: #999; background: rgba(120,120,120,.1); border-color: rgba(120,120,120,.28); }
+.cp-tag-categoria-combate    { color: #4caf7d; background: rgba(76,175,125,.1);  border-color: rgba(76,175,125,.3); }
+.cp-tag-categoria-destino    { color: #9966cc; background: rgba(153,102,204,.1); border-color: rgba(153,102,204,.3); }
+.cp-tag-categoria-magia      { color: #5ec8d8; background: rgba(94,200,216,.1);  border-color: rgba(94,200,216,.3); }
+.cp-tag-categoria-concedidos { color: #d87ea8; background: rgba(216,126,168,.1); border-color: rgba(216,126,168,.3); }
+.cp-tag-categoria-tormenta   { color: #cc4444; background: rgba(204,68,68,.1);   border-color: rgba(204,68,68,.3); }
+.cp-tag-categoria-origem     { color: #c9a84c; background: rgba(201,168,76,.1);  border-color: rgba(201,168,76,.3); }
 
 /* Painel de variações (caminhos, linhagens...) */
 .cp-variacao {
@@ -1186,13 +1360,9 @@ html, body {
 
 /* Legenda de keywords */
 
-/* Área expandida quando painel abre */
-@media (min-width: 901px) {
-  #classesArea.encolhido { margin-right: clamp(380px, 33vw, 600px); }
-}
-@media (max-width: 900px) {
-  .classe-painel { width: 100%; }
-}
+/* Área expandida quando painel de Classe abre — largura padronizada
+   agora vem de .detalhe-painel (ver comentário lá); .cards-area.encolhido
+   mais abaixo já cobre #classesArea (ele tem as duas classes). */
 
 /* ── PV / PM — identidade visual global ── */
 .pv-texto {
@@ -1378,26 +1548,203 @@ html, body {
 
 /* ── RESPONSIVO ─────────────────────────────────────────── */
 @media (min-width: 901px) {
-  /* Empurra o grid para a esquerda quando o painel de detalhes abre
-     (só faz sentido quando o painel é uma faixa fixa de 340px) */
-  .cards-area.encolhido { margin-right: 340px; }
-  /* Deuses tem painel mais largo (460px) — precisa de mais margem, e a largura
-     também só vale aqui (senão o seletor de ID vence a versão mobile de 100%) */
-  #secao-deuses .cards-area.encolhido { margin-right: 460px; }
-  #deusPainel { width: 460px; }
-  #magiaPainel { width: 460px; }
-  #equipPainel { width: 460px; }
-  #secao-armas .cards-area.encolhido,
-  #secao-armaduras .cards-area.encolhido,
-  #secao-itens-gerais .cards-area.encolhido,
-  #secao-modificadores .cards-area.encolhido,
-  #secao-armas-magicas .cards-area.encolhido,
-  #secao-armaduras-magicas .cards-area.encolhido,
-  #secao-pocoes-pergaminhos .cards-area.encolhido,
-  #secao-acessorios .cards-area.encolhido,
-  #secao-artefatos .cards-area.encolhido { margin-right: 460px; }
-  [id^="secao-magias"] .cards-area.encolhido { margin-right: 460px; }
+  /* Empurra o grid para a esquerda quando o painel de detalhes abre —
+     uma regra só agora que todo painel tem a mesma largura (460px, ver
+     .detalhe-painel). Antes cada seção tinha sua própria margem
+     duplicada (340/460/clamp conforme o painel daquela seção). */
+  .cards-area.encolhido { margin-right: 460px; }
 }
+
+/* ══════════════════ BESTIÁRIO (CRIATURAS) ══════════════════ */
+
+/* Grid de cards: ND em destaque maior, tags de tipo/tamanho, PV em
+   vermelho e Defesa em amarelo — pedido explícito do usuário pra dar
+   mais hierarquia visual aos números mais importantes do card. */
+.cr-nd-tag { font-size: 10px; padding: 2px 8px; }
+.cr-tags-tipo { display:flex; flex-wrap:wrap; gap:5px; margin-bottom:6px; }
+.cr-tag {
+  font-family:'Cinzel',serif; font-size:8px; padding:1px 6px; border-radius:2px; letter-spacing:.04em;
+  background:rgba(255,255,255,.03); color:#888; border:.5px solid #222;
+}
+.cr-stat-pv { color:#cc4444; }
+.cr-stat-pv i { color:#cc4444; }
+.cr-stat-defesa { color:#c9a84c; }
+.cr-stat-defesa i { color:#c9a84c; }
+.cr-tag-conjurador { background:rgba(120,90,200,.12); color:#a894e0; border-color:rgba(120,90,200,.3); }
+.cr-tag-conjurador i { margin-right:2px; }
+
+/* Destaque de "Ameaça Solo" no painel de detalhe da criatura */
+.dp-hero.cr-hero-solo { box-shadow: inset 0 -3px 0 0 #8b1a1a; }
+.dp-hero.cr-hero-solo .dp-hero-icon { color: #cc4444; }
+.cr-selo-solo {
+  position: absolute; left: 1rem; top: .75rem;
+  display: flex; align-items: center; gap: 4px;
+  font-family: 'Cinzel', serif; font-size: 9px; letter-spacing: .1em; text-transform: uppercase;
+  background: linear-gradient(135deg, #8b1a1a, #5a0f0f); color: #f0d9a0;
+  padding: 4px 10px; border-radius: 3px; border: .5px solid rgba(240,217,160,.3);
+  box-shadow: 0 2px 6px rgba(0,0,0,.4);
+}
+
+/* Mesmo destaque, mais discreto, no card da grade */
+.criatura-card.cr-card-solo { border-color: rgba(139,26,26,.4); box-shadow: inset 0 -2px 0 0 #8b1a1a; }
+
+/* Painel de detalhe: grupos de estatísticas do mesmo tipo (Resistências,
+   Atributos, Perícias) — cada grupo é uma div com um rótulo, e dentro
+   dela cada estatística é sua própria div "chip". Feito assim (em vez
+   de texto corrido) para permitir busca avançada por estatística
+   individual no futuro. */
+.dp-grupo {
+  background:rgba(255,255,255,.02); border:.5px solid #1a1a1a; border-radius:5px;
+  padding:8px 10px; margin-bottom:10px;
+}
+.dp-grupo-titulo {
+  font-family:'Cinzel',serif; font-size:7px; color:#666; letter-spacing:.1em; text-transform:uppercase; margin-bottom:6px;
+}
+.dp-grupo-itens { display:flex; flex-wrap:wrap; gap:6px; }
+.dp-grupo-item {
+  background:#0a0707; border:.5px solid #181010; border-radius:3px; padding:3px 8px;
+  font-size:11px; color:#ccc;
+}
+.dp-grupo-item .lbl { color:#777; margin-right:4px; }
+
+.dp-fonte-pagina {
+  margin-top: 14px; padding-top: 10px; border-top: .5px solid #1a1010;
+  font-family:'Cinzel',serif; font-size: 8px; color:#444; letter-spacing:.12em; text-transform:uppercase;
+}
+
+.calc-combate {
+  margin: 10px 0; background:#0d0a0a; border:.5px solid #1e1e1e; border-radius:6px; padding:14px 16px;
+}
+.calc-combate-header {
+  display:flex; align-items:center; justify-content:space-between;
+  font-family:'Cinzel',serif; font-size:11px; color:#c9a84c; letter-spacing:.08em; margin-bottom:8px;
+}
+.calc-combate-nota { font-size:11px; color:#777; line-height:1.6; margin-bottom:10px; }
+.calc-combate-linha { display:flex; gap:8px; margin-bottom:10px; align-items:center; }
+.calc-combate-linha select,
+.calc-combate-linha input[type="text"] {
+  flex:1; width:100%; background:#0a0707; border:.5px solid #222; color:#ccc; padding:6px 8px; border-radius:4px; font-size:12px;
+}
+.calc-combate-linha input[type="number"] {
+  background:#0a0707; border:.5px solid #222; color:#ccc; padding:6px 8px; border-radius:4px; font-size:12px;
+}
+
+/* Campo de busca de criatura com dropdown próprio (substitui <datalist>,
+   que em vários navegadores só sugere opções depois de digitar algo) */
+.calc-busca-wrap { position:relative; flex:1; }
+.calc-busca-dropdown {
+  display:none; position:absolute; top:calc(100% + 4px); left:0; right:0; z-index:20;
+  max-height:260px; overflow-y:auto; background:#0d0a0a; border:.5px solid #2a2a2a; border-radius:6px;
+  box-shadow:0 8px 24px rgba(0,0,0,.5);
+}
+.calc-busca-dropdown.aberto { display:block; }
+.calc-busca-opcao { display:flex; align-items:center; justify-content:space-between; gap:10px; padding:7px 10px; font-size:12px; color:#ccc; cursor:pointer; }
+.calc-busca-opcao:hover { background:rgba(201,168,76,.08); color:#c9a84c; }
+.calc-busca-nd { color:#777; font-size:11px; flex-shrink:0; }
+.calc-busca-vazio { padding:10px; font-size:11px; color:#666; font-style:italic; }
+.calc-x-btn { background:none; border:none; color:#555; font-size:13px; cursor:pointer; padding:2px 4px; transition:color .2s; flex-shrink:0; }
+.calc-x-btn:hover { color:#e8e8e8; }
+
+/* Calculadora de Combate na sua própria aba (mais espaçosa que a versão
+   compacta que existia dentro de Criaturas) */
+.calc-combate-full { max-width:900px; width:100%; margin:0 auto 1.5rem; padding:20px 22px; }
+.calc-nome-link { cursor:pointer; transition:color .15s; }
+.calc-nome-link:hover { color:#c9a84c; text-decoration:underline; }
+.calc-combate-acoes { display:flex; align-items:center; gap:10px; margin-top:14px; flex-wrap:wrap; }
+
+.calc-combate-lista { display:flex; flex-direction:column; gap:8px; min-width:0; }
+
+/* Card de cada grupo montado — tudo numa linha só (tag, nome, quantidade,
+   ND, remover) pra não espalhar a informação em várias sub-linhas */
+.calc-grupo-card {
+  display:flex; align-items:center; gap:10px; flex-wrap:wrap;
+  background:#0a0707; border:.5px solid #222; border-radius:6px; padding:8px 12px;
+}
+.calc-grupo-card.calc-grupo-solo { border-color:rgba(139,26,26,.4); box-shadow:inset 3px 0 0 0 #8b1a1a; }
+.calc-grupo-tag {
+  display:inline-flex; align-items:center; gap:4px; flex-shrink:0;
+  font-family:'Cinzel',serif; font-size:8px; letter-spacing:.08em; text-transform:uppercase;
+  padding:3px 7px; border-radius:3px; background:rgba(120,120,120,.12); color:#999;
+}
+.calc-grupo-tag-vazio { padding:3px 0; }
+.calc-grupo-tag-solo { background:rgba(139,26,26,.18); color:#d38a8a; }
+.calc-grupo-tag-lacaio { background:rgba(68,120,170,.15); color:#8ab4d3; }
+.calc-grupo-tag-especial { background:rgba(201,168,76,.15); color:#d8bd77; }
+.calc-grupo-nome {
+  font-family:'Cinzel',serif; font-size:13px; color:#ddd;
+  flex:1 1 140px; min-width:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+}
+.calc-grupo-qtd {
+  display:flex; align-items:center; gap:6px; font-size:10px; color:#777; flex-shrink:0;
+  font-family:'Cinzel',serif; letter-spacing:.05em; text-transform:uppercase;
+}
+.calc-grupo-qtd input { width:52px; background:#0d0a0a; border:.5px solid #222; color:#ccc; padding:4px 6px; border-radius:4px; font-size:12px; }
+.calc-grupo-nd { font-size:11px; color:#888; white-space:nowrap; flex-shrink:0; }
+.calc-grupo-nd strong { color:#c9a84c; }
+
+/* Resumo do combate montado — barra horizontal logo abaixo da busca, só
+   aparece (via .ativo) quando há pelo menos um grupo montado; antes disso
+   fica com display:none, sem ocupar espaço vazio na tela. */
+.calc-resumo-linha {
+  display:none; flex-direction:column; gap:8px; background:#0a0707; border:.5px solid #1e1e1e;
+  border-radius:6px; padding:10px 14px; margin-bottom:12px;
+}
+.calc-resumo-linha.ativo { display:flex; }
+.calc-resumo-linha-topo { display:flex; align-items:baseline; gap:22px; flex-wrap:wrap; }
+.calc-resumo-item-linha { display:flex; align-items:baseline; gap:6px; }
+.calc-resumo-item-linha .calc-resumo-label { margin-bottom:0; }
+.calc-resumo-item-linha .calc-resumo-valor { font-size:15px; }
+.calc-resumo-label { font-size:9px; color:#777; font-family:'Cinzel',serif; letter-spacing:.06em; text-transform:uppercase; }
+.calc-resumo-valor { font-size:18px; color:#c9a84c; font-family:'Cinzel',serif; }
+.calc-resumo-aviso {
+  font-size:11px; line-height:1.5; color:#d38a8a; background:rgba(139,26,26,.1);
+  border:.5px solid rgba(139,26,26,.3); border-radius:4px; padding:8px;
+}
+.calc-resumo-nota { font-size:10px; line-height:1.5; color:#666; }
+.calc-btn-acao {
+  background:transparent; border:.5px solid #2a2a2a; color:#999; padding:7px 12px; border-radius:4px;
+  font-family:'Cinzel',serif; font-size:9px; letter-spacing:.08em; text-transform:uppercase;
+  cursor:pointer; transition:all .2s; display:flex; align-items:center; gap:6px;
+}
+.calc-btn-acao:hover { border-color:#c9a84c55; color:#c9a84c; background:rgba(201,168,76,.06); }
+.calc-combate-salvo-info { font-size:11px; color:#666; font-style:italic; }
+
+.calc-combate-heroes { margin-top:18px; padding-top:16px; border-top:.5px solid #1a1010; }
+.calc-combate-campo {
+  display:flex; flex-direction:column; gap:4px; font-size:10px; color:#777;
+  font-family:'Cinzel',serif; letter-spacing:.05em; text-transform:uppercase;
+}
+.calc-combate-campo input[type="number"] { width:90px; }
+
+.calc-comparacao-box {
+  margin-top:12px; padding:12px 14px; border-radius:6px; border:.5px solid #222; background:#0a0707;
+}
+.calc-comparacao-nds { font-size:11px; color:#888; margin-bottom:6px; }
+.calc-comparacao-nds strong { color:#ccc; }
+.calc-comparacao-texto { font-size:12px; line-height:1.6; color:#bbb; }
+.calc-comp-facil { border-color:rgba(68,170,102,.35); }
+.calc-comp-facil .calc-comparacao-texto { color:#7fc99a; }
+.calc-comp-justo { border-color:rgba(201,168,76,.35); }
+.calc-comp-justo .calc-comparacao-texto { color:#d8bd77; }
+.calc-comp-dificil { border-color:rgba(204,68,68,.35); }
+.calc-comp-dificil .calc-comparacao-texto { color:#d38a8a; }
+
+/* Sugestões de criaturas para o nível do grupo (dentro da comparação com heróis) */
+.calc-sugestoes-grid { display:grid; grid-template-columns:repeat(auto-fit, minmax(200px,1fr)); gap:12px; margin-top:10px; }
+.calc-sugestao-card {
+  background:#0a0707; border:.5px solid #222; border-radius:6px; padding:12px 14px;
+  display:flex; flex-direction:column; gap:6px; align-items:flex-start;
+}
+.calc-sugestao-selo {
+  font-family:'Cinzel',serif; font-size:9px; letter-spacing:.08em; text-transform:uppercase;
+  padding:3px 7px; border-radius:3px;
+}
+.calc-sugestao-card.calc-comp-facil .calc-sugestao-selo { background:rgba(68,170,102,.18); color:#7fc99a; }
+.calc-sugestao-card.calc-comp-justo .calc-sugestao-selo { background:rgba(201,168,76,.18); color:#d8bd77; }
+.calc-sugestao-card.calc-comp-dificil .calc-sugestao-selo { background:rgba(204,68,68,.18); color:#d38a8a; }
+.calc-sugestao-nome { font-family:'Cinzel',serif; font-size:14px; color:#ddd; }
+.calc-sugestao-info { font-size:11px; color:#888; }
+.calc-sugestao-card .calc-btn-acao { margin-top:4px; }
 
 /* Colunas mais estreitas só pro grid de Deuses — com a área do ícone alta (150px),
    isso deixa o card com proporção de retrato em vez de quase-quadrado */
@@ -1452,6 +1799,20 @@ html, body {
 .kw-cond    { color: #d06060; border-color: #d06060cc; }
 .kw-regra   { color: #a080d8; border-color: #a080d8cc; }
 .kw-parceiro { color: #c07a30; border-color: #c07a30cc; }
+.kw-raca    { color: #c9a84c; border-color: #c9a84ccc; cursor: pointer; }
+.kw-raca:hover    { color: #e0c070; border-color: #e0c070cc; }
+.kw-classe  { color: #d87878; border-color: #d87878cc; cursor: pointer; }
+.kw-classe:hover  { color: #f09898; border-color: #f09898cc; }
+.kw-origem  { color: #78b0d8; border-color: #78b0d8cc; cursor: pointer; }
+.kw-origem:hover  { color: #98d0f8; border-color: #98d0f8cc; }
+.kw-deus    { color: #e8c860; border-color: #e8c860cc; cursor: pointer; }
+.kw-deus:hover    { color: #ffe080; border-color: #ffe080cc; }
+.kw-criatura { color: #b06848; border-color: #b06848cc; cursor: pointer; }
+.kw-criatura:hover { color: #d08868; border-color: #d08868cc; }
+.kw-perigo  { color: #cc5050; border-color: #cc5050cc; cursor: pointer; }
+.kw-perigo:hover  { color: #ec7070; border-color: #ec7070cc; }
+.kw-ambiente { color: #6ab090; border-color: #6ab090cc; cursor: pointer; }
+.kw-ambiente:hover { color: #8ad0b0; border-color: #8ad0b0cc; }
 
 /* ── TOOLTIP GLOBAL ── */
 #tooltip-kw {
@@ -1864,6 +2225,15 @@ html, body {
 }
 .per-uso-desc { font-size: 10.5px; color: #666; line-height: 1.5; }
 
+.per-concedida-por { display: none; padding-top: 6px; border-top: .5px solid #161616; }
+.per-linha.aberto .per-concedida-por { display: block; }
+.per-concedida-titulo {
+  display: flex; align-items: center; gap: 5px; font-family: 'Cinzel', serif; font-size: 9px;
+  color: #8a7440; letter-spacing: .06em; text-transform: uppercase; margin-bottom: 5px;
+}
+.per-concedida-linha { font-size: 10.5px; color: #777; line-height: 1.6; }
+.per-concedida-label { color: #c9a84c; font-family: 'Cinzel', serif; font-size: 8.5px; letter-spacing: .03em; margin-right: 3px; }
+
 /* Painel de explicação (cp-explicacao) e painel de escolha (cp-escolha)
    reaproveitados dentro de uma linha de perícia — somem/aparecem junto
    com os usos, ao expandir a linha */
@@ -1881,3 +2251,140 @@ html, body {
 .per-uso-tabela td { padding: 4px 8px; color: #888; border-bottom: .5px solid #161616; }
 .per-uso-tabela tr:last-child td { border-bottom: none; }
 .per-uso-tabela td:first-child { color: #b8922a; white-space: nowrap; }
+
+/* ── Perigos (Perigos Simples + Perigos Complexos, Cap. 7) ── */
+
+/* Widget "Sortear Perigo" — reaproveita a caixa visual do .calc-combate.
+   Vive DENTRO de .cards-area (não como irmão dela) de propósito: assim
+   ele encolhe/estica junto com a grade quando o painel de detalhe abre —
+   antes ficava fora e não acompanhava o ajuste de tamanho do painel. */
+.sortear-armadilha {
+  margin: 0 0 16px; background:#0d0a0a; border:.5px solid #1e1e1e; border-radius:6px; padding:14px 16px;
+}
+.sortear-armadilha .calc-combate-linha { flex-wrap:wrap; align-items:flex-end; }
+
+/* Checkbox personalizado — componente genérico reaproveitado em qualquer
+   lugar do site que precise de uma caixa de seleção (não nativa, pra
+   combinar com o visual escuro/dourado do site em vez do checkbox do
+   navegador). Usado no sorteio de perigos e no filtro "excluir usados"
+   da Visão Geral; padronizado aqui pra reaproveitar em futuras telas. */
+.t20-checkbox {
+  display:flex; align-items:center; gap:8px; font-size:11px; color:#999; cursor:pointer;
+  margin:2px 0 10px; line-height:1;
+}
+.t20-checkbox:hover { color:#ccc; }
+.t20-checkbox input[type="checkbox"] {
+  appearance:none; -webkit-appearance:none; margin:0; flex-shrink:0;
+  width:15px; height:15px; border-radius:3px; border:.5px solid #333; background:#0a0707;
+  cursor:pointer; position:relative; transition:border-color .15s, background .15s;
+}
+.t20-checkbox input[type="checkbox"]:hover { border-color:#555; }
+.t20-checkbox input[type="checkbox"]:checked { background:rgba(201,168,76,.15); border-color:#c9a84c; }
+.t20-checkbox input[type="checkbox"]:checked::after {
+  content:''; position:absolute; left:4px; top:1px; width:4px; height:8px;
+  border:solid #c9a84c; border-width:0 2px 2px 0; transform:rotate(45deg);
+}
+
+/* Lista acumulada de sorteios — cada roda de "Sortear" entra aqui em vez
+   de substituir o resultado anterior, pra dar pra montar uma lista de
+   armadilhas/perigos de uma masmorra numa sessão de preparo. */
+.sortear-lista-header {
+  display:flex; align-items:center; justify-content:space-between; gap:10px;
+  font-family:'Cinzel',serif; font-size:9px; color:#888; letter-spacing:.06em; text-transform:uppercase;
+  margin-top:8px; margin-bottom:8px;
+}
+.sortear-lista { display:flex; flex-direction:column; gap:6px; }
+.sortear-lista .calc-x-btn { margin-left:auto; }
+
+/* Cadeia de progressão de doenças (fraca → debilitada → inconsciente → morre) */
+.dp-progressao { display:flex; flex-wrap:wrap; align-items:center; gap:6px; margin-top:6px; }
+.dp-progressao-passo {
+  font-family:'Cinzel',serif; font-size:10.5px; color:#d38a8a; letter-spacing:.03em; text-transform:uppercase;
+  background:rgba(139,26,26,.12); border:.5px solid rgba(139,26,26,.3); border-radius:4px; padding:4px 9px;
+}
+.dp-progressao-seta { color:#555; font-size:11px; }
+
+/* Contador de sucessos/falhas de um Perigo Complexo — puramente mecânico,
+   não calcula quem "venceu"; o texto de contadorNota (citação literal do
+   livro) é quem informa o limiar. */
+.pgc-contador {
+  margin-top:8px; background:#0d0a0a; border:.5px solid #1e1e1e; border-radius:6px; padding:12px 14px;
+}
+.pgc-contador-linha { display:flex; align-items:center; gap:18px; flex-wrap:wrap; }
+.pgc-contador-item { display:flex; flex-direction:column; align-items:flex-start; gap:4px; }
+.pgc-contador-label {
+  font-family:'Cinzel',serif; font-size:9px; color:#888; letter-spacing:.06em; text-transform:uppercase;
+}
+.pgc-contador-controles { display:flex; align-items:center; gap:8px; }
+.pgc-contador-controles button {
+  background:#0a0707; border:.5px solid #2a2a2a; color:#ccc; border-radius:4px; width:24px; height:24px;
+  display:flex; align-items:center; justify-content:center; cursor:pointer; font-size:11px; transition:border-color .2s,color .2s;
+}
+.pgc-contador-controles button:hover { border-color:#c9a84c; color:#c9a84c; }
+.pgc-contador-controles span { min-width:18px; text-align:center; font-family:'Cinzel',serif; font-size:14px; color:#e8e8e8; }
+.pgc-contador .calc-x-btn { margin-left:auto; }
+.pgc-contador .calc-combate-nota { margin:10px 0 0; }
+
+/* Select genérico de filtro (ex: filtro por Condição em Perigos) — mesma
+   linguagem visual do .filtro-btn, só que como <select> nativo. */
+.filtro-select {
+  background:#0d0a0a; border:.5px solid #1e1e1e; color:#999; border-radius:3px;
+  height:30px; padding:0 8px; font-family:'Cinzel',serif; font-size:8px; letter-spacing:.06em;
+  cursor:pointer; transition:all .2s;
+}
+.filtro-select:hover { color:#ccc; border-color:#2a2a2a; }
+
+/* Marcador "usado na mesa" — vive dentro da própria linha do topo do card
+   (ao lado da tag de categoria), não mais sobreposto/absoluto por cima
+   dela, pra não cobrir o texto da tag. */
+.eq-card-top-right { display:flex; align-items:center; gap:6px; flex-shrink:0; }
+.perigo-usado-btn {
+  width:18px; height:18px; border-radius:50%; display:flex; align-items:center; justify-content:center;
+  background:#0a0707; border:.5px solid #2a2a2a; color:#444; cursor:pointer; transition:all .2s; font-size:9px; flex-shrink:0;
+}
+.perigo-usado-btn:hover { border-color:#c9a84c; color:#c9a84c; }
+.perigo-usado-btn.a { background:rgba(126,200,160,.15); border-color:#7ec8a0; color:#7ec8a0; }
+.eq-card.perigo-card.usado { opacity:.55; }
+.eq-card.perigo-card.usado:hover { opacity:.85; }
+
+/* Mesmo marcador, como botão de linha inteira dentro do painel de detalhe. */
+.perigo-usado-detalhe { margin-bottom:10px; }
+.perigo-usado-detalhe.a { color:#7ec8a0; border-color:rgba(126,200,160,.35); background:rgba(126,200,160,.05); }
+
+/* Segmento clicável no breadcrumb — hoje só o item "pai" de uma seção com
+   3 níveis (ex: Perigos → Perigos Simples) tem um destino de verdade. */
+.bc-item-link { cursor:pointer; transition:color .15s; }
+.bc-item-link:hover { color:#c9a84c; text-decoration:underline; }
+
+/* ── Ambiente (Clima, Terrenos, Masmorras, Ermos, Urbano, Viagens) ── */
+
+/* Visão geral (hub) — grade de atalhos pras seis sub-abas, cada uma com
+   ícone, título, descrição curta e contagem. Some quando há uma busca
+   ativa, dando lugar à grade de resultados combinados. */
+.amb-hub-grid {
+  display:grid; grid-template-columns:repeat(auto-fill, minmax(220px, 1fr)); gap:14px;
+}
+.amb-hub-card {
+  position:relative; background:#0d0a0a; border:.5px solid #1e1e1e; border-radius:8px; padding:18px;
+  cursor:pointer; transition:border-color .2s, transform .15s;
+}
+.amb-hub-card:hover { border-color:#c9a84c; transform:translateY(-2px); }
+.amb-hub-card i { font-size:22px; color:#c9a84c; }
+.amb-hub-titulo { font-family:'Cinzel',serif; font-size:15px; color:#e8e8e8; margin-top:10px; }
+.amb-hub-desc { font-size:12px; color:#999; margin-top:6px; line-height:1.5; }
+.amb-hub-count {
+  position:absolute; top:14px; right:14px; font-family:'Cinzel',serif; font-size:10px; color:#888;
+  background:rgba(255,255,255,.04); border:.5px solid #2a2a2a; border-radius:10px; padding:2px 8px;
+}
+
+/* Sub-tabela citada literalmente do livro dentro do painel de detalhe
+   (ex: a tabela de 1d6 da Ruína) — reaproveitável por qualquer item futuro
+   que também tenha uma tabela de resultado aleatório embutida. */
+.dp-tabela { display:flex; flex-direction:column; gap:6px; margin-top:6px; }
+.dp-tabela-linha {
+  display:flex; align-items:baseline; gap:10px; font-size:13px; color:#ccc; line-height:1.5;
+  padding:6px 10px; background:rgba(255,255,255,.02); border-radius:4px;
+}
+.dp-tabela-faixa {
+  font-family:'Cinzel',serif; font-size:11px; color:#c9a84c; letter-spacing:.04em; flex-shrink:0; min-width:32px;
+}

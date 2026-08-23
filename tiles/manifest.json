@@ -1,0 +1,47 @@
+{
+  "arton": {
+    "nativo": [
+      5906,
+      4134
+    ],
+    "maxZoom": 5,
+    "tileSize": 256,
+    "totalTiles": 560
+  },
+  "lamnor": {
+    "nativo": [
+      1270,
+      1034
+    ],
+    "maxZoom": 3,
+    "tileSize": 256,
+    "totalTiles": 39
+  },
+  "tamura": {
+    "nativo": [
+      797,
+      1092
+    ],
+    "maxZoom": 3,
+    "tileSize": 256,
+    "totalTiles": 29
+  },
+  "moreania": {
+    "nativo": [
+      1329,
+      871
+    ],
+    "maxZoom": 3,
+    "tileSize": 256,
+    "totalTiles": 33
+  },
+  "doherimm": {
+    "nativo": [
+      1683,
+      1270
+    ],
+    "maxZoom": 3,
+    "tileSize": 256,
+    "totalTiles": 52
+  }
+}

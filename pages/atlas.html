@@ -11,6 +11,20 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;600&family=Crimson+Text:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/dist/tabler-icons.min.css" />
+
+  <!-- Leaflet — motor do mapa (CRS.Simple, mapa fictício por pixel, não geográfico) -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+  <!-- PixiJS — camada de efeitos atmosféricos acelerados por GPU (nuvens/tormenta/bioluminescência) -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pixi.js/8.6.6/pixi.min.js"></script>
+
+  <!-- GSAP — transições/animações cinematográficas -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+
+  <!-- Howler.js — som ambiente por região/atmosfera -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/howler/2.2.4/howler.min.js"></script>
+
   <link rel="stylesheet" href="../css/variables.css" />
   <link rel="stylesheet" href="../css/atlas.css" />
 </head>
@@ -41,6 +55,11 @@
   <button class="sb-btn" id="btnDistancia" onclick="toggleDistancia()">
     <i class="ti ti-ruler" aria-hidden="true"></i>
     <span class="sb-tooltip">Medir Distância</span>
+  </button>
+
+  <button class="sb-btn" id="btnSom" onclick="toggleSom()">
+    <i class="ti ti-volume-3" aria-hidden="true"></i>
+    <span class="sb-tooltip">Som Ambiente (sem áudio ainda)</span>
   </button>
 
   <div class="sb-sep"></div>
@@ -183,60 +202,22 @@
   </div>
 </div>
 
-<!-- MAPA PRINCIPAL -->
-<main class="map-wrap" id="mapWrap">
-  <div class="map-container" id="mapContainer">
+<!-- MAPA PRINCIPAL — Leaflet toma posse exclusiva deste container -->
+<main class="map-wrap" id="mapWrap"></main>
 
-    <!-- IMAGEM DO MAPA
-         Renomeie seus arquivos e coloque na pasta images/:
-         30b-Poster-mapa-limpo.jpg  →  images/mapa-arton.jpg
-         22-Lamnor.jpg              →  images/mapa-lamnor.jpg
-         27-Tamu-ra.jpg             →  images/mapa-tamura.jpg
-         28-Moreania.jpg            →  images/mapa-moreania.jpg
-         29-Doherimm.jpg            →  images/mapa-doherimm.jpg
-    -->
-    <img class="map-img" id="mapImg"
-         src="../images/mapa-arton.jpg"
-         alt="Mapa de Arton"
-         draggable="false" />
-
-    <!-- SVG DAS REGIÕES — preenchido pelo atlas.js -->
-    <svg class="regions-svg" id="regionsSvg"
-         viewBox="0 0 100 100"
-         preserveAspectRatio="xMidYMid slice"></svg>
-
-    <!-- LABELS DAS REGIÕES — Arton Norte -->
-    <div class="regiao-label" id="lbl-reinado"      style="left:44%;top:57%">O Reinado</div>
-    <div class="regiao-label" id="lbl-tauron"       style="left:20%;top:43%">Império de Tauron</div>
-    <div class="regiao-label" id="lbl-supremacia"   style="left:43%;top:50%">Supremacia Purista</div>
-    <div class="regiao-label" id="lbl-namalkah"     style="left:46%;top:31%">Namalkah</div>
-    <div class="regiao-label" id="lbl-aslothia"     style="left:67%;top:56%">Aslothia</div>
-    <div class="regiao-label" id="lbl-lamnor-reg"   style="left:22%;top:73%">Lamnor</div>
-    <div class="regiao-label" id="lbl-ubani"        style="left:37%;top:18%">Ubani</div>
-    <div class="regiao-label" id="lbl-zona-tormenta" style="left:39%;top:46%">⚠ Tormenta</div>
-
-    <!-- CANVAS NUVENS — fixo, não transforma com o mapa -->
-    <canvas id="cloudsCanvas" class="clouds-canvas"></canvas>
-
-    <!-- CANVAS PARTÍCULAS (Tormenta / Bioluminescência) -->
-    <canvas id="particlesCanvas" class="particles-canvas"></canvas>
-
-    <!-- CANVAS DISTÂNCIA -->
-    <canvas id="distanciaCanvas" class="distancia-canvas"></canvas>
-
-    <!-- ROTA SVG DA VECTORA -->
-    <svg class="vectora-rota" id="vectoraRota" viewBox="0 0 100 100" preserveAspectRatio="xMidYMid slice">
-      <path id="vectoraCaminho"
-        d="M 52,37 C 55,40 60,43 62,46 C 59,51 54,56 52,58 C 48,55 45,50 44,46 C 46,42 49,39 52,37"
-        fill="none" stroke="rgba(136,136,255,0.2)" stroke-width="0.3" stroke-dasharray="1.5,1"/>
-    </svg>
-
-  </div><!-- /map-container -->
-
-  <!-- NÉVOA NAS BORDAS DO JPG — fora do container, não transforma -->
+<!-- CAMADA DE EFEITOS — irmã do #mapWrap (não filha!), mesma posição/tamanho
+     na tela, pointer-events:none pra nunca bloquear cliques no mapa/marcadores.
+     Fica por cima do Leaflet via z-index (ver atlas.css), não por aninhamento. -->
+<div class="map-effects-layer" id="mapEffectsLayer">
+  <!-- CANVAS NUVENS -->
+  <canvas id="cloudsCanvas" class="clouds-canvas"></canvas>
+  <!-- PIXI (tormenta/bioluminescência) entra num <div> próprio — PixiJS cria seu próprio <canvas> -->
+  <div id="pixiEfeitos" class="pixi-efeitos"></div>
+  <!-- CANVAS DISTÂNCIA -->
+  <canvas id="distanciaCanvas" class="distancia-canvas"></canvas>
+  <!-- NÉVOA NAS BORDAS -->
   <div class="map-vignette-fixed"></div>
-
-</main><!-- /map-wrap -->
+</div>
 
 <!-- BANNER MODO CRIAÇÃO -->
 <div class="modo-criacao-banner" id="modocriacaoBanner">
@@ -377,6 +358,7 @@
 </div>
 
 <!-- SCRIPTS -->
+<script src="../js/acessibilidade.js"></script>
 <script src="../js/data/locais.js"></script>
 <script src="../js/atlas.js"></script>
 <script>

@@ -283,6 +283,32 @@ let _PODER_GERAL_LIST = null;
 // demanda na primeira vez que processarKeywords() rodar.
 let _MAGIA_LIST = null;
 
+// Cache combinada das 6 listas de Equipamentos (armas, armaduras, itens
+// gerais/munições, melhorias, materiais, encantos, específicas, acessórios,
+// artefatos) pra keyword — mesmo esquema de _MAGIA_LIST/_PODER_LIST.
+let _ITEM_LIST = null;
+// Nomes de Poder Geral que colidem com nome de item (ex: "Acrobático" é
+// poder E encanto de armadura) — poder sempre ganha a prioridade (roda
+// antes), mas guardamos a lista pra acrescentar uma dica visual (tooltip)
+// nesses casos raros, em vez de deixar a ambiguidade invisível.
+let _NOMES_COLIDENTES = null;
+
+// Caches de Raças, Classes, Origens e Deuses pra keyword — mesmo esquema
+// sob demanda de _PODER_GERAL_LIST/_MAGIA_LIST/_ITEM_LIST. Adicionadas
+// pra permitir citar essas entidades em qualquer texto do site (descrição
+// de criatura, prerequisito de poder, texto de origem etc.) e virar link
+// clicável que abre o painel de detalhe correspondente — sem precisar
+// editar manualmente cada texto já extraído.
+let _RACA_LIST = null;
+let _CLASSE_LIST = null;
+let _ORIGEM_LIST = null;
+let _DEUS_LIST = null;
+let _CRIATURA_LIST = null;
+let _PERIGO_LIST = null;
+let _PERIGO_COMPLEXO_LIST = null;
+let _AMBIENTE_LIST = null;
+let _PODER_CLASSE_LIST = null;
+
 // ── DETECÇÃO NUMÉRICA AUTOMÁTICA ───────────────────────────
 
 function _processarNumericos(texto, placeholders) {
@@ -336,9 +362,9 @@ function processarKeywords(texto) {
     resultado = resultado.replace(kw.regex, (_, capture) => {
       const idx = placeholders.length;
       const nomeEscapado = _escapeHtml(capture);
-      // Perícias linkam para a página de Perícias (abre e expande a linha)
+      // Perícias abrem o mini-painel compartilhado (pilha de referências)
       const clickAttr = kw.tipo === 'pericia'
-        ? ` onclick="event.stopPropagation(); window.irParaPericia && window.irParaPericia('${nomeEscapado.replace(/'/g, "\\'")}')" style="cursor:pointer"`
+        ? ` onclick="event.stopPropagation(); window.abrirBlocoReferencia && window.abrirBlocoReferencia('pericia', '${nomeEscapado.replace(/'/g, "\\'")}')" style="cursor:pointer"`
         : '';
       placeholders.push(
         `<span class="kw kw-${kw.tipo}"` +
@@ -369,13 +395,25 @@ function processarKeywords(texto) {
       .sort((a, b) => b.nome.length - a.nome.length);
   }
   if (_PODER_GERAL_LIST) {
+    if (!_NOMES_COLIDENTES && typeof window !== 'undefined' && window.ENCANTOS_ARMA) {
+      const nomesDeItem = new Set([
+        ...(window.ARMAS || []), ...(window.ARMADURAS || []), ...(window.ITENS_GERAIS || []),
+        ...(window.MUNICOES || []), ...(window.MELHORIAS || []), ...(window.MATERIAIS_ESPECIAIS || []),
+        ...(window.ENCANTOS_ARMA || []), ...(window.ENCANTOS_ARMADURA || []),
+        ...(window.ARMAS_ESPECIFICAS || []), ...(window.ARMADURAS_ESCUDOS_ESPECIFICOS || []),
+        ...(window.ACESSORIOS || []), ...(window.ARTEFATOS || []),
+      ].map(x => x.nome));
+      _NOMES_COLIDENTES = new Set(_PODER_GERAL_LIST.map(p => p.nome).filter(n => nomesDeItem.has(n)));
+    }
     for (const pg of _PODER_GERAL_LIST) {
       resultado = resultado.replace(pg.regex, (_, capture) => {
         const idx = placeholders.length;
         const nomeEscapado = _escapeHtml(capture).replace(/'/g, "\\'");
+        const colide = _NOMES_COLIDENTES && _NOMES_COLIDENTES.has(pg.nome);
         placeholders.push(
           `<span class="kw kw-poder-geral"` +
-          ` onclick="event.stopPropagation(); window.irParaPoderGeral && window.irParaPoderGeral('${nomeEscapado}', '${pg.categoria}')"` +
+          ` onclick="event.stopPropagation(); window.abrirBlocoReferencia && window.abrirBlocoReferencia('poderGeral', '${nomeEscapado}', '${pg.categoria}')"` +
+          (colide ? ` title="Este nome também existe como item de Equipamentos — este link vai pro Poder Geral."` : '') +
           ` style="cursor:pointer">${capture}</span>`
         );
         return `\x00${idx}\x00`;
@@ -405,7 +443,7 @@ function processarKeywords(texto) {
         const nomeEscapado = _escapeHtml(capture).replace(/'/g, "\\'");
         placeholders.push(
           `<span class="kw kw-magia"` +
-          ` onclick="event.stopPropagation(); window.irParaMagia && window.irParaMagia('${nomeEscapado}')"` +
+          ` onclick="event.stopPropagation(); window.abrirBlocoReferencia && window.abrirBlocoReferencia('magia', '${nomeEscapado}')"` +
           ` style="cursor:pointer">${capture}</span>`
         );
         return `\x00${idx}\x00`;
@@ -413,7 +451,344 @@ function processarKeywords(texto) {
     }
   }
 
-  // Passo 3: restaura placeholders
+  // Passo 5: nomes de Equipamentos — cobre TODO o compêndio de Equipamentos:
+  // armas, armaduras, itens gerais, munições, melhorias, materiais especiais,
+  // encantos de arma/armadura, armas/armaduras específicas, acessórios e
+  // artefatos. Combina as 12 listas numa cache só, cada nome guardando o
+  // "tipo" que window.irParaItem() usa pra saber pra qual seção navegar.
+  // Roda DEPOIS de Poderes Gerais e Magias de propósito: se um nome colidir
+  // com um poder ou magia (ex: "Acrobático" existe como poder E como
+  // encanto), o texto já virou placeholder antes de chegar aqui, então o
+  // poder/magia sempre tem prioridade automaticamente — sem lógica extra.
+  if (!_ITEM_LIST && typeof window !== 'undefined' && window.ARMAS) {
+    const fontes = [
+      [window.ARMAS, 'arma'],
+      [window.ARMADURAS, 'armadura'],
+      [window.ITENS_GERAIS, 'item-geral'],
+      [window.MUNICOES, 'item-geral'],
+      [window.MELHORIAS, 'melhoria'],
+      [window.MATERIAIS_ESPECIAIS, 'material'],
+      [window.ENCANTOS_ARMA, 'encanto-arma'],
+      [window.ENCANTOS_ARMADURA, 'encanto-armadura'],
+      [window.ARMAS_ESPECIFICAS, 'arma-especifica'],
+      [window.ARMADURAS_ESCUDOS_ESPECIFICOS, 'armadura-especifica'],
+      [window.ACESSORIOS, 'acessorio'],
+      [window.ARTEFATOS, 'artefato'],
+    ];
+    _ITEM_LIST = fontes
+      .flatMap(([lista, tipo]) => (lista || []).filter(x => x.nome).map(x => ({ nome: x.nome, tipo })))
+      .map(({ nome, tipo }) => ({
+        nome, tipo,
+        regex: new RegExp(
+          `(?<=[\\s,;:.!?()"'\\-]|^)(${_escapeRegex(nome)})(?=[\\s,;:.!?()"'\\-]|$)`,
+          'g'
+        ),
+      }))
+      .sort((a, b) => b.nome.length - a.nome.length);
+  }
+  if (_ITEM_LIST) {
+    for (const it of _ITEM_LIST) {
+      resultado = resultado.replace(it.regex, (_, capture) => {
+        const idx = placeholders.length;
+        const nomeEscapado = _escapeHtml(capture).replace(/'/g, "\\'");
+        placeholders.push(
+          `<span class="kw kw-item"` +
+          ` onclick="event.stopPropagation(); window.abrirBlocoReferencia && window.abrirBlocoReferencia('item', '${nomeEscapado}', '${it.tipo}')"` +
+          ` style="cursor:pointer">${capture}</span>`
+        );
+        return `\x00${idx}\x00`;
+      });
+    }
+  }
+
+  // Passo 6: nomes de Raças — mesma técnica dos passos 3-5. Roda DEPOIS de
+  // Poderes/Magias/Itens de propósito: em caso de colisão de nome (raro),
+  // as categorias mais específicas ganham prioridade, igual ao esquema já
+  // usado pra Poder Geral x Item.
+  if (!_RACA_LIST && typeof window !== 'undefined' && window.RACAS) {
+    _RACA_LIST = window.RACAS
+      .filter(r => r.nome)
+      .map(r => ({
+        nome: r.nome, id: r.id,
+        regex: new RegExp(
+          `(?<=[\\s,;:.!?()"'\\-]|^)(${_escapeRegex(r.nome)})(?=[\\s,;:.!?()"'\\-]|$)`,
+          'g'
+        ),
+      }))
+      .sort((a, b) => b.nome.length - a.nome.length);
+  }
+  if (_RACA_LIST) {
+    for (const rc of _RACA_LIST) {
+      resultado = resultado.replace(rc.regex, (_, capture) => {
+        const idx = placeholders.length;
+        placeholders.push(
+          `<span class="kw kw-raca"` +
+          ` onclick="event.stopPropagation(); window.abrirBlocoReferencia && window.abrirBlocoReferencia('raca', '${rc.id}')"` +
+          ` style="cursor:pointer">${capture}</span>`
+        );
+        return `\x00${idx}\x00`;
+      });
+    }
+  }
+
+  // Passo 7: nomes de Classes — mesma técnica.
+  if (!_CLASSE_LIST && typeof window !== 'undefined' && window.CLASSES) {
+    _CLASSE_LIST = window.CLASSES
+      .filter(c => c.nome)
+      .map(c => ({
+        nome: c.nome, id: c.id,
+        regex: new RegExp(
+          `(?<=[\\s,;:.!?()"'\\-]|^)(${_escapeRegex(c.nome)})(?=[\\s,;:.!?()"'\\-]|$)`,
+          'g'
+        ),
+      }))
+      .sort((a, b) => b.nome.length - a.nome.length);
+  }
+  if (_CLASSE_LIST) {
+    for (const cl of _CLASSE_LIST) {
+      resultado = resultado.replace(cl.regex, (_, capture) => {
+        const idx = placeholders.length;
+        placeholders.push(
+          `<span class="kw kw-classe"` +
+          ` onclick="event.stopPropagation(); window.abrirBlocoReferencia && window.abrirBlocoReferencia('classe', '${cl.id}')"` +
+          ` style="cursor:pointer">${capture}</span>`
+        );
+        return `\x00${idx}\x00`;
+      });
+    }
+  }
+
+  // Passo 8: nomes de Origens — mesma técnica.
+  if (!_ORIGEM_LIST && typeof window !== 'undefined' && window.ORIGENS) {
+    _ORIGEM_LIST = window.ORIGENS
+      .filter(o => o.nome)
+      .map(o => ({
+        nome: o.nome, id: o.id,
+        regex: new RegExp(
+          `(?<=[\\s,;:.!?()"'\\-]|^)(${_escapeRegex(o.nome)})(?=[\\s,;:.!?()"'\\-]|$)`,
+          'g'
+        ),
+      }))
+      .sort((a, b) => b.nome.length - a.nome.length);
+  }
+  if (_ORIGEM_LIST) {
+    for (const og of _ORIGEM_LIST) {
+      resultado = resultado.replace(og.regex, (_, capture) => {
+        const idx = placeholders.length;
+        placeholders.push(
+          `<span class="kw kw-origem"` +
+          ` onclick="event.stopPropagation(); window.abrirBlocoReferencia && window.abrirBlocoReferencia('origem', '${og.id}')"` +
+          ` style="cursor:pointer">${capture}</span>`
+        );
+        return `\x00${idx}\x00`;
+      });
+    }
+  }
+
+  // Passo 9: nomes de Deuses — mesma técnica. Nomes próprios (Aharadak,
+  // Allihanna, Valkaria...) têm baixíssimo risco de colisão com texto comum.
+  if (!_DEUS_LIST && typeof window !== 'undefined' && window.DEUSES) {
+    _DEUS_LIST = window.DEUSES
+      .filter(d => d.nome)
+      .map(d => ({
+        nome: d.nome, id: d.id,
+        regex: new RegExp(
+          `(?<=[\\s,;:.!?()"'\\-]|^)(${_escapeRegex(d.nome)})(?=[\\s,;:.!?()"'\\-]|$)`,
+          'g'
+        ),
+      }))
+      .sort((a, b) => b.nome.length - a.nome.length);
+  }
+  if (_DEUS_LIST) {
+    for (const dz of _DEUS_LIST) {
+      resultado = resultado.replace(dz.regex, (_, capture) => {
+        const idx = placeholders.length;
+        placeholders.push(
+          `<span class="kw kw-deus"` +
+          ` onclick="event.stopPropagation(); window.abrirBlocoReferencia && window.abrirBlocoReferencia('deus', '${dz.id}')"` +
+          ` style="cursor:pointer">${capture}</span>`
+        );
+        return `\x00${idx}\x00`;
+      });
+    }
+  }
+
+  // Passo 10: nomes de Criaturas (bestiário) — mesma técnica. Nomes comuns
+  // (Lobo, Zumbi, Ogro...) podem colidir com uso figurado do texto comum —
+  // risco aceito, igual ao resto do sistema (ajusta se aparecer problema).
+  if (!_CRIATURA_LIST && typeof window !== 'undefined' && window.CRIATURAS) {
+    _CRIATURA_LIST = window.CRIATURAS
+      .filter(c => c.nome)
+      .map(c => ({
+        nome: c.nome, id: c.id,
+        regex: new RegExp(
+          `(?<=[\\s,;:.!?()"'\\-]|^)(${_escapeRegex(c.nome)})(?=[\\s,;:.!?()"'\\-]|$)`,
+          'g'
+        ),
+      }))
+      .sort((a, b) => b.nome.length - a.nome.length);
+  }
+  if (_CRIATURA_LIST) {
+    for (const cr of _CRIATURA_LIST) {
+      resultado = resultado.replace(cr.regex, (_, capture) => {
+        const idx = placeholders.length;
+        placeholders.push(
+          `<span class="kw kw-criatura"` +
+          ` onclick="event.stopPropagation(); window.abrirBlocoReferencia && window.abrirBlocoReferencia('criatura', '${cr.id}')"` +
+          ` style="cursor:pointer">${capture}</span>`
+        );
+        return `\x00${idx}\x00`;
+      });
+    }
+  }
+
+  // Passo 11: nomes de Perigos Simples — mesma técnica.
+  if (!_PERIGO_LIST && typeof window !== 'undefined' && window.PERIGOS_SIMPLES) {
+    _PERIGO_LIST = window.PERIGOS_SIMPLES
+      .filter(p => p.nome)
+      .map(p => ({
+        nome: p.nome, id: p.id,
+        regex: new RegExp(
+          `(?<=[\\s,;:.!?()"'\\-]|^)(${_escapeRegex(p.nome)})(?=[\\s,;:.!?()"'\\-]|$)`,
+          'g'
+        ),
+      }))
+      .sort((a, b) => b.nome.length - a.nome.length);
+  }
+  if (_PERIGO_LIST) {
+    for (const pg of _PERIGO_LIST) {
+      resultado = resultado.replace(pg.regex, (_, capture) => {
+        const idx = placeholders.length;
+        placeholders.push(
+          `<span class="kw kw-perigo"` +
+          ` onclick="event.stopPropagation(); window.abrirBlocoReferencia && window.abrirBlocoReferencia('perigo', '${pg.id}')"` +
+          ` style="cursor:pointer">${capture}</span>`
+        );
+        return `\x00${idx}\x00`;
+      });
+    }
+  }
+
+  // Passo 12: nomes de Perigos Complexos — mesma técnica.
+  if (!_PERIGO_COMPLEXO_LIST && typeof window !== 'undefined' && window.PERIGOS_COMPLEXOS) {
+    _PERIGO_COMPLEXO_LIST = window.PERIGOS_COMPLEXOS
+      .filter(p => p.nome)
+      .map(p => ({
+        nome: p.nome, id: p.id,
+        regex: new RegExp(
+          `(?<=[\\s,;:.!?()"'\\-]|^)(${_escapeRegex(p.nome)})(?=[\\s,;:.!?()"'\\-]|$)`,
+          'g'
+        ),
+      }))
+      .sort((a, b) => b.nome.length - a.nome.length);
+  }
+  if (_PERIGO_COMPLEXO_LIST) {
+    for (const pc of _PERIGO_COMPLEXO_LIST) {
+      resultado = resultado.replace(pc.regex, (_, capture) => {
+        const idx = placeholders.length;
+        placeholders.push(
+          `<span class="kw kw-perigo"` +
+          ` onclick="event.stopPropagation(); window.abrirBlocoReferencia && window.abrirBlocoReferencia('perigoComplexo', '${pc.id}')"` +
+          ` style="cursor:pointer">${capture}</span>`
+        );
+        return `\x00${idx}\x00`;
+      });
+    }
+  }
+
+  // Passo 13: nomes de Ambiente — combina as 6 coleções nomeadas (Clima,
+  // Terreno, Masmorra, Ermo, Urbano-Assentamento, Urbano-Elemento; as
+  // tabelas de rolagem de Viagem/Perseguição/Ideias de Masmorra não têm
+  // nome singular, então ficam de fora). Cada nome guarda a "coleção" que
+  // window.abrirBlocoReferencia('ambiente', id, colecao) precisa pra achar
+  // o item certo (mesma convenção de ambienteBuscarItem em compendio.js).
+  if (!_AMBIENTE_LIST && typeof window !== 'undefined' && window.AMBIENTE_CLIMA) {
+    const colecoesAmbiente = [
+      [window.AMBIENTE_CLIMA, 'clima'],
+      [window.AMBIENTE_TERRENO, 'terreno'],
+      [window.AMBIENTE_MASMORRA_ELEMENTO, 'masmorra'],
+      [window.AMBIENTE_ERMO_ELEMENTO, 'ermo'],
+      [window.AMBIENTE_URBANO_ASSENTAMENTO, 'urbano-assentamento'],
+      [window.AMBIENTE_URBANO_ELEMENTO, 'urbano-elemento'],
+    ];
+    _AMBIENTE_LIST = colecoesAmbiente
+      .flatMap(([lista, colecao]) => (lista || []).filter(x => x.nome).map(x => ({ nome: x.nome, id: x.id, colecao })))
+      .map(({ nome, id, colecao }) => ({
+        nome, id, colecao,
+        regex: new RegExp(
+          `(?<=[\\s,;:.!?()"'\\-]|^)(${_escapeRegex(nome)})(?=[\\s,;:.!?()"'\\-]|$)`,
+          'g'
+        ),
+      }))
+      .sort((a, b) => b.nome.length - a.nome.length);
+  }
+  if (_AMBIENTE_LIST) {
+    for (const am of _AMBIENTE_LIST) {
+      resultado = resultado.replace(am.regex, (_, capture) => {
+        const idx = placeholders.length;
+        placeholders.push(
+          `<span class="kw kw-ambiente"` +
+          ` onclick="event.stopPropagation(); window.abrirBlocoReferencia && window.abrirBlocoReferencia('ambiente', '${am.id}', '${am.colecao}')"` +
+          ` style="cursor:pointer">${capture}</span>`
+        );
+        return `\x00${idx}\x00`;
+      });
+    }
+  }
+
+  // Passo 14: nomes de Poderes de Classe — window.PODERES_CLASSES é um
+  // objeto { classeId: [poder, poder, ...] }, não uma lista única, então
+  // achatamos todas as classes numa lista combinada uma vez só. Nomes se
+  // repetem entre classes (ex: "Aumento de Atributo" existe em quase toda
+  // classe), então cada entrada guarda TODAS as classes donas daquele nome
+  // (`classeIds`), não só uma — a escolha de qual classe usar é feita na
+  // hora da substituição, não no cache.
+  // Roda DEPOIS do Passo 3 (Poderes Gerais) de propósito: em caso de nome
+  // igual entre um Poder Geral e um Poder de Classe, o Poder Geral já foi
+  // substituído por um placeholder antes daqui e vence — mesma convenção
+  // de prioridade por ordem de passe usada nas outras coleções.
+  if (!_PODER_CLASSE_LIST && typeof window !== 'undefined' && window.PODERES_CLASSES) {
+    const _porNomeClasse = new Map();
+    for (const [classeId, poderes] of Object.entries(window.PODERES_CLASSES)) {
+      for (const p of (poderes || [])) {
+        if (!p.nome) continue;
+        if (!_porNomeClasse.has(p.nome)) _porNomeClasse.set(p.nome, []);
+        _porNomeClasse.get(p.nome).push(classeId);
+      }
+    }
+    _PODER_CLASSE_LIST = Array.from(_porNomeClasse.entries())
+      .map(([nome, classeIds]) => ({
+        nome, classeIds,
+        regex: new RegExp(
+          `(?<=[\\s,;:.!?()"'\\-]|^)(${_escapeRegex(nome)})(?=[\\s,;:.!?()"'\\-]|$)`,
+          'g'
+        ),
+      }))
+      .sort((a, b) => b.nome.length - a.nome.length);
+  }
+  if (_PODER_CLASSE_LIST) {
+    for (const pc of _PODER_CLASSE_LIST) {
+      resultado = resultado.replace(pc.regex, (_, capture) => {
+        const idx = placeholders.length;
+        const nomeEscapado = _escapeHtml(capture).replace(/'/g, "\\'");
+        // Prioriza a classe "de contexto" (a que está com o painel aberto
+        // no momento, ex: descrição de um poder do Bárbaro citando outro
+        // poder do Bárbaro) — window._classeAtualId já existe em
+        // compendio.js pra esse fim. Sem contexto ou fora da classe dona,
+        // cai no primeiro nome encontrado (comportamento antigo).
+        const contexto = (typeof window !== 'undefined') ? window._classeAtualId : null;
+        const classeEscolhida = (contexto && pc.classeIds.includes(contexto)) ? contexto : pc.classeIds[0];
+        placeholders.push(
+          `<span class="kw kw-poder-classe"` +
+          ` onclick="event.stopPropagation(); window.abrirBlocoReferencia && window.abrirBlocoReferencia('poderClasse', '${nomeEscapado}', '${classeEscolhida}')"` +
+          ` style="cursor:pointer">${capture}</span>`
+        );
+        return `\x00${idx}\x00`;
+      });
+    }
+  }
+
+  // Passo 15: restaura placeholders
   resultado = resultado.replace(/\x00(\d+)\x00/g, (_, i) => placeholders[+i] || '');
   return resultado;
 }

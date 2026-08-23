@@ -9,11 +9,22 @@ let _cpPoderBusca    = '';
 let _cpNivelFiltro = 0; // 0 = sem filtro de nível
 
 // ── SELEÇÃO DE PODERES PARA O PERSONAGEM ───────────────────
-const T20_STORAGE_KEY = 't20_personagem_poderes';
+// Padronizado em kebab-case (mesmo padrão de `t20-pontos-*` no atlas.js).
+// Migra automaticamente de quem já tinha dados salvos na chave antiga.
+const T20_STORAGE_KEY = 't20-personagem-poderes';
+const T20_STORAGE_KEY_LEGADO = 't20_personagem_poderes';
 
 function _carregarPoderesSelecionados() {
   try {
-    return JSON.parse(localStorage.getItem(T20_STORAGE_KEY) || '[]');
+    const atual = localStorage.getItem(T20_STORAGE_KEY);
+    if (atual !== null) return JSON.parse(atual);
+    const legado = localStorage.getItem(T20_STORAGE_KEY_LEGADO);
+    if (legado !== null) {
+      localStorage.setItem(T20_STORAGE_KEY, legado);
+      localStorage.removeItem(T20_STORAGE_KEY_LEGADO);
+      return JSON.parse(legado);
+    }
+    return [];
   } catch { return []; }
 }
 
@@ -48,11 +59,21 @@ window.togglePoderPersonagem = function(classeId, poderId, btn) {
 };
 
 // ── SELEÇÃO DE OPÇÃO DENTRO DE UM PODER (Familiar, Companheiro Animal, Autômato...) ──
-const T20_OPCAO_STORAGE_KEY = 't20_personagem_opcoes';
+const T20_OPCAO_STORAGE_KEY = 't20-personagem-opcoes';
+const T20_OPCAO_STORAGE_KEY_LEGADO = 't20_personagem_opcoes';
 
 function _carregarOpcoesSelecionadas() {
-  try { return JSON.parse(localStorage.getItem(T20_OPCAO_STORAGE_KEY) || '[]'); }
-  catch { return []; }
+  try {
+    const atual = localStorage.getItem(T20_OPCAO_STORAGE_KEY);
+    if (atual !== null) return JSON.parse(atual);
+    const legado = localStorage.getItem(T20_OPCAO_STORAGE_KEY_LEGADO);
+    if (legado !== null) {
+      localStorage.setItem(T20_OPCAO_STORAGE_KEY, legado);
+      localStorage.removeItem(T20_OPCAO_STORAGE_KEY_LEGADO);
+      return JSON.parse(legado);
+    }
+    return [];
+  } catch { return []; }
 }
 
 function _salvarOpcoesSelecionadas(lista) {
@@ -176,6 +197,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const partes = ['Compêndio'];
     const alvo = document.querySelector(`[data-secao="${nome}"]`);
+    // Quando a seção atual é um "neto" (nav-sub-sub-item, ex: Perigos Simples),
+    // o item do meio no breadcrumb (o pai tem-filhos, ex: Perigos) tem uma
+    // seção própria de verdade — guardamos o id dele aqui pra deixar esse
+    // segmento clicável, voltando direto pra visão geral sem passar pelo menu.
+    let idMeioClicavel = null;
 
     if (alvo) {
       const grupo = alvo.closest('.nav-grupo');
@@ -186,17 +212,24 @@ document.addEventListener('DOMContentLoaded', () => {
       if (ehSubSub) {
         const subItemPai = alvo.closest('.nav-sub-sub')?.previousElementSibling;
         const subLabel = subItemPai?.querySelector('.sub-label')?.textContent.trim();
-        if (subLabel) partes.push(subLabel);
+        if (subLabel) { partes.push(subLabel); idMeioClicavel = subItemPai?.dataset.secao || null; }
       }
 
       const label = alvo.querySelector('.sub-label, span')?.textContent.trim();
       if (label) partes.push(label);
     }
 
-    bcEl.innerHTML = partes.map((p, i) => `
-      ${i > 0 ? '<i class="ti ti-chevron-right bc-sep" aria-hidden="true"></i>' : ''}
-      <span class="bc-item${i === partes.length - 1 ? ' bc-atual' : ''}">${p}</span>
-    `).join('');
+    bcEl.innerHTML = partes.map((p, i) => {
+      const ehUltimo = i === partes.length - 1;
+      // Só o penúltimo segmento pode ser clicável (o pai tem-filhos), e só
+      // quando de fato temos uma seção válida pra levar de volta — nunca
+      // inventamos destino pros outros níveis (Compêndio / grupo do menu).
+      const clicavel = !ehUltimo && i === partes.length - 2 && idMeioClicavel;
+      const item = clicavel
+        ? `<span class="bc-item bc-item-link" onclick="mostrarSecao('${idMeioClicavel}')" role="button" tabindex="0">${p}</span>`
+        : `<span class="bc-item${ehUltimo ? ' bc-atual' : ''}">${p}</span>`;
+      return `${i > 0 ? '<i class="ti ti-chevron-right bc-sep" aria-hidden="true"></i>' : ''}${item}`;
+    }).join('');
   }
 
   function mostrarSecao(nome) {
@@ -850,9 +883,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const fonteTag = `<span class="cp-tag-fonte">${p.fonte || 'Tormenta 20'}</span>`;
 
-    const LABEL_CATEGORIA_PODER = { combate: 'Combate', destino: 'Destino', magia: 'Magia', concedidos: 'Concedidos', tormenta: 'Tormenta' };
+    const LABEL_CATEGORIA_PODER = { combate: 'Combate', destino: 'Destino', magia: 'Magia', concedidos: 'Concedidos', tormenta: 'Tormenta', origem: 'Origem' };
     const categoriaTag = p.categoria
-      ? `<span class="cp-tag-categoria">${LABEL_CATEGORIA_PODER[p.categoria] || p.categoria}</span>`
+      ? `<span class="cp-tag-categoria cp-tag-categoria-${p.categoria}">${LABEL_CATEGORIA_PODER[p.categoria] || p.categoria}</span>`
       : '';
 
     const prereqHtml = p.prerequisito
@@ -929,7 +962,7 @@ document.addEventListener('DOMContentLoaded', () => {
       </button>` : '';
 
     return `
-      <div class="cp-poder"
+      <div class="cp-poder cp-poder-cat-${p.categoria || ''}"
            data-tipo="${p.tipo}"
            data-nome="${(p.nome || '').toLowerCase()}"
            data-desc="${(p.descricao || '').toLowerCase().substring(0, 120)}">
@@ -1639,7 +1672,7 @@ document.addEventListener('DOMContentLoaded', () => {
           ${item.preRequisito ? `<span class="eq-hab-tag">Requer: ${item.preRequisito}</span>` : soTag}
           ${BADGE_T20}
         </div>`;
-      card.addEventListener('click', () => abrirDetalheEquip(item._origem === 'escudo' || item._origem === 'armadura' ? 'encanto-armadura' : 'encanto-arma', item.id));
+      card.addEventListener('click', () => abrirDetalheEquip(item._tipoEncanto === 'armadura' ? 'encanto-armadura' : 'encanto-arma', item.id));
     } else if (categoria === 'material') {
       card.innerHTML = `
         <div class="eq-card-top">
@@ -2021,6 +2054,1574 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!grid) return;
     grid.innerHTML = '';
     (window.ARTEFATOS || []).forEach(a => grid.appendChild(renderArtefatoCard(a)));
+  }
+
+  // ── CRIATURAS (Bestiário) ──────────────────────────────────────────
+  const _criaturaEstado = { nd: 'todos', grupo: 'todos', papel: 'todos', busca: '', modo: 'cards' };
+
+  const PAPEL_ICONE = { solo: 'ti-shield-lock', lacaio: 'ti-users', especial: 'ti-star' };
+  const PAPEL_LABEL = { solo: 'Solo', lacaio: 'Lacaio', especial: 'Especial' };
+
+  function ndNaFaixa(ndValor, faixa) {
+    if (faixa === 'todos') return true;
+    if (faixa === '0-1') return ndValor <= 1;
+    if (faixa === '2-5') return ndValor >= 2 && ndValor <= 5;
+    if (faixa === '6-10') return ndValor >= 6 && ndValor <= 10;
+    if (faixa === '11-15') return ndValor >= 11 && ndValor <= 15;
+    if (faixa === '16-20') return ndValor >= 16 && ndValor <= 20;
+    return true;
+  }
+
+  // Monta (e guarda em cache no próprio objeto) um texto único com todos os
+  // campos relevantes da criatura, para a busca cobrir tipo, ataques,
+  // habilidades, magias, resistências e perícias — não só nome/descrição.
+  function textoBuscavelCriatura(c) {
+    if (c._buscaCache) return c._buscaCache;
+    const partes = [
+      c.nome, c.descricao, c.tipo, c.tamanho, c.papel,
+      (window.GRUPOS_CRIATURAS && window.GRUPOS_CRIATURAS[c.grupo]) ? window.GRUPOS_CRIATURAS[c.grupo].label : c.grupo,
+      ...(c.ataques || []).map(a => a._naoExtraido ? a.textoOriginal : `${a.arma} ${a.extra || ''}`),
+      ...(c.habilidades || []).map(h => `${h.titulo} ${h.texto}`),
+      ...(c.magias ? [c.magias.conjurador, ...c.magias.lista.map(m => `${m.titulo} ${m.texto}`)] : []),
+      ...(c.resistencias || []).map(r => r._naoExtraido ? r.textoOriginal : `${r.categoria} ${r.alvo || ''}`),
+      ...(c.pericias || []).map(p => p.nome),
+      c.equipamento, c.tesouro,
+    ];
+    c._buscaCache = partes.filter(Boolean).join(' | ').toLowerCase();
+    return c._buscaCache;
+  }
+
+  function renderCriaturaCard(c) {
+    const card = document.createElement('div');
+    card.className = 'eq-card criatura-card' + (c.papel === 'solo' ? ' cr-card-solo' : '');
+    card.dataset.id = c.id;
+    card.innerHTML = `
+      <div class="eq-card-top">
+        <span class="eq-categoria-tag cr-nd-tag">ND ${c.nd}</span>
+        <span class="eq-preco-tag"><i class="ti ${PAPEL_ICONE[c.papel] || 'ti-paw'}" aria-hidden="true"></i> ${PAPEL_LABEL[c.papel] || ''}</span>
+      </div>
+      <div class="eq-nome">${c.nome}</div>
+      <div class="cr-tags-tipo">
+        <span class="cr-tag">${c.tipo}</span>
+        ${c.tamanho ? `<span class="cr-tag">${c.tamanho}</span>` : ''}
+        ${c.magias ? `<span class="cr-tag cr-tag-conjurador"><i class="ti ti-wand" aria-hidden="true"></i> Conjurador</span>` : ''}
+      </div>
+      <div class="eq-footer">
+        <span class="eq-stat-mini cr-stat-pv"><i class="ti ti-heart" aria-hidden="true"></i>${c.pv} PV</span>
+        <span class="eq-stat-mini cr-stat-defesa"><i class="ti ti-shield" aria-hidden="true"></i>${c.defesa}</span>
+        <span class="rc-badge badge-fonte">Tormenta 20</span>
+      </div>`;
+    card.addEventListener('click', () => abrirDetalheCriatura(c.id));
+    return card;
+  }
+
+  function renderCriaturasNaSecao() {
+    const grid = document.getElementById('criaturasGrid');
+    if (!grid) return;
+    let lista = window.CRIATURAS || [];
+    if (_criaturaEstado.nd !== 'todos') lista = lista.filter(c => ndNaFaixa(c.ndValor, _criaturaEstado.nd));
+    if (_criaturaEstado.grupo !== 'todos') lista = lista.filter(c => c.grupo === _criaturaEstado.grupo);
+    if (_criaturaEstado.papel !== 'todos') lista = lista.filter(c => c.papel === _criaturaEstado.papel);
+    if (_criaturaEstado.busca) {
+      const t = _criaturaEstado.busca;
+      lista = lista.filter(c => textoBuscavelCriatura(c).includes(t));
+    }
+    lista = [...lista].sort((a, b) => a.ndValor - b.ndValor);
+
+    const countEl = document.getElementById('criaturasCount');
+    if (countEl) countEl.textContent = lista.length + (lista.length !== 1 ? ' criaturas' : ' criatura');
+
+    if (_criaturaEstado.modo === 'tabela') {
+      document.getElementById('criaturasGrid').style.display = 'none';
+      document.getElementById('criaturasTabelaWrap').style.display = '';
+      document.getElementById('criaturasTabelaWrap').innerHTML = renderCriaturasTabela(lista);
+      return;
+    }
+    document.getElementById('criaturasGrid').style.display = '';
+    document.getElementById('criaturasTabelaWrap').style.display = 'none';
+    grid.innerHTML = '';
+    if (!lista.length) {
+      grid.innerHTML = `<div class="cp-poderes-vazio" style="grid-column:1/-1">Nenhuma criatura encontrada.</div>`;
+      return;
+    }
+    lista.forEach(c => grid.appendChild(renderCriaturaCard(c)));
+  }
+
+  function renderCriaturasTabela(lista) {
+    const linhas = lista.map(c => {
+      const grupoInfo = (window.GRUPOS_CRIATURAS || {})[c.grupo] || { label: c.grupo };
+      return `
+      <tr onclick="abrirDetalheCriatura('${c.id}')">
+        <td>${c.nome}${c.magias ? ' <i class="ti ti-wand" title="Conjurador" aria-hidden="true"></i>' : ''}</td>
+        <td>${c.nd}</td>
+        <td>${grupoInfo.label}</td>
+        <td>${PAPEL_LABEL[c.papel] || ''}</td>
+        <td>${c.pv}</td>
+        <td>${c.defesa}</td>
+        <td>${c.tipo}</td>
+        <td>${c.tamanho || ''}</td>
+      </tr>`;
+    }).join('');
+    return `
+      <div class="eq-tabela-scroll">
+        <table class="eq-tabela">
+          <thead><tr><th>Nome</th><th>ND</th><th>Grupo</th><th>Papel</th><th>PV</th><th>Defesa</th><th>Tipo</th><th>Tamanho</th></tr></thead>
+          <tbody>${linhas}</tbody>
+        </table>
+      </div>`;
+  }
+
+  window.setFiltroCriatura = (eixo, btn, valor) => {
+    const grupoId = eixo === 'nd' ? 'criaturasFiltroND' : eixo === 'grupo' ? 'criaturasFiltroGrupo' : 'criaturasFiltroPapel';
+    document.querySelectorAll(`#${grupoId} .filtro-btn`).forEach(b => b.classList.remove('a'));
+    btn.classList.add('a');
+    _criaturaEstado[eixo] = valor;
+    renderCriaturasNaSecao();
+  };
+
+  window.setModoVisualCriaturas = (modo) => {
+    _criaturaEstado.modo = modo;
+    document.getElementById('criaturasModoCards').classList.toggle('a', modo === 'cards');
+    document.getElementById('criaturasModoTabela').classList.toggle('a', modo === 'tabela');
+    renderCriaturasNaSecao();
+  };
+
+  let _criaturaAtual = null;
+
+  function blocoHabilidades(lista) {
+    if (!lista || !lista.length) return '';
+    return lista.map(h => `
+      <div class="dp-habilidade">
+        <div class="dp-hab-nome">${h.titulo}</div>
+        <div class="dp-hab-desc">${processarKeywords(h.texto)}</div>
+      </div>`).join('');
+  }
+
+  // Ataques agora chegam ESTRUTURADOS (um item por arma/golpe, ex: { categoria,
+  // arma, bonus, dano, tipoDano, critico, extra }), para permitir busca avançada
+  // futura por bônus de ataque, tipo de dano etc. Aqui eles são reagrupados por
+  // categoria (Corpo a Corpo / À Distância) e recompostos em texto legível —
+  // o dado estruturado por trás continua segmentado.
+  function formatarAtaque(a) {
+    if (a._naoExtraido) return processarKeywords(a.textoOriginal);
+    let texto = `${a.arma} +${a.bonus} (${a.dano}`;
+    if (a.extra) texto += ` mais ${a.extra}`;
+    if (a.critico) texto += `, ${a.critico}`;
+    texto += ')';
+    return processarKeywords(texto);
+  }
+
+  function blocoAtaques(lista) {
+    if (!lista || !lista.length) return '';
+    const grupos = {};
+    const ordem = [];
+    lista.forEach(a => {
+      const cat = a.categoria || 'Ataque';
+      if (!grupos[cat]) { grupos[cat] = []; ordem.push(cat); }
+      grupos[cat].push(a);
+    });
+    return ordem.map(cat => `
+      <div class="dp-habilidade">
+        <div class="dp-hab-nome">${cat}</div>
+        <div class="dp-hab-desc">${grupos[cat].map(formatarAtaque).join(' e ')}.</div>
+      </div>`).join('');
+  }
+
+  // Resistências agora chegam ESTRUTURADAS (categoria/alvo/valor). Aqui são
+  // recompostas em texto legível para exibição, mantendo o dado segmentado.
+  const RESIST_CATEGORIA_LABEL = { imunidade: 'Imunidade', reducao: 'Redução de dano', vulnerabilidade: 'Vulnerabilidade', resistencia: 'Resistência', cura_acelerada: 'Cura acelerada', resistencia_magia: 'Resistência a magia' };
+  function formatarResistencia(r) {
+    if (r._naoExtraido) return processarKeywords(r.textoOriginal);
+    if (r.categoria === 'reducao') {
+      return processarKeywords(`${RESIST_CATEGORIA_LABEL.reducao} ${r.valor}${r.alvo ? '/' + r.alvo : ''}`);
+    }
+    if (r.categoria === 'cura_acelerada') {
+      return processarKeywords(`${RESIST_CATEGORIA_LABEL.cura_acelerada} ${r.valor}${r.alvo ? ' (' + r.alvo + ')' : ''}`);
+    }
+    if (r.categoria === 'resistencia_magia') {
+      return processarKeywords(`${RESIST_CATEGORIA_LABEL.resistencia_magia} +${r.valor}${r.alvo ? ' (' + r.alvo + ')' : ''}`);
+    }
+    return processarKeywords(`${RESIST_CATEGORIA_LABEL[r.categoria] || r.categoria} a ${r.alvo}`);
+  }
+
+  // Grupo de estatísticas do mesmo tipo (ex: Resistências, Atributos, Perícias) —
+  // uma div "container" com um rótulo, e dentro dela cada item em sua própria
+  // div "chip". Feito assim (em vez de um texto único) para permitir busca
+  // avançada futura por estatística individual.
+  function grupoChips(titulo, itens) {
+    if (!itens || !itens.length) return '';
+    const chips = itens.map(it => it.label
+      ? `<div class="dp-grupo-item"><span class="lbl">${it.label}</span>${it.valor}</div>`
+      : `<div class="dp-grupo-item">${it.valor}</div>`
+    ).join('');
+    return `<div class="dp-grupo"><div class="dp-grupo-titulo">${titulo}</div><div class="dp-grupo-itens">${chips}</div></div>`;
+  }
+
+  window.abrirDetalheCriatura = (id) => {
+    const c = (window.CRIATURAS || []).find(x => x.id === id);
+    if (!c) return;
+    _criaturaAtual = c;
+    const grupoInfo = (window.GRUPOS_CRIATURAS || {})[c.grupo] || { label: c.grupo };
+
+    document.getElementById('crTipo').innerHTML = `<i class="ti ${PAPEL_ICONE[c.papel] || 'ti-paw'}" aria-hidden="true"></i> ${grupoInfo.label} · ${PAPEL_LABEL[c.papel] || ''}`;
+    document.getElementById('crNome').textContent = c.nome;
+    document.getElementById('crSub').textContent = `${c.tipo}${c.tamanho ? ' ' + c.tamanho : ''}`;
+    document.getElementById('crNdFixoValor').textContent = `ND ${c.nd}`;
+
+    // Destaque visual para criaturas "solo" — ameaças pra serem enfrentadas
+    // sozinhas, que merecem chamar mais atenção que lacaios/especiais comuns.
+    const crHero = document.getElementById('crHero');
+    crHero.classList.toggle('cr-hero-solo', c.papel === 'solo');
+    let seloSolo = crHero.querySelector('.cr-selo-solo');
+    if (c.papel === 'solo') {
+      if (!seloSolo) {
+        seloSolo = document.createElement('span');
+        seloSolo.className = 'cr-selo-solo';
+        seloSolo.innerHTML = '<i class="ti ti-skull" aria-hidden="true"></i> Ameaça Solo';
+        crHero.appendChild(seloSolo);
+      }
+    } else if (seloSolo) {
+      seloSolo.remove();
+    }
+
+    const magiasHtml = c.magias ? `
+      <div class="dp-secao">Magias</div>
+      <p class="dp-desc">O conjurador lança magias como um ${c.magias.conjurador}.</p>
+      ${blocoHabilidades(c.magias.lista)}` : '';
+
+    // Resistências: Fortitude/Reflexos/Vontade sempre existem; imunidades,
+    // reduções de dano e vulnerabilidades (array c.resistencias) entram como
+    // itens extras do mesmo grupo.
+    const itensResistencia = [
+      { label: 'Fortitude', valor: c.fort },
+      { label: 'Reflexos', valor: c.reflexos },
+      { label: 'Vontade', valor: c.vontade },
+      ...(c.resistencias || []).map(r => ({ label: null, valor: formatarResistencia(r) })),
+    ];
+
+    // Atributos: objeto { For, Des, Con, Int, Sab, Car } — null vira "—".
+    const ORDEM_ATRIB = ['For', 'Des', 'Con', 'Int', 'Sab', 'Car'];
+    const itensAtributos = ORDEM_ATRIB.map(k => ({
+      label: k, valor: (c.atributos && c.atributos[k] !== null && c.atributos[k] !== undefined) ? c.atributos[k] : '—',
+    }));
+
+    const itensPericias = (c.pericias || []).map(p => ({ label: p.nome, valor: p.valor }));
+
+    document.getElementById('crBody').innerHTML = `
+      <p class="dp-desc">${processarKeywords(c.descricao || '')}</p>
+
+      <div class="dp-secao">Estatísticas</div>
+      <div class="dp-atribs">
+        <div class="dp-atrib"><div class="dp-atrib-l">Iniciativa</div><div class="dp-atrib-v cr-v-ini">${c.iniciativa}</div></div>
+        <div class="dp-atrib"><div class="dp-atrib-l">Percepção</div><div class="dp-atrib-v cr-v-ini">${c.percepcao}</div></div>
+        <div class="dp-atrib"><div class="dp-atrib-l">Defesa</div><div class="dp-atrib-v cr-v-defesa">${c.defesa}</div></div>
+        <div class="dp-atrib"><div class="dp-atrib-l">Pontos de Vida</div><div class="dp-atrib-v cr-v-pv">${c.pv}</div></div>
+        <div class="dp-atrib"><div class="dp-atrib-l">Deslocamento</div><div class="dp-atrib-v cr-v-desloc">${c.deslocamento}</div></div>
+        ${c.pm !== null && c.pm !== undefined ? `<div class="dp-atrib"><div class="dp-atrib-l">Pontos de Mana</div><div class="dp-atrib-v cr-v-pm">${c.pm}</div></div>` : ''}
+      </div>
+
+      ${grupoChips('Resistências', itensResistencia)}
+      ${grupoChips('Atributos', itensAtributos)}
+      ${grupoChips('Perícias', itensPericias)}
+
+      <div class="dp-secao">Ataques &amp; Habilidades</div>
+      ${blocoAtaques(c.ataques)}
+      ${blocoHabilidades(c.habilidades)}
+      ${magiasHtml}
+
+      ${c.equipamento ? `<div class="dp-secao">Equipamento</div><p class="dp-desc">${processarKeywords(c.equipamento)}</p>` : ''}
+
+      <div class="dp-secao">Tesouro</div>
+      <p class="dp-desc">${processarKeywords(c.tesouro || 'Nenhum')}</p>
+
+      <div class="dp-fonte-pagina">Tormenta 20, p. ${c.pagina || '—'}</div>
+    `;
+
+    document.getElementById('criaturaPainel').classList.add('aberto');
+    // O painel pode ser aberto tanto da grade de Criaturas quanto da
+    // Calculadora de Combate — encolhe a área visível de quem estiver ativa.
+    document.querySelectorAll('#secao-criaturas .cards-area, #secao-calc-combate .cards-area')
+      .forEach(el => el.classList.add('encolhido'));
+  };
+
+  window.fecharDetalheCriatura = () => {
+    document.getElementById('criaturaPainel').classList.remove('aberto');
+    document.querySelectorAll('#secao-criaturas .cards-area, #secao-calc-combate .cards-area')
+      .forEach(el => el.classList.remove('encolhido'));
+  };
+
+  // ── CALCULADORA DE COMBATE ──────────────────────────────────────────
+  // Fórmula do livro (Cap. 7, "Construindo Combates", p. 282):
+  // ND < 1: ND do combate = ND da criatura × quantidade.
+  // ND ≥ 1: ND do combate = ND da criatura + 2 a cada dobra da quantidade.
+  let _combateGrupos = []; // { nome, ndValor, ndTexto, qtd }
+
+  function ndCombateGrupo(ndValor, qtd) {
+    if (qtd <= 1) return ndValor;
+    if (ndValor < 1) return Math.round(ndValor * qtd * 100) / 100;
+    const dobras = Math.floor(Math.log2(qtd));
+    return ndValor + dobras * 2;
+  }
+
+  function formatarNd(valor) {
+    if (valor === 0.25) return '¼';
+    if (valor === 0.5) return '½';
+    return String(Math.round(valor * 100) / 100);
+  }
+
+  // Busca de criatura para a calculadora: dropdown próprio (em vez de
+  // <datalist>) porque o datalist nativo, em boa parte dos navegadores, só
+  // sugere opções depois que o usuário digita algo — clicar num campo
+  // vazio não abre a lista. Aqui o clique/foco já mostra todas as
+  // criaturas (ordenadas por ND), e digitar filtra por nome.
+  let _listaCalculadoraOrdenada = null;
+  let _calcOpcaoSelecionadaId = null;
+
+  function obterListaCalculadoraOrdenada() {
+    if (!_listaCalculadoraOrdenada) {
+      _listaCalculadoraOrdenada = [...(window.CRIATURAS || [])].sort((a, b) => a.ndValor - b.ndValor);
+    }
+    return _listaCalculadoraOrdenada;
+  }
+
+  function renderDropdownCalculadora(filtro) {
+    const dd = document.getElementById('calcCombateDropdown');
+    if (!dd) return;
+    const termo = (filtro || '').trim().toLowerCase();
+    const lista = obterListaCalculadoraOrdenada().filter(c => !termo || c.nome.toLowerCase().includes(termo));
+    dd.innerHTML = lista.length
+      ? lista.map(c => `<div class="calc-busca-opcao" onmousedown="selecionarOpcaoCalculadora('${c.id}')">
+          <span>${c.nome}</span><span class="calc-busca-nd">ND ${c.nd}</span>
+        </div>`).join('')
+      : `<div class="calc-busca-vazio">Nenhuma criatura encontrada.</div>`;
+    dd.classList.add('aberto');
+  }
+
+  // onmousedown (não onclick) porque o blur do input dispara antes do
+  // click — sem isso, o dropdown some antes do clique na opção registrar.
+  window.selecionarOpcaoCalculadora = (id) => {
+    const c = obterListaCalculadoraOrdenada().find(x => x.id === id);
+    if (!c) return;
+    const inputEl = document.getElementById('calcCombateInput');
+    if (inputEl) inputEl.value = c.nome;
+    _calcOpcaoSelecionadaId = id;
+    fecharDropdownCalculadora();
+  };
+
+  window.abrirDropdownCalculadora = () => {
+    renderDropdownCalculadora(document.getElementById('calcCombateInput')?.value || '');
+  };
+
+  window.filtrarDropdownCalculadora = () => {
+    _calcOpcaoSelecionadaId = null;
+    renderDropdownCalculadora(document.getElementById('calcCombateInput')?.value || '');
+  };
+
+  window.fecharDropdownCalculadora = () => {
+    document.getElementById('calcCombateDropdown')?.classList.remove('aberto');
+  };
+
+  window.adicionarGrupoCombate = () => {
+    const inputEl = document.getElementById('calcCombateInput');
+    const qtdEl = document.getElementById('calcCombateQtd');
+    if (!inputEl || !inputEl.value.trim()) return;
+    const texto = inputEl.value.trim().toLowerCase();
+    const lista = obterListaCalculadoraOrdenada();
+    // Prioriza a criatura escolhida no dropdown; se o usuário só digitou o
+    // nome sem clicar numa opção, cai para o match exato por nome.
+    let c = _calcOpcaoSelecionadaId ? lista.find(x => x.id === _calcOpcaoSelecionadaId) : null;
+    if (!c) c = lista.find(x => x.nome.toLowerCase() === texto);
+    if (!c) return;
+    const qtd = Math.max(1, parseInt(qtdEl.value, 10) || 1);
+    _combateGrupos.push({ id: c.id, nome: c.nome, ndValor: c.ndValor, ndTexto: c.nd, qtd });
+    inputEl.value = '';
+    _calcOpcaoSelecionadaId = null;
+    fecharDropdownCalculadora();
+    renderCalculadoraCombate();
+  };
+
+  window.removerGrupoCombate = (i) => {
+    _combateGrupos.splice(i, 1);
+    renderCalculadoraCombate();
+  };
+
+  // Resolve o objeto completo da criatura a partir de um grupo montado —
+  // pelo id salvo (formato atual) ou, se faltar (combate salvo de uma
+  // versão anterior sem id), por nome. Centraliza essa busca porque ela é
+  // usada tanto pra abrir o painel de detalhe quanto pra ler o papel de
+  // combate (solo/lacaio/especial) na hora de renderizar o card do grupo.
+  function obterCriaturaDoGrupo(g) {
+    let c = g.id ? (window.CRIATURAS || []).find(x => x.id === g.id) : null;
+    if (!c) c = (window.CRIATURAS || []).find(x => x.nome === g.nome);
+    return c || null;
+  }
+
+  // Clique no nome da criatura dentro de um grupo montado → abre o painel
+  // lateral de detalhes (mesmo painel usado no Bestiário).
+  window.abrirDetalheGrupoCombate = (i) => {
+    const g = _combateGrupos[i];
+    if (!g) return;
+    const c = obterCriaturaDoGrupo(g);
+    if (c) abrirDetalheCriatura(c.id);
+  };
+
+  // Edição de quantidade direto no card do grupo, sem precisar remover e
+  // adicionar de novo. O re-render adia pro próximo tick (setTimeout 0):
+  // disparar innerHTML no wrapper ainda durante o evento "change" do
+  // próprio <input> (que dispara no blur) faz o navegador tentar remover
+  // um nó que ainda está processando o evento, e quebra.
+  window.atualizarQtdGrupoCombate = (i, valor) => {
+    const g = _combateGrupos[i];
+    if (!g) return;
+    g.qtd = Math.max(1, parseInt(valor, 10) || 1);
+    setTimeout(renderCalculadoraCombate, 0);
+  };
+
+  function renderCalculadoraCombate() {
+    const wrap = document.getElementById('calcCombateGrupos');
+    if (!wrap) return;
+    if (!_combateGrupos.length) {
+      wrap.innerHTML = '';
+      renderResumoCombate();
+      atualizarPainelHerois();
+      return;
+    }
+    wrap.innerHTML = _combateGrupos.map((g, i) => {
+      const ndCombate = ndCombateGrupo(g.ndValor, g.qtd);
+      const c = obterCriaturaDoGrupo(g);
+      const papel = c ? c.papel : null;
+      return `<div class="calc-grupo-card${papel === 'solo' ? ' calc-grupo-solo' : ''}">
+        ${papel ? `<span class="calc-grupo-tag calc-grupo-tag-${papel}"><i class="ti ${PAPEL_ICONE[papel] || 'ti-paw'}" aria-hidden="true"></i> ${PAPEL_LABEL[papel] || ''}</span>` : '<span class="calc-grupo-tag calc-grupo-tag-vazio"></span>'}
+        <span class="calc-grupo-nome calc-nome-link" onclick="abrirDetalheGrupoCombate(${i})">${g.nome}</span>
+        <label class="calc-grupo-qtd">Qtd
+          <input type="number" min="1" value="${g.qtd}" onchange="atualizarQtdGrupoCombate(${i}, this.value)" />
+        </label>
+        <span class="calc-grupo-nd">ND ${g.ndTexto} cada → <strong>ND do grupo: ${formatarNd(ndCombate)}</strong></span>
+        <button class="calc-x-btn" onclick="removerGrupoCombate(${i})" title="Remover grupo"><i class="ti ti-x" aria-hidden="true"></i></button>
+      </div>`;
+    }).join('');
+    renderResumoCombate();
+    atualizarPainelHerois();
+  }
+
+  // ── Resumo do combate montado ────────────────────────────────────────
+  // ND do maior grupo, ND combinado (soma simples) e total de criaturas
+  // aparecem numa barra horizontal logo abaixo da busca — só quando há
+  // pelo menos um grupo montado (a classe "ativo" controla isso; sem ela
+  // a barra fica com display:none, sem ocupar espaço vazio na tela).
+  // Também avisa quando há 2+ criaturas "solo" no mesmo combate — o livro
+  // pensa em "solo" como ameaça pra enfrentar sozinha, então juntar duas
+  // foge bastante do ND sugerido (não é uma regra do livro, é só um
+  // alerta de bom senso).
+  function renderResumoCombate() {
+    const el = document.getElementById('calcCombateResumo');
+    if (!el) return;
+    if (!_combateGrupos.length) {
+      el.innerHTML = '';
+      el.classList.remove('ativo');
+      return;
+    }
+
+    const maior = Math.max(..._combateGrupos.map(g => ndCombateGrupo(g.ndValor, g.qtd)));
+    const combinado = _combateGrupos.reduce((soma, g) => soma + ndCombateGrupo(g.ndValor, g.qtd), 0);
+    const totalCriaturas = _combateGrupos.reduce((soma, g) => soma + g.qtd, 0);
+    const totalGruposSolo = _combateGrupos.reduce((soma, g) => {
+      const c = obterCriaturaDoGrupo(g);
+      return soma + (c && c.papel === 'solo' ? 1 : 0);
+    }, 0);
+
+    el.innerHTML = `
+      <div class="calc-resumo-linha-topo">
+        <div class="calc-resumo-item-linha">
+          <span class="calc-resumo-label">ND do maior grupo</span>
+          <span class="calc-resumo-valor">${formatarNd(maior)}</span>
+        </div>
+        <div class="calc-resumo-item-linha">
+          <span class="calc-resumo-label">ND combinado</span>
+          <span class="calc-resumo-valor">${formatarNd(combinado)}</span>
+        </div>
+        <div class="calc-resumo-item-linha">
+          <span class="calc-resumo-label">Criaturas no combate</span>
+          <span class="calc-resumo-valor">${totalCriaturas}</span>
+        </div>
+      </div>
+      ${totalGruposSolo >= 2 ? `<div class="calc-resumo-aviso"><i class="ti ti-alert-triangle" aria-hidden="true"></i> ${totalGruposSolo} criaturas "solo" nesse combate — o livro pensa em "solo" como ameaça pra enfrentar sozinha; juntar duas ou mais deixa o combate bem mais difícil que o ND sugere.</div>` : ''}
+      <div class="calc-resumo-nota"><i class="ti ti-info-circle" aria-hidden="true"></i> O livro só define a fórmula pra grupos idênticos — misturando grupos diferentes, use o maior ND (${formatarNd(maior)}) como referência principal; o combinado é só soma simples, não é regra oficial.</div>
+    `;
+    el.classList.add('ativo');
+  }
+
+  // ── Comparar com o grupo de heróis ──────────────────────────────────
+  // Usa a própria definição do livro: "uma criatura de ND X fornece um
+  // combate equilibrado para personagens de nível X" (Cap.7, p.282), sempre
+  // comparando com o MAIOR ND de grupo montado (não o ND combinado, que é
+  // apenas uma soma de referência). O livro também pressupõe grupos de 4
+  // personagens e não dá fórmula para outros tamanhos — quando o número de
+  // heróis é diferente de 4, isso é avisado em texto, sem inventar fórmula.
+  function renderComparacaoHerois() {
+    const compEl = document.getElementById('calcCombateComparacao');
+    if (!compEl) return;
+    if (!_combateGrupos.length) { compEl.innerHTML = ''; return; }
+
+    const qtdEl = document.getElementById('calcHeroisQtd');
+    const nivelEl = document.getElementById('calcHeroisNivel');
+    const qtdHerois = Math.max(1, parseInt(qtdEl?.value, 10) || 4);
+    const nivelHerois = Math.max(1, parseInt(nivelEl?.value, 10) || 1);
+
+    const maior = Math.max(..._combateGrupos.map(g => ndCombateGrupo(g.ndValor, g.qtd)));
+    const combinado = _combateGrupos.reduce((soma, g) => soma + ndCombateGrupo(g.ndValor, g.qtd), 0);
+
+    let classe, texto;
+    if (maior < nivelHerois) {
+      classe = 'calc-comp-facil';
+      texto = `Abaixo do desafio justo — o livro define ND ${formatarNd(maior)} como equilibrado para personagens de nível ${formatarNd(maior)}, então para um grupo de nível ${nivelHerois} este combate tende a ser mais fácil que o padrão.`;
+    } else if (maior === nivelHerois) {
+      classe = 'calc-comp-justo';
+      texto = `Desafio justo — o livro define ND ${formatarNd(maior)} como um combate equilibrado para personagens de nível ${nivelHerois}.`;
+    } else {
+      classe = 'calc-comp-dificil';
+      texto = `Acima do desafio justo — o livro define ND ${formatarNd(maior)} como equilibrado para nível ${formatarNd(maior)}, então para um grupo de nível ${nivelHerois} este combate tende a ser mais difícil que o padrão.`;
+    }
+
+    let notaGrupo = '';
+    if (qtdHerois !== 4) {
+      notaGrupo = ` O livro pressupõe grupos de 4 personagens; com ${qtdHerois} herói${qtdHerois !== 1 ? 's' : ''}, ajuste essa expectativa — grupos menores devem enfrentar ND mais baixo, maiores podem enfrentar ND mais alto (o livro não dá uma fórmula exata para esse ajuste).`;
+    }
+
+    compEl.innerHTML = `<div class="calc-comparacao-box ${classe}">
+      <div class="calc-comparacao-nds">ND do maior grupo: <strong>${formatarNd(maior)}</strong> · ND combinado: <strong>${formatarNd(combinado)}</strong> · Nível do grupo: <strong>${nivelHerois}</strong> (${qtdHerois} herói${qtdHerois !== 1 ? 's' : ''})</div>
+      <div class="calc-comparacao-texto">${texto}${notaGrupo}</div>
+    </div>`;
+  }
+  window.renderComparacaoHerois = renderComparacaoHerois;
+
+  // ── Sugestões de criaturas para o nível do grupo ────────────────────
+  // Filtra o próprio Bestiário pela mesma regra do livro usada acima
+  // (ND == nível dos heróis é "desafio justo"): nada de fórmula nova, só
+  // aproximação por ND. Criaturas já adicionadas ao combate não repetem
+  // na lista de sugestões. Poucas sugestões por faixa (até 2), não uma
+  // lista extensa.
+  function sugerirCriaturasParaGrupo(nivelHerois) {
+    const lista = window.CRIATURAS || [];
+    const jaNoCombate = new Set(_combateGrupos.map(g => g.nome));
+    const candidatas = lista.filter(c => !jaNoCombate.has(c.nome));
+
+    const justo = candidatas.filter(c => c.ndValor === nivelHerois);
+    const facil = candidatas.filter(c => c.ndValor < nivelHerois).sort((a, b) => b.ndValor - a.ndValor);
+    const dificil = candidatas.filter(c => c.ndValor > nivelHerois).sort((a, b) => a.ndValor - b.ndValor);
+
+    const sugestoes = [];
+    justo.slice(0, 2).forEach(c => sugestoes.push({ c, tag: 'justo' }));
+    facil.slice(0, 2).forEach(c => sugestoes.push({ c, tag: 'facil' }));
+    dificil.slice(0, 2).forEach(c => sugestoes.push({ c, tag: 'dificil' }));
+    return sugestoes;
+  }
+
+  const SUGESTAO_TAG_LABEL = { facil: 'Fácil', justo: 'Desafio justo', dificil: 'Difícil' };
+  const SUGESTAO_TAG_CLASSE = { facil: 'calc-comp-facil', justo: 'calc-comp-justo', dificil: 'calc-comp-dificil' };
+
+  function renderSugestoesCriaturas() {
+    const wrap = document.getElementById('calcCombateSugestoes');
+    if (!wrap) return;
+    const nivelEl = document.getElementById('calcHeroisNivel');
+    const nivelHerois = Math.max(1, parseInt(nivelEl?.value, 10) || 1);
+    const sugestoes = sugerirCriaturasParaGrupo(nivelHerois);
+
+    if (!sugestoes.length) {
+      wrap.innerHTML = `<div class="calc-combate-header"><span><i class="ti ti-bulb" aria-hidden="true"></i> Sugestões de criaturas</span></div>
+        <p class="calc-combate-nota">Nenhuma criatura do Bestiário sobrou para sugerir nesse nível (ou todas já estão no combate).</p>`;
+      return;
+    }
+
+    wrap.innerHTML = `
+      <div class="calc-combate-header"><span><i class="ti ti-bulb" aria-hidden="true"></i> Sugestões de criaturas para nível ${nivelHerois}</span></div>
+      <p class="calc-combate-nota">Baseadas na mesma regra do livro usada acima (ND ${nivelHerois} = desafio justo para personagens de nível ${nivelHerois}), pressupondo grupo de 4 personagens — ajuste pelo bom senso se o seu grupo for diferente.</p>
+      <div class="calc-sugestoes-grid">
+        ${sugestoes.map(({ c, tag }) => `
+          <div class="calc-sugestao-card ${SUGESTAO_TAG_CLASSE[tag]}">
+            <span class="calc-sugestao-selo">${SUGESTAO_TAG_LABEL[tag]}</span>
+            <div class="calc-sugestao-nome calc-nome-link" onclick="abrirDetalheCriatura('${c.id}')">${c.nome}</div>
+            <div class="calc-sugestao-info">ND ${c.nd} · ${PAPEL_LABEL[c.papel] || ''}</div>
+            <button class="calc-btn-acao" onclick="adicionarSugestaoCombate('${c.id}')"><i class="ti ti-plus" aria-hidden="true"></i> Adicionar</button>
+          </div>`).join('')}
+      </div>`;
+  }
+  window.renderSugestoesCriaturas = renderSugestoesCriaturas;
+
+  window.adicionarSugestaoCombate = (id) => {
+    const c = (window.CRIATURAS || []).find(x => x.id === id);
+    if (!c) return;
+    _combateGrupos.push({ id: c.id, nome: c.nome, ndValor: c.ndValor, ndTexto: c.nd, qtd: 1 });
+    renderCalculadoraCombate();
+  };
+
+  function atualizarPainelHerois() {
+    renderComparacaoHerois();
+    renderSugestoesCriaturas();
+  }
+  window.atualizarPainelHerois = atualizarPainelHerois;
+
+  // ── Salvar / carregar / limpar o combate montado (localStorage) ─────
+  const LS_COMBATE = 't20-compendio-combate-salvo';
+
+  function atualizarInfoSalvo(isoData) {
+    const info = document.getElementById('calcCombateSalvoInfo');
+    if (!info) return;
+    if (!isoData) { info.textContent = ''; return; }
+    const d = new Date(isoData);
+    const hh = String(d.getHours()).padStart(2, '0');
+    const mm = String(d.getMinutes()).padStart(2, '0');
+    info.textContent = `Salvo às ${hh}:${mm}`;
+  }
+
+  window.salvarCombateCalculadora = () => {
+    const heroisQtd = document.getElementById('calcHeroisQtd')?.value || 4;
+    const heroisNivel = document.getElementById('calcHeroisNivel')?.value || 1;
+    const dados = { grupos: _combateGrupos, heroisQtd, heroisNivel, salvoEm: new Date().toISOString() };
+    try {
+      localStorage.setItem(LS_COMBATE, JSON.stringify(dados));
+      atualizarInfoSalvo(dados.salvoEm);
+    } catch (e) {
+      const info = document.getElementById('calcCombateSalvoInfo');
+      if (info) info.textContent = 'Não foi possível salvar (armazenamento local indisponível).';
+    }
+  };
+
+  window.limparCombateCalculadora = () => {
+    _combateGrupos = [];
+    try { localStorage.removeItem(LS_COMBATE); } catch (e) { /* ignora */ }
+    renderCalculadoraCombate();
+    atualizarInfoSalvo(null);
+  };
+
+  function carregarCombateSalvo() {
+    try {
+      const bruto = localStorage.getItem(LS_COMBATE);
+      if (!bruto) return;
+      const dados = JSON.parse(bruto);
+      if (Array.isArray(dados.grupos)) _combateGrupos = dados.grupos;
+      const qtdEl = document.getElementById('calcHeroisQtd');
+      const nivelEl = document.getElementById('calcHeroisNivel');
+      if (qtdEl && dados.heroisQtd) qtdEl.value = dados.heroisQtd;
+      if (nivelEl && dados.heroisNivel) nivelEl.value = dados.heroisNivel;
+      renderCalculadoraCombate();
+      atualizarInfoSalvo(dados.salvoEm);
+    } catch (e) { /* dados salvos corrompidos — ignora e mantém calculadora vazia */ }
+  }
+
+  // ── PERIGOS (Perigos Simples + Perigos Complexos, Cap. 7, p. 317-321) ──
+  const PERIGO_CATEGORIA_LABEL = { ambiental: 'Ambiental', armadilha: 'Armadilha', doenca: 'Doença' };
+  const PERIGO_CATEGORIA_ICONE = { ambiental: 'ti-cloud-storm', armadilha: 'ti-bomb', doenca: 'ti-virus' };
+
+  function textoBuscavelPerigo(p) {
+    if (p._buscaCache) return p._buscaCache;
+    const partes = [p.nome, PERIGO_CATEGORIA_LABEL[p.categoria], p.descricao, p.dano, p.resistencia, p.transmissao, ...(p.progressao || []), ...extrairCondicoesPerigo(p)];
+    p._buscaCache = partes.filter(Boolean).join(' | ').toLowerCase();
+    return p._buscaCache;
+  }
+
+  // Detecta, sem inventar nada, quais Condições oficiais (apêndice, cf.
+  // KEYWORDS_T20.cond em keywords.js) aparecem num texto — usado tanto pra
+  // busca livre quanto pro filtro dedicado "Condição". Compartilhado entre
+  // Perigos Simples e Perigos Complexos (mesmo padrão de detecção pros dois),
+  // pra manter os dados padronizados conforme o site cresce.
+  function extrairCondicoesDeTexto(texto) {
+    const lista = (typeof KEYWORDS_T20 !== 'undefined' && KEYWORDS_T20.cond) ? KEYWORDS_T20.cond : [];
+    const encontradas = new Set();
+    lista.forEach(item => {
+      const padroes = Array.isArray(item.padroes) ? item.padroes : [item.padroes];
+      const achou = padroes.some(pad => new RegExp(`(?<=[\\s,;:.!?()"'\\-]|^)${pad.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}(?=[\\s,;:.!?()"'\\-]|$)`, 'i').test(texto));
+      if (achou) encontradas.add(padroes[0]);
+    });
+    return Array.from(encontradas);
+  }
+
+  function extrairCondicoesPerigo(p) {
+    if (p._condicoesCache) return p._condicoesCache;
+    const texto = [p.descricao, p.dano, p.resistencia, ...(p.progressao || [])].filter(Boolean).join(' ');
+    p._condicoesCache = extrairCondicoesDeTexto(texto);
+    return p._condicoesCache;
+  }
+
+  function extrairCondicoesPerigoComplexo(pc) {
+    if (pc._condicoesCache) return pc._condicoesCache;
+    const texto = [pc.objetivo, pc.efeito, pc.notas, ...(pc.acoes || []).map(a => a.texto || '')].filter(Boolean).join(' ');
+    pc._condicoesCache = extrairCondicoesDeTexto(texto);
+    return pc._condicoesCache;
+  }
+
+  let _filtroPerigoCategoria = 'todos';
+  let _filtroPerigoCondicao = 'todas';
+  let _buscaPerigos = '';
+
+  window.setFiltroPerigo = (el, valor) => {
+    document.querySelectorAll('#perigosFiltroCategoria .filtro-btn').forEach(b => b.classList.remove('a'));
+    el.classList.add('a');
+    _filtroPerigoCategoria = valor;
+    renderPerigosNaSecao();
+  };
+
+  window.setFiltroCondicaoPerigo = (valor) => {
+    _filtroPerigoCondicao = valor;
+    renderPerigosNaSecao();
+  };
+
+  function preencherFiltroCondicoesPerigo() {
+    const selectEl = document.getElementById('perigosFiltroCondicao');
+    if (!selectEl || selectEl.dataset.preenchido) return;
+    const condsSet = new Set();
+    (window.PERIGOS_SIMPLES || []).forEach(p => extrairCondicoesPerigo(p).forEach(c => condsSet.add(c)));
+    const condsOrdenadas = Array.from(condsSet).sort((a, b) => a.localeCompare(b, 'pt-BR'));
+    selectEl.innerHTML = `<option value="todas">Filtrar por condição…</option>` +
+      condsOrdenadas.map(c => `<option value="${c}">${c}</option>`).join('');
+    selectEl.dataset.preenchido = '1';
+  }
+
+  // ── "Usado na mesa" — marcador puramente local (não afeta o livro nem
+  // nenhuma regra), pra ajudar o mestre a não repetir armadilha/perigo numa
+  // campanha longa. Guardado por tipo+id em localStorage. ──
+  const LS_PERIGOS_USADOS = 't20-perigos-usados';
+  function carregarPerigosUsados() {
+    try { return new Set(JSON.parse(localStorage.getItem(LS_PERIGOS_USADOS) || '[]')); }
+    catch (e) { return new Set(); }
+  }
+  function salvarPerigosUsados() {
+    try { localStorage.setItem(LS_PERIGOS_USADOS, JSON.stringify([..._perigosUsados])); } catch (e) { /* ignora */ }
+  }
+  let _perigosUsados = carregarPerigosUsados();
+  function chaveUsadoPerigo(tipo, id) { return `${tipo}:${id}`; }
+  function perigoEstaUsado(tipo, id) { return _perigosUsados.has(chaveUsadoPerigo(tipo, id)); }
+
+  window.toggleUsadoPerigo = (tipo, id, evt) => {
+    if (evt) evt.stopPropagation();
+    const chave = chaveUsadoPerigo(tipo, id);
+    if (_perigosUsados.has(chave)) _perigosUsados.delete(chave); else _perigosUsados.add(chave);
+    salvarPerigosUsados();
+    if (window.PERIGOS_SIMPLES) renderPerigosNaSecao();
+    if (window.PERIGOS_COMPLEXOS) renderPerigosComplexosNaSecao();
+    if (document.getElementById('perigosVisaoGrid')) renderPerigosVisaoGeral();
+    // Se o painel de detalhe do item alternado estiver aberto, atualiza o botão nele também.
+    const usadoAgora = perigoEstaUsado(tipo, id);
+    const btnDetalhe = document.getElementById(tipo === 'complexo' ? 'pgcUsadoBtn' : 'pgUsadoBtn');
+    if (btnDetalhe && btnDetalhe.dataset.id === id) {
+      btnDetalhe.classList.toggle('a', usadoAgora);
+      btnDetalhe.innerHTML = `<i class="ti ${usadoAgora ? 'ti-check' : 'ti-circle'}" aria-hidden="true"></i> ${usadoAgora ? 'Usado nesta campanha' : 'Marcar como usado'}`;
+    }
+  };
+
+  function botaoUsadoCard(tipo, id) {
+    const usado = perigoEstaUsado(tipo, id);
+    return `<button class="perigo-usado-btn${usado ? ' a' : ''}" onclick="toggleUsadoPerigo('${tipo}','${id}', event)" title="${usado ? 'Marcado como usado' : 'Marcar como usado'}">
+      <i class="ti ${usado ? 'ti-check' : 'ti-circle'}" aria-hidden="true"></i>
+    </button>`;
+  }
+
+  function renderPerigoCard(p) {
+    const card = document.createElement('div');
+    const usado = perigoEstaUsado('simples', p.id);
+    card.className = 'eq-card perigo-card' + (usado ? ' usado' : '');
+    card.dataset.id = p.id;
+    const tagPrincipal = p.nd ? `<span class="eq-categoria-tag cr-nd-tag">ND ${p.nd}</span>`
+      : (p.cd ? `<span class="eq-categoria-tag cr-nd-tag">CD ${p.cd}</span>` : '<span class="eq-categoria-tag cr-nd-tag">—</span>');
+    card.innerHTML = `
+      <div class="eq-card-top">
+        ${tagPrincipal}
+        <div class="eq-card-top-right">
+          <span class="eq-preco-tag"><i class="ti ${PERIGO_CATEGORIA_ICONE[p.categoria] || 'ti-alert-triangle'}" aria-hidden="true"></i> ${PERIGO_CATEGORIA_LABEL[p.categoria] || ''}</span>
+          ${botaoUsadoCard('simples', p.id)}
+        </div>
+      </div>
+      <div class="eq-nome">${p.nome}</div>
+      <div class="eq-footer">
+        <span class="rc-badge badge-fonte">Tormenta 20</span>
+      </div>`;
+    card.addEventListener('click', () => abrirDetalhePerigo(p.id));
+    return card;
+  }
+
+  function renderPerigosNaSecao() {
+    const grid = document.getElementById('perigosGrid');
+    if (!grid) return;
+    let lista = window.PERIGOS_SIMPLES || [];
+    if (_filtroPerigoCategoria !== 'todos') lista = lista.filter(p => p.categoria === _filtroPerigoCategoria);
+    if (_filtroPerigoCondicao !== 'todas') lista = lista.filter(p => extrairCondicoesPerigo(p).includes(_filtroPerigoCondicao));
+    if (_buscaPerigos) lista = lista.filter(p => textoBuscavelPerigo(p).includes(_buscaPerigos));
+    const countEl = document.getElementById('perigosCount');
+    if (countEl) countEl.textContent = lista.length + (lista.length !== 1 ? ' perigos' : ' perigo');
+    grid.innerHTML = '';
+    if (!lista.length) {
+      grid.innerHTML = `<div class="cp-poderes-vazio" style="grid-column:1/-1">Nenhum perigo encontrado.</div>`;
+      return;
+    }
+    lista.forEach(p => grid.appendChild(renderPerigoCard(p)));
+  }
+
+  // Página "Perigos" (item pai do menu, sem filhos selecionados) — visão
+  // geral com os dois grupos juntos, pra não carregar vazia pedindo pra
+  // escolher Perigos Simples ou Perigos Complexos no menu.
+  let _buscaPerigosVisao = '';
+  let _filtroPerigoCondicaoVisao = 'todas';
+  let _excluirUsadosVisao = false;
+
+  window.setFiltroCondicaoPerigoVisao = (valor) => {
+    _filtroPerigoCondicaoVisao = valor;
+    renderPerigosVisaoGeral();
+  };
+
+  window.setExcluirUsadosVisao = (checked) => {
+    _excluirUsadosVisao = !!checked;
+    renderPerigosVisaoGeral();
+  };
+
+  // Lista combinada (Simples + Complexos) — reaproveita a mesma detecção de
+  // condições dos dois tipos, então cobre os perigos complexos também.
+  function preencherFiltroCondicoesPerigoVisao() {
+    const selectEl = document.getElementById('perigosVisaoFiltroCondicao');
+    if (!selectEl || selectEl.dataset.preenchido) return;
+    const condsSet = new Set();
+    (window.PERIGOS_SIMPLES || []).forEach(p => extrairCondicoesPerigo(p).forEach(c => condsSet.add(c)));
+    (window.PERIGOS_COMPLEXOS || []).forEach(pc => extrairCondicoesPerigoComplexo(pc).forEach(c => condsSet.add(c)));
+    const condsOrdenadas = Array.from(condsSet).sort((a, b) => a.localeCompare(b, 'pt-BR'));
+    selectEl.innerHTML = `<option value="todas">Filtrar por condição…</option>` +
+      condsOrdenadas.map(c => `<option value="${c}">${c}</option>`).join('');
+    selectEl.dataset.preenchido = '1';
+  }
+
+  function renderPerigosVisaoGeral() {
+    const gridSimples = document.getElementById('perigosVisaoGrid');
+    const gridComplexos = document.getElementById('perigosComplexosVisaoGrid');
+    if (!gridSimples || !gridComplexos) return;
+
+    let simples = window.PERIGOS_SIMPLES || [];
+    let complexos = window.PERIGOS_COMPLEXOS || [];
+    if (_buscaPerigosVisao) {
+      simples = simples.filter(p => textoBuscavelPerigo(p).includes(_buscaPerigosVisao));
+      complexos = complexos.filter(pc => textoBuscavelPerigoComplexo(pc).includes(_buscaPerigosVisao));
+    }
+    if (_filtroPerigoCondicaoVisao !== 'todas') {
+      simples = simples.filter(p => extrairCondicoesPerigo(p).includes(_filtroPerigoCondicaoVisao));
+      complexos = complexos.filter(pc => extrairCondicoesPerigoComplexo(pc).includes(_filtroPerigoCondicaoVisao));
+    }
+    if (_excluirUsadosVisao) {
+      simples = simples.filter(p => !perigoEstaUsado('simples', p.id));
+      complexos = complexos.filter(pc => !perigoEstaUsado('complexo', pc.id));
+    }
+
+    const tituloSimplesEl = document.getElementById('perigosVisaoTituloSimples');
+    if (tituloSimplesEl) tituloSimplesEl.textContent = `Perigos Simples (${simples.length})`;
+    gridSimples.innerHTML = '';
+    if (!simples.length) gridSimples.innerHTML = `<div class="cp-poderes-vazio" style="grid-column:1/-1">Nenhum perigo encontrado.</div>`;
+    else simples.forEach(p => gridSimples.appendChild(renderPerigoCard(p)));
+
+    const tituloComplexosEl = document.getElementById('perigosVisaoTituloComplexos');
+    if (tituloComplexosEl) tituloComplexosEl.textContent = `Perigos Complexos (${complexos.length})`;
+    gridComplexos.innerHTML = '';
+    if (!complexos.length) gridComplexos.innerHTML = `<div class="cp-poderes-vazio" style="grid-column:1/-1">Nenhum perigo complexo encontrado.</div>`;
+    else complexos.forEach(pc => gridComplexos.appendChild(renderPerigoComplexoCard(pc)));
+  }
+
+  // Cadeia visual de progressão (fatigado → exausto → inconsciente...) —
+  // reaproveitada por doenças e por ambientais que tenham progressao preenchida.
+  function blocoProgressaoPerigo(progressao) {
+    if (!progressao || !progressao.length) return '';
+    return `
+      <div class="dp-secao">Progressão</div>
+      <div class="dp-progressao">
+        ${progressao.map((passo, i) => `${i > 0 ? '<i class="ti ti-arrow-right dp-progressao-seta" aria-hidden="true"></i>' : ''}<span class="dp-progressao-passo">${passo}</span>`).join('')}
+      </div>`;
+  }
+
+  function botaoUsadoDetalhe(tipo, id, elId) {
+    const usado = perigoEstaUsado(tipo, id);
+    return `<button class="filtro-btn perigo-usado-detalhe${usado ? ' a' : ''}" id="${elId}" data-id="${id}" onclick="toggleUsadoPerigo('${tipo}','${id}')">
+      <i class="ti ${usado ? 'ti-check' : 'ti-circle'}" aria-hidden="true"></i> ${usado ? 'Usado nesta campanha' : 'Marcar como usado'}
+    </button>`;
+  }
+
+  window.abrirDetalhePerigo = (id) => {
+    const p = (window.PERIGOS_SIMPLES || []).find(x => x.id === id);
+    if (!p) return;
+
+    document.getElementById('pgTipo').innerHTML = `<i class="ti ${PERIGO_CATEGORIA_ICONE[p.categoria] || 'ti-alert-triangle'}" aria-hidden="true"></i> ${PERIGO_CATEGORIA_LABEL[p.categoria] || 'Perigo'}`;
+    document.getElementById('pgNome').textContent = p.nome;
+    document.getElementById('pgSub').textContent = p.nd ? `ND ${p.nd}` : (p.cd ? `CD ${p.cd}` : '—');
+
+    let corpo;
+    if (p.categoria === 'armadilha') {
+      const itensArmadilha = [];
+      if (p.resistencia) itensArmadilha.push({ label: null, valor: p.resistencia });
+      if (p.investigacaoCD) itensArmadilha.push({ label: 'Percepção/Investigação', valor: `CD ${p.investigacaoCD}` });
+      if (p.ladinagemCD) itensArmadilha.push({ label: 'Ladinagem (desarmar)', valor: `CD ${p.ladinagemCD}` });
+      corpo = `
+        ${p.dano ? `<div class="dp-secao">Efeito</div><p class="dp-desc">${processarKeywords(p.dano)}</p>` : ''}
+        ${grupoChips('Testes', itensArmadilha)}
+      `;
+    } else if (p.categoria === 'doenca') {
+      const itensDoenca = [];
+      if (p.transmissao) itensDoenca.push({ label: 'Transmissão', valor: p.transmissao });
+      if (p.cd) itensDoenca.push({ label: 'CD de Resistência', valor: p.cd });
+      corpo = `
+        <p class="dp-desc">${processarKeywords(p.descricao || '')}</p>
+        ${grupoChips('Contágio', itensDoenca)}
+        ${blocoProgressaoPerigo(p.progressao)}
+      `;
+    } else {
+      const itensAmbiental = [];
+      if (p.resistencia) itensAmbiental.push({ label: null, valor: p.resistencia });
+      corpo = `
+        <p class="dp-desc">${processarKeywords(p.descricao || '')}</p>
+        ${grupoChips('Testes', itensAmbiental)}
+        ${blocoProgressaoPerigo(p.progressao)}
+      `;
+    }
+
+    document.getElementById('pgBody').innerHTML = `
+      ${botaoUsadoDetalhe('simples', p.id, 'pgUsadoBtn')}
+      ${corpo}
+      <div class="dp-fonte-pagina">Tormenta 20, p. ${p.pagina || '—'}</div>`;
+
+    document.getElementById('perigoPainel').classList.add('aberto');
+    document.querySelectorAll('#secao-perigos-simples .cards-area, #secao-perigos .cards-area').forEach(el => el.classList.add('encolhido'));
+  };
+
+  window.fecharDetalhePerigo = () => {
+    document.getElementById('perigoPainel').classList.remove('aberto');
+    document.querySelectorAll('#secao-perigos-simples .cards-area, #secao-perigos .cards-area').forEach(el => el.classList.remove('encolhido'));
+  };
+
+  // ── Sortear Perigo (utilidade rápida pra mestre montar masmorra ou
+  // improvisar uma cena) — cobre qualquer perigo simples (ambiental,
+  // armadilha ou doença) ou um perigo complexo, com faixa de ND opcional
+  // quando o tipo escolhido tiver ND numérico (armadilha/complexo). ──
+  const ND_ARMADILHA_OPCOES = [0.25, 0.5, 1, 2, 3, 4, 5, 6, 8];
+  function formatarNdArmadilha(v) {
+    if (v === 0.25) return '1/4';
+    if (v === 0.5) return '1/2';
+    return String(v);
+  }
+
+  function preencherSelectsSortearPorTipo(tipo) {
+    const minEl = document.getElementById('sortearNdMin');
+    const maxEl = document.getElementById('sortearNdMax');
+    if (!minEl || !maxEl) return;
+    const opcoes = tipo === 'complexo'
+      ? Array.from(new Set((window.PERIGOS_COMPLEXOS || []).map(pc => pc.ndValor))).sort((a, b) => a - b)
+      : ND_ARMADILHA_OPCOES;
+    if (!opcoes.length) return;
+    const opcoesHtml = opcoes.map(v => `<option value="${v}">${formatarNdArmadilha(v)}</option>`).join('');
+    minEl.innerHTML = opcoesHtml;
+    maxEl.innerHTML = opcoesHtml;
+    maxEl.value = String(opcoes[opcoes.length - 1]);
+  }
+
+  window.atualizarVisibilidadeNdSortear = () => {
+    const tipoEl = document.getElementById('sortearTipoPerigo');
+    const wrap = document.getElementById('sortearNdWrap');
+    const usarNdEl = document.getElementById('sortearUsarNd');
+    const filtrarNdWrap = document.getElementById('sortearFiltrarNdWrap');
+    if (!tipoEl || !wrap) return;
+    // Ambiental e Doença não têm ND no livro — o checkbox "Filtrar por ND"
+    // some nesses dois casos (não tem o que filtrar). Qualquer/Armadilha/
+    // Complexo têm itens com ND numérico, então mostram o checkbox.
+    const ndDisponivel = tipoEl.value !== 'ambiental' && tipoEl.value !== 'doenca';
+    if (filtrarNdWrap) filtrarNdWrap.style.display = ndDisponivel ? '' : 'none';
+    if (!ndDisponivel && usarNdEl) usarNdEl.checked = false;
+    const mostrarFaixa = ndDisponivel && usarNdEl && usarNdEl.checked;
+    wrap.style.display = mostrarFaixa ? '' : 'none';
+    if (mostrarFaixa) preencherSelectsSortearPorTipo(tipoEl.value);
+  };
+
+  // O widget "Sortear Perigo" é um único elemento no DOM, reaproveitado nas
+  // três páginas de Perigos (Simples, Complexos e Visão Geral) — em vez de
+  // duplicar o markup/IDs três vezes, ele "muda de casa" pro .cards-area da
+  // seção de onde foi aberto, o que preserva o mesmo comportamento de
+  // encolher junto com o painel de detalhe em qualquer uma delas.
+  const SORTEAR_BOTAO_POR_SECAO = {
+    'secao-perigos-simples': 'btnSortearArmadilha',
+    'secao-perigos-complexos': 'btnSortearArmadilhaPC',
+    'secao-perigos': 'btnSortearArmadilhaVisao',
+  };
+
+  window.toggleSortearArmadilha = (secaoId) => {
+    secaoId = secaoId || 'secao-perigos-simples';
+    const box = document.getElementById('sortearArmadilha');
+    const areaAlvo = document.querySelector(`#${secaoId} .cards-area`);
+    if (!box || !areaAlvo) return;
+
+    const trocouDeSecao = box.parentElement !== areaAlvo;
+    if (trocouDeSecao) {
+      areaAlvo.insertBefore(box, areaAlvo.firstChild);
+      box.style.display = 'none';
+      // Ao abrir a partir da aba de Perigos Complexos, já sugere esse tipo
+      // no seletor em vez de deixar em "Qualquer perigo simples".
+      const tipoEl = document.getElementById('sortearTipoPerigo');
+      if (tipoEl && secaoId === 'secao-perigos-complexos') tipoEl.value = 'complexo';
+    }
+
+    const abrir = box.style.display === 'none';
+    box.style.display = abrir ? '' : 'none';
+    Object.values(SORTEAR_BOTAO_POR_SECAO).forEach(btnId => {
+      const b = document.getElementById(btnId);
+      if (b) b.classList.toggle('a', abrir && btnId === SORTEAR_BOTAO_POR_SECAO[secaoId]);
+    });
+    if (abrir) atualizarVisibilidadeNdSortear();
+  };
+
+  // Lista acumulada de sorteios — cada roda de "Sortear" entra aqui em vez
+  // de substituir o resultado anterior, pra dar pra montar uma lista de
+  // armadilhas/perigos de uma masmorra numa sessão de preparo. Vive só em
+  // memória (não persiste no localStorage) — reseta ao recarregar a página.
+  let _sorteioLista = [];
+  const SORTEIO_LISTA_MAX = 20;
+
+  function renderSorteioLista() {
+    const resultEl = document.getElementById('sortearArmadilhaResultado');
+    if (!resultEl) return;
+    if (!_sorteioLista.length) { resultEl.innerHTML = ''; return; }
+    const itensHtml = _sorteioLista.map((item, i) => `
+      <div class="calc-grupo-card sortear-item">
+        <span class="calc-grupo-tag">${item.tag}</span>
+        <a href="javascript:void(0)" class="calc-grupo-nome" onclick="${item.tipo === 'complexo' ? 'abrirDetalhePerigoComplexo' : 'abrirDetalhePerigo'}('${item.id}')">${item.nome}</a>
+        <button class="calc-x-btn" onclick="removerDaListaSorteio(${i})" title="Remover da lista"><i class="ti ti-x" aria-hidden="true"></i></button>
+      </div>`).join('');
+    resultEl.innerHTML = `
+      <div class="sortear-lista-header">
+        <span>Sorteados nesta sessão (${_sorteioLista.length}${_sorteioLista.length >= SORTEIO_LISTA_MAX ? `, máx. ${SORTEIO_LISTA_MAX}` : ''})</span>
+        <button class="calc-x-btn" onclick="limparListaSorteio()">Limpar lista</button>
+      </div>
+      <div class="sortear-lista">${itensHtml}</div>`;
+  }
+  window.removerDaListaSorteio = (i) => { _sorteioLista.splice(i, 1); renderSorteioLista(); };
+  window.limparListaSorteio = () => { _sorteioLista = []; renderSorteioLista(); };
+  function adicionarNaListaSorteio(item) {
+    _sorteioLista.unshift(item);
+    if (_sorteioLista.length > SORTEIO_LISTA_MAX) _sorteioLista.length = SORTEIO_LISTA_MAX;
+    renderSorteioLista();
+  }
+
+  window.sortearPerigo = () => {
+    const tipoEl = document.getElementById('sortearTipoPerigo');
+    const avisoEl = document.getElementById('sortearArmadilhaAviso');
+    const excluirUsadosEl = document.getElementById('sortearExcluirUsados');
+    const usarNdEl = document.getElementById('sortearUsarNd');
+    if (!tipoEl) return;
+    if (avisoEl) avisoEl.innerHTML = '';
+    const tipo = tipoEl.value;
+    const excluirUsados = !!(excluirUsadosEl && excluirUsadosEl.checked);
+    const usarNd = !!(usarNdEl && usarNdEl.checked);
+
+    if (tipo === 'complexo') {
+      let candidatas = window.PERIGOS_COMPLEXOS || [];
+      const minEl = document.getElementById('sortearNdMin');
+      const maxEl = document.getElementById('sortearNdMax');
+      if (usarNd && minEl && maxEl && minEl.options.length) {
+        let ndMin = parseFloat(minEl.value), ndMax = parseFloat(maxEl.value);
+        if (ndMin > ndMax) { const tmp = ndMin; ndMin = ndMax; ndMax = tmp; }
+        candidatas = candidatas.filter(pc => pc.ndValor >= ndMin && pc.ndValor <= ndMax);
+      }
+      if (excluirUsados) candidatas = candidatas.filter(pc => !perigoEstaUsado('complexo', pc.id));
+      if (!candidatas.length) {
+        if (avisoEl) avisoEl.innerHTML = `<p class="calc-combate-nota">${excluirUsados ? 'Todos os perigos complexos desse filtro já foram marcados como usados.' : 'Nenhum perigo complexo nessa faixa de ND.'}</p>`;
+        return;
+      }
+      const escolhida = candidatas[Math.floor(Math.random() * candidatas.length)];
+      adicionarNaListaSorteio({ tipo: 'complexo', id: escolhida.id, nome: escolhida.nome, tag: `ND ${escolhida.nd}` });
+      return;
+    }
+
+    let candidatas = window.PERIGOS_SIMPLES || [];
+    if (tipo !== 'qualquer') candidatas = candidatas.filter(p => p.categoria === tipo);
+    // ND só existe em armadilhas — no filtro "qualquer" com a faixa ativada
+    // isso naturalmente restringe o sorteio às armadilhas dentro da faixa
+    // (ambientais/doenças não têm ND pra comparar, então ficam de fora).
+    if (usarNd && (tipo === 'armadilha' || tipo === 'qualquer')) {
+      const minEl = document.getElementById('sortearNdMin');
+      const maxEl = document.getElementById('sortearNdMax');
+      if (minEl && maxEl && minEl.options.length) {
+        let ndMin = parseFloat(minEl.value), ndMax = parseFloat(maxEl.value);
+        if (ndMin > ndMax) { const tmp = ndMin; ndMin = ndMax; ndMax = tmp; }
+        candidatas = candidatas.filter(p => typeof p.ndValor === 'number' && p.ndValor >= ndMin && p.ndValor <= ndMax);
+      }
+    }
+    if (excluirUsados) candidatas = candidatas.filter(p => !perigoEstaUsado('simples', p.id));
+    if (!candidatas.length) {
+      if (avisoEl) avisoEl.innerHTML = `<p class="calc-combate-nota">${excluirUsados ? 'Todos os perigos desse filtro já foram marcados como usados.' : 'Nenhum perigo encontrado com esse filtro.'}</p>`;
+      return;
+    }
+    const escolhida = candidatas[Math.floor(Math.random() * candidatas.length)];
+    const tagResultado = escolhida.nd ? `ND ${escolhida.nd}` : (escolhida.cd ? `CD ${escolhida.cd}` : (PERIGO_CATEGORIA_LABEL[escolhida.categoria] || ''));
+    adicionarNaListaSorteio({ tipo: 'simples', id: escolhida.id, nome: escolhida.nome, tag: tagResultado });
+  };
+
+  // ── Perigos Complexos (cenas de teste estendido, p. 320-321) ──
+  function textoBuscavelPerigoComplexo(pc) {
+    if (pc._buscaCache) return pc._buscaCache;
+    const partes = [pc.nome, pc.objetivo, pc.efeito, pc.notas, ...(pc.acoes || []).map(a => `${a.nome} ${a.pericia || ''} ${a.texto || ''}`), ...extrairCondicoesPerigoComplexo(pc)];
+    pc._buscaCache = partes.filter(Boolean).join(' | ').toLowerCase();
+    return pc._buscaCache;
+  }
+
+  let _buscaPerigosComplexos = '';
+
+  function renderPerigoComplexoCard(pc) {
+    const card = document.createElement('div');
+    const usado = perigoEstaUsado('complexo', pc.id);
+    card.className = 'eq-card perigo-card' + (usado ? ' usado' : '');
+    card.dataset.id = pc.id;
+    const nAcoes = (pc.acoes || []).length;
+    card.innerHTML = `
+      <div class="eq-card-top">
+        <span class="eq-categoria-tag cr-nd-tag">ND ${pc.nd}</span>
+        <div class="eq-card-top-right">
+          <span class="eq-preco-tag"><i class="ti ti-flame" aria-hidden="true"></i> Cena</span>
+          ${botaoUsadoCard('complexo', pc.id)}
+        </div>
+      </div>
+      <div class="eq-nome">${pc.nome}</div>
+      <div class="eq-footer">
+        ${nAcoes ? `<span class="eq-stat-mini"><i class="ti ti-list-check" aria-hidden="true"></i>${nAcoes} ${nAcoes !== 1 ? 'ações' : 'ação'}</span>` : ''}
+        <span class="rc-badge badge-fonte">Tormenta 20</span>
+      </div>`;
+    card.addEventListener('click', () => abrirDetalhePerigoComplexo(pc.id));
+    return card;
+  }
+
+  function renderPerigosComplexosNaSecao() {
+    const grid = document.getElementById('perigosComplexosGrid');
+    if (!grid) return;
+    let lista = window.PERIGOS_COMPLEXOS || [];
+    if (_buscaPerigosComplexos) lista = lista.filter(pc => textoBuscavelPerigoComplexo(pc).includes(_buscaPerigosComplexos));
+    const countEl = document.getElementById('perigosComplexosCount');
+    if (countEl) countEl.textContent = lista.length + (lista.length !== 1 ? ' perigos complexos' : ' perigo complexo');
+    grid.innerHTML = '';
+    if (!lista.length) {
+      grid.innerHTML = `<div class="cp-poderes-vazio" style="grid-column:1/-1">Nenhum perigo complexo encontrado.</div>`;
+      return;
+    }
+    lista.forEach(pc => grid.appendChild(renderPerigoComplexoCard(pc)));
+  }
+
+  let _contadorPerigoComplexo = { sucessos: 0, falhas: 0 };
+
+  function renderContadorPerigoComplexo() {
+    const sEl = document.getElementById('pgcContadorSucessos');
+    const fEl = document.getElementById('pgcContadorFalhas');
+    if (sEl) sEl.textContent = _contadorPerigoComplexo.sucessos;
+    if (fEl) fEl.textContent = _contadorPerigoComplexo.falhas;
+  }
+
+  window.ajustarContadorPerigoComplexo = (campo, delta) => {
+    _contadorPerigoComplexo[campo] = Math.max(0, _contadorPerigoComplexo[campo] + delta);
+    renderContadorPerigoComplexo();
+  };
+
+  window.zerarContadorPerigoComplexo = () => {
+    _contadorPerigoComplexo = { sucessos: 0, falhas: 0 };
+    renderContadorPerigoComplexo();
+  };
+
+  window.abrirDetalhePerigoComplexo = (id) => {
+    const pc = (window.PERIGOS_COMPLEXOS || []).find(x => x.id === id);
+    if (!pc) return;
+    _contadorPerigoComplexo = { sucessos: 0, falhas: 0 };
+
+    document.getElementById('pgcNome').textContent = pc.nome;
+    const ndFixoEl = document.getElementById('pgcNdFixo');
+    if (ndFixoEl) ndFixoEl.classList.add('ativo');
+    document.getElementById('pgcNdFixoValor').textContent = `ND ${pc.nd}`;
+
+    const acoesHtml = (pc.acoes || []).map(a => `
+      <div class="dp-habilidade">
+        <div class="dp-hab-nome">${a.nome}${a.pericia ? ` <span style="font-weight:400;color:#888;">— ${a.pericia}${a.cd ? ` CD ${a.cd}` : ''}</span>` : ''}</div>
+        <div class="dp-hab-desc">${processarKeywords(a.texto || '')}</div>
+      </div>`).join('');
+
+    document.getElementById('pgcBody').innerHTML = `
+      ${botaoUsadoDetalhe('complexo', pc.id, 'pgcUsadoBtn')}
+      ${pc.objetivo ? `<div class="dp-secao">Objetivo</div><p class="dp-desc">${processarKeywords(pc.objetivo)}</p>` : ''}
+      ${pc.efeito ? `<div class="dp-secao">Efeito</div><p class="dp-desc">${processarKeywords(pc.efeito)}</p>` : ''}
+      ${pc.notas ? `<div class="dp-secao">Notas</div><p class="dp-desc">${processarKeywords(pc.notas)}</p>` : ''}
+
+      ${acoesHtml ? `<div class="dp-secao">Ações</div>${acoesHtml}` : ''}
+
+      <div class="dp-secao">Contador de Testes</div>
+      <div class="pgc-contador">
+        <div class="pgc-contador-linha">
+          <div class="pgc-contador-item">
+            <span class="pgc-contador-label">Sucessos</span>
+            <div class="pgc-contador-controles">
+              <button onclick="ajustarContadorPerigoComplexo('sucessos',-1)"><i class="ti ti-minus" aria-hidden="true"></i></button>
+              <span id="pgcContadorSucessos">0</span>
+              <button onclick="ajustarContadorPerigoComplexo('sucessos',1)"><i class="ti ti-plus" aria-hidden="true"></i></button>
+            </div>
+          </div>
+          <div class="pgc-contador-item">
+            <span class="pgc-contador-label">Falhas</span>
+            <div class="pgc-contador-controles">
+              <button onclick="ajustarContadorPerigoComplexo('falhas',-1)"><i class="ti ti-minus" aria-hidden="true"></i></button>
+              <span id="pgcContadorFalhas">0</span>
+              <button onclick="ajustarContadorPerigoComplexo('falhas',1)"><i class="ti ti-plus" aria-hidden="true"></i></button>
+            </div>
+          </div>
+          <button class="calc-x-btn" onclick="zerarContadorPerigoComplexo()" title="Zerar"><i class="ti ti-refresh" aria-hidden="true"></i></button>
+        </div>
+        ${pc.contadorNota ? `<p class="calc-combate-nota">${processarKeywords(pc.contadorNota)}</p>` : ''}
+      </div>
+
+      <div class="dp-fonte-pagina">Tormenta 20, p. ${pc.pagina || '—'}</div>
+    `;
+
+    document.getElementById('perigoComplexoPainel').classList.add('aberto');
+    document.querySelectorAll('#secao-perigos-complexos .cards-area, #secao-perigos .cards-area').forEach(el => el.classList.add('encolhido'));
+  };
+
+  window.fecharDetalhePerigoComplexo = () => {
+    document.getElementById('perigoComplexoPainel').classList.remove('aberto');
+    document.querySelectorAll('#secao-perigos-complexos .cards-area, #secao-perigos .cards-area').forEach(el => el.classList.remove('encolhido'));
+  };
+
+  // ── AMBIENTE (Clima, Terrenos, Masmorras, Ermos, Urbano, Viagens — Cap.
+  // 6 "O Mestre", seção "Ambientes de Aventura", p. 263-275) ──────────────
+  // Todas as sub-abas (exceto Viagens, que é só uma tabela/calculadora)
+  // compartilham o mesmo shape de card e o mesmo painel de detalhe
+  // (#ambientePainel) — abrirDetalheAmbiente(colecao, id) resolve o item
+  // certo em qualquer uma das coleções abaixo e monta o painel genérico.
+  const AMBIENTE_SECOES_TODAS = ['secao-ambiente', 'secao-clima', 'secao-terrenos', 'secao-masmorras', 'secao-ermos', 'secao-urbano'];
+  const AMBIENTE_ICONE = { clima: 'ti-cloud-rain', terreno: 'ti-mountain', masmorra: 'ti-door', ermo: 'ti-trees', 'urbano-assentamento': 'ti-building-community', 'urbano-elemento': 'ti-building-community' };
+  const AMBIENTE_TIPO_LABEL = { clima: 'Clima', terreno: 'Terreno', masmorra: 'Masmorra', ermo: 'Ermo', 'urbano-assentamento': 'Assentamento', 'urbano-elemento': 'Urbano' };
+
+  function ambienteBuscarItem(colecao, id) {
+    const mapa = {
+      clima: window.AMBIENTE_CLIMA,
+      terreno: window.AMBIENTE_TERRENO,
+      masmorra: window.AMBIENTE_MASMORRA_ELEMENTO,
+      ermo: window.AMBIENTE_ERMO_ELEMENTO,
+      'urbano-assentamento': window.AMBIENTE_URBANO_ASSENTAMENTO,
+      'urbano-elemento': window.AMBIENTE_URBANO_ELEMENTO,
+    };
+    return (mapa[colecao] || []).find(x => x.id === id);
+  }
+
+  function textoBuscavelAmbiente(item) {
+    if (item._buscaCache) return item._buscaCache;
+    const partes = [item.nome, item.efeito, item.populacao, item.governo, item.guarda, item.justica, item.economia,
+      ...(item.stats || []).map(s => `${s.label || ''} ${s.valor}`),
+      ...(item.subtabela || []).map(s => s.resultado)];
+    item._buscaCache = partes.filter(Boolean).join(' | ').toLowerCase();
+    return item._buscaCache;
+  }
+
+  function renderAmbienteCard(colecao, item, tagPrincipal) {
+    const card = document.createElement('div');
+    card.className = 'eq-card';
+    card.dataset.id = item.id;
+    card.innerHTML = `
+      <div class="eq-card-top">
+        <span class="eq-categoria-tag cr-nd-tag">${tagPrincipal}</span>
+      </div>
+      <div class="eq-nome">${item.nome}</div>
+      <div class="eq-footer">
+        <span class="rc-badge badge-fonte">Tormenta 20</span>
+      </div>`;
+    card.addEventListener('click', () => abrirDetalheAmbiente(colecao, item.id));
+    return card;
+  }
+
+  window.abrirDetalheAmbiente = (colecao, id) => {
+    const item = ambienteBuscarItem(colecao, id);
+    if (!item) return;
+
+    document.getElementById('ambTipo').innerHTML = `<i class="ti ${AMBIENTE_ICONE[colecao] || 'ti-cloud'}" aria-hidden="true"></i> ${AMBIENTE_TIPO_LABEL[colecao] || 'Ambiente'}`;
+    document.getElementById('ambNome').textContent = item.nome;
+
+    let stats = item.stats || null;
+    let subEl = '';
+    let corpoExtra = '';
+
+    if (colecao === 'terreno') {
+      subEl = TERRENO_LABEL[item.terreno] || '';
+    } else if (colecao === 'clima') {
+      subEl = CLIMA_CATEGORIA_LABEL[item.categoria] || '';
+    } else if (colecao === 'masmorra') {
+      subEl = MASMORRA_TIPO_LABEL[item.tipo] || '';
+    } else if (colecao === 'urbano-assentamento') {
+      subEl = 'Tipo de Comunidade';
+      stats = [
+        { label: 'População', valor: item.populacao },
+        { label: 'Governo', valor: item.governo },
+        { label: 'Guarda', valor: item.guarda },
+        { label: 'Justiça', valor: item.justica },
+        { label: 'Economia', valor: item.economia },
+      ];
+    }
+
+    document.getElementById('ambSub').textContent = subEl;
+
+    if (item.subtabela) {
+      corpoExtra = `<div class="dp-secao">Tabela</div><div class="dp-tabela">${item.subtabela.map(s => `<div class="dp-tabela-linha"><span class="dp-tabela-faixa">${s.faixa}</span><span>${s.resultado}</span></div>`).join('')}</div>`;
+    }
+
+    document.getElementById('ambBody').innerHTML = `
+      ${item.efeito ? `<p class="dp-desc">${processarKeywords(item.efeito)}</p>` : ''}
+      ${grupoChips('Estatísticas', (stats || []).filter(s => s.valor))}
+      ${corpoExtra}
+      <div class="dp-fonte-pagina">Tormenta 20, p. ${item.pagina || '—'}</div>`;
+
+    document.getElementById('ambientePainel').classList.add('aberto');
+    document.querySelectorAll(AMBIENTE_SECOES_TODAS.map(s => `#${s} .cards-area`).join(', ')).forEach(el => el.classList.add('encolhido'));
+  };
+
+  window.fecharDetalheAmbiente = () => {
+    document.getElementById('ambientePainel').classList.remove('aberto');
+    document.querySelectorAll(AMBIENTE_SECOES_TODAS.map(s => `#${s} .cards-area`).join(', ')).forEach(el => el.classList.remove('encolhido'));
+  };
+
+  // ── Clima ──
+  const CLIMA_CATEGORIA_LABEL = { temperatura: 'Temperatura', visibilidade: 'Visibilidade', precipitacao: 'Precipitação', vento: 'Vento' };
+  let _filtroClima = 'todos';
+  let _buscaClima = '';
+
+  window.setFiltroClima = (el, valor) => {
+    document.querySelectorAll('#climaFiltroCategoria .filtro-btn').forEach(b => b.classList.remove('a'));
+    el.classList.add('a');
+    _filtroClima = valor;
+    renderClimaNaSecao();
+  };
+
+  function renderClimaNaSecao() {
+    const grid = document.getElementById('climaGrid');
+    if (!grid) return;
+    let lista = window.AMBIENTE_CLIMA || [];
+    if (_filtroClima !== 'todos') lista = lista.filter(c => c.categoria === _filtroClima);
+    if (_buscaClima) lista = lista.filter(c => textoBuscavelAmbiente(c).includes(_buscaClima));
+    const countEl = document.getElementById('climaCount');
+    if (countEl) countEl.textContent = lista.length + (lista.length !== 1 ? ' efeitos' : ' efeito');
+    grid.innerHTML = '';
+    if (!lista.length) { grid.innerHTML = `<div class="cp-poderes-vazio" style="grid-column:1/-1">Nenhum efeito encontrado.</div>`; return; }
+    lista.forEach(c => grid.appendChild(renderAmbienteCard('clima', c, CLIMA_CATEGORIA_LABEL[c.categoria] || '')));
+  }
+
+  // ── Terrenos ──
+  const TERRENO_LABEL = { geral: 'Geral', colinas: 'Colinas', desertos: 'Desertos', florestas: 'Florestas', montanhas: 'Montanhas', pantanos: 'Pântanos', planicies: 'Planícies', artico: 'Ártico', aquatico: 'Aquático' };
+  let _filtroTerreno = 'todos';
+  let _buscaTerrenos = '';
+
+  window.setFiltroTerreno = (el, valor) => {
+    document.querySelectorAll('#terrenosFiltroTipo .filtro-btn').forEach(b => b.classList.remove('a'));
+    el.classList.add('a');
+    _filtroTerreno = valor;
+    renderTerrenosNaSecao();
+  };
+
+  function renderTerrenosNaSecao() {
+    const grid = document.getElementById('terrenosGrid');
+    if (!grid) return;
+    let lista = window.AMBIENTE_TERRENO || [];
+    if (_filtroTerreno !== 'todos') lista = lista.filter(t => t.terreno === _filtroTerreno);
+    if (_buscaTerrenos) lista = lista.filter(t => textoBuscavelAmbiente(t).includes(_buscaTerrenos));
+    const countEl = document.getElementById('terrenosCount');
+    if (countEl) countEl.textContent = lista.length + (lista.length !== 1 ? ' elementos' : ' elemento');
+    grid.innerHTML = '';
+    if (!lista.length) { grid.innerHTML = `<div class="cp-poderes-vazio" style="grid-column:1/-1">Nenhum elemento encontrado.</div>`; return; }
+    lista.forEach(t => grid.appendChild(renderAmbienteCard('terreno', t, TERRENO_LABEL[t.terreno] || '')));
+  }
+
+  // ── Masmorras ──
+  const MASMORRA_TIPO_LABEL = { piso: 'Piso', parede: 'Parede', porta: 'Porta', pilar: 'Pilar', outro: 'Outro' };
+  let _filtroMasmorra = 'todos';
+  let _buscaMasmorras = '';
+
+  window.setFiltroMasmorra = (el, valor) => {
+    document.querySelectorAll('#masmorrasFiltroTipo .filtro-btn').forEach(b => b.classList.remove('a'));
+    el.classList.add('a');
+    _filtroMasmorra = valor;
+    renderMasmorrasNaSecao();
+  };
+
+  function renderMasmorrasNaSecao() {
+    const grid = document.getElementById('masmorrasGrid');
+    if (!grid) return;
+    let lista = window.AMBIENTE_MASMORRA_ELEMENTO || [];
+    if (_filtroMasmorra !== 'todos') lista = lista.filter(m => m.tipo === _filtroMasmorra);
+    if (_buscaMasmorras) lista = lista.filter(m => textoBuscavelAmbiente(m).includes(_buscaMasmorras));
+    const countEl = document.getElementById('masmorrasCount');
+    if (countEl) countEl.textContent = lista.length + (lista.length !== 1 ? ' elementos' : ' elemento');
+    grid.innerHTML = '';
+    if (!lista.length) { grid.innerHTML = `<div class="cp-poderes-vazio" style="grid-column:1/-1">Nenhum elemento encontrado.</div>`; return; }
+    lista.forEach(m => grid.appendChild(renderAmbienteCard('masmorra', m, MASMORRA_TIPO_LABEL[m.tipo] || '')));
+  }
+
+  window.toggleSortearMasmorra = () => {
+    const box = document.getElementById('sortearMasmorra');
+    if (!box) return;
+    const abrir = box.style.display === 'none';
+    box.style.display = abrir ? '' : 'none';
+    const btn = document.getElementById('btnSortearMasmorra');
+    if (btn) btn.classList.toggle('a', abrir);
+  };
+
+  window.sortearIdeiaMasmorra = () => {
+    const lista = window.AMBIENTE_MASMORRA_IDEIAS || [];
+    if (!lista.length) return;
+    const resultEl = document.getElementById('sortearMasmorraResultado');
+    const escolhida = lista[Math.floor(Math.random() * lista.length)];
+    resultEl.innerHTML = `
+      <div class="calc-grupo-card">
+        <span class="calc-grupo-tag">d20 = ${escolhida.numero}</span>
+        <span class="calc-grupo-nome">${escolhida.ideia}</span>
+      </div>`;
+  };
+
+  // ── Ermos ──
+  let _buscaErmos = '';
+
+  function renderErmosNaSecao() {
+    const grid = document.getElementById('ermosGrid');
+    if (!grid) return;
+    let lista = window.AMBIENTE_ERMO_ELEMENTO || [];
+    if (_buscaErmos) lista = lista.filter(e => textoBuscavelAmbiente(e).includes(_buscaErmos));
+    const countEl = document.getElementById('ermosCount');
+    if (countEl) countEl.textContent = lista.length + (lista.length !== 1 ? ' elementos' : ' elemento');
+    grid.innerHTML = '';
+    if (!lista.length) { grid.innerHTML = `<div class="cp-poderes-vazio" style="grid-column:1/-1">Nenhum elemento encontrado.</div>`; return; }
+    lista.forEach(e => grid.appendChild(renderAmbienteCard('ermo', e, 'Ermo')));
+  }
+
+  // ── Urbano (Assentamentos + Elementos + Perseguição) ──
+  let _buscaUrbano = '';
+
+  function renderUrbanoNaSecao() {
+    const gridAssentamento = document.getElementById('urbanoAssentamentoGrid');
+    const gridElemento = document.getElementById('urbanoElementoGrid');
+    if (!gridAssentamento || !gridElemento) return;
+    let assentamentos = window.AMBIENTE_URBANO_ASSENTAMENTO || [];
+    let elementos = window.AMBIENTE_URBANO_ELEMENTO || [];
+    if (_buscaUrbano) {
+      assentamentos = assentamentos.filter(a => textoBuscavelAmbiente(a).includes(_buscaUrbano));
+      elementos = elementos.filter(e => textoBuscavelAmbiente(e).includes(_buscaUrbano));
+    }
+    gridAssentamento.innerHTML = '';
+    if (!assentamentos.length) gridAssentamento.innerHTML = `<div class="cp-poderes-vazio" style="grid-column:1/-1">Nenhum assentamento encontrado.</div>`;
+    else assentamentos.forEach(a => gridAssentamento.appendChild(renderAmbienteCard('urbano-assentamento', a, 'Assentamento')));
+    gridElemento.innerHTML = '';
+    if (!elementos.length) gridElemento.innerHTML = `<div class="cp-poderes-vazio" style="grid-column:1/-1">Nenhum elemento encontrado.</div>`;
+    else elementos.forEach(e => gridElemento.appendChild(renderAmbienteCard('urbano-elemento', e, 'Urbano')));
+  }
+
+  window.toggleSortearPerseguicao = () => {
+    const box = document.getElementById('sortearPerseguicao');
+    if (!box) return;
+    const abrir = box.style.display === 'none';
+    box.style.display = abrir ? '' : 'none';
+    const btn = document.getElementById('btnSortearPerseguicao');
+    if (btn) btn.classList.toggle('a', abrir);
+  };
+
+  window.sortearEventoPerseguicao = () => {
+    const lista = window.AMBIENTE_PERSEGUICAO_EVENTOS || [];
+    if (!lista.length) return;
+    const resultEl = document.getElementById('sortearPerseguicaoResultado');
+    const d20 = 1 + Math.floor(Math.random() * 20);
+    const evento = lista.find(e => d20 >= e.faixaMin && d20 <= e.faixaMax);
+    if (!evento) return;
+    resultEl.innerHTML = `
+      <div class="calc-grupo-card sortear-item" style="flex-direction:column;align-items:flex-start;gap:4px;">
+        <span class="calc-grupo-tag">d20 = ${d20} · ${evento.evento}</span>
+        ${evento.teste ? `<span class="calc-grupo-nome" style="font-size:12px;">Teste: ${evento.teste}</span>` : ''}
+        ${evento.exemplo ? `<span class="calc-combate-nota" style="margin:0;">${evento.exemplo}</span>` : ''}
+      </div>`;
+  };
+
+  // ── Viagens ──
+  function preencherSelectViagem() {
+    const el = document.getElementById('viagemDeslocamento');
+    if (!el || el.dataset.preenchido) return;
+    const lista = window.AMBIENTE_VIAGEM_TABELA || [];
+    el.innerHTML = lista.map(v => `<option value="${v.deslocamentoM}">${v.deslocamentoM}m</option>`).join('');
+    el.dataset.preenchido = '1';
+  }
+
+  window.calcularViagem = () => {
+    const el = document.getElementById('viagemDeslocamento');
+    const resultEl = document.getElementById('viagemResultado');
+    if (!el || !resultEl) return;
+    const valor = parseFloat(el.value);
+    const linha = (window.AMBIENTE_VIAGEM_TABELA || []).find(v => v.deslocamentoM === valor);
+    if (!linha) { resultEl.innerHTML = ''; return; }
+    resultEl.innerHTML = grupoChips('Velocidade de viagem', [
+      { label: 'Por hora', valor: `${linha.porHoraKm} km` },
+      { label: 'Por dia', valor: `${linha.porDiaKm} km` },
+    ]);
+  };
+
+  function renderViagemRegras() {
+    const el = document.getElementById('viagemRegras');
+    if (!el) return;
+    const lista = window.AMBIENTE_VIAGEM_REGRAS || [];
+    el.innerHTML = lista.map(r => `<div class="dp-grupo"><div class="dp-grupo-titulo">${r.titulo}</div><p class="dp-desc" style="margin-top:6px">${r.texto}</p></div>`).join('');
+  }
+
+  // ── Ambiente — visão geral (hub com atalhos + busca combinada) ──
+  const AMBIENTE_HUB = [
+    { secao: 'clima', icone: 'ti-cloud-rain', titulo: 'Clima', desc: 'Calor, frio, chuva, vento e tempestades.', colecao: () => window.AMBIENTE_CLIMA || [] },
+    { secao: 'terrenos', icone: 'ti-mountain', titulo: 'Terrenos', desc: 'Colinas, florestas, montanhas, água e mais.', colecao: () => window.AMBIENTE_TERRENO || [] },
+    { secao: 'masmorras', icone: 'ti-door', titulo: 'Masmorras', desc: 'Pisos, paredes, portas e outros elementos.', colecao: () => window.AMBIENTE_MASMORRA_ELEMENTO || [] },
+    { secao: 'ermos', icone: 'ti-trees', titulo: 'Ermos', desc: 'Covis, ruínas e santuários pelo caminho.', colecao: () => window.AMBIENTE_ERMO_ELEMENTO || [] },
+    { secao: 'urbano', icone: 'ti-building-community', titulo: 'Urbano', desc: 'Aldeias, vilas, cidades, metrópoles e perseguições.', colecao: () => [...(window.AMBIENTE_URBANO_ASSENTAMENTO || []), ...(window.AMBIENTE_URBANO_ELEMENTO || [])] },
+    { secao: 'viagens', icone: 'ti-route', titulo: 'Viagens', desc: 'Velocidade de viagem por hora e por dia.', colecao: () => [] },
+  ];
+
+  function renderAmbienteHub() {
+    const el = document.getElementById('ambienteVisaoAtalhos');
+    if (!el) return;
+    el.innerHTML = AMBIENTE_HUB.map(h => {
+      const n = h.colecao().length;
+      return `
+        <div class="amb-hub-card" onclick="mostrarSecao('${h.secao}')">
+          <i class="ti ${h.icone}" aria-hidden="true"></i>
+          <div class="amb-hub-titulo">${h.titulo}</div>
+          <div class="amb-hub-desc">${h.desc}</div>
+          ${n ? `<span class="amb-hub-count">${n}</span>` : ''}
+        </div>`;
+    }).join('');
+  }
+
+  let _buscaAmbienteVisao = '';
+  const AMBIENTE_VISAO_COLECOES = [
+    { colecao: 'clima', lista: () => window.AMBIENTE_CLIMA || [], tag: (i) => CLIMA_CATEGORIA_LABEL[i.categoria] || '' },
+    { colecao: 'terreno', lista: () => window.AMBIENTE_TERRENO || [], tag: (i) => TERRENO_LABEL[i.terreno] || '' },
+    { colecao: 'masmorra', lista: () => window.AMBIENTE_MASMORRA_ELEMENTO || [], tag: (i) => MASMORRA_TIPO_LABEL[i.tipo] || '' },
+    { colecao: 'ermo', lista: () => window.AMBIENTE_ERMO_ELEMENTO || [], tag: () => 'Ermo' },
+    { colecao: 'urbano-assentamento', lista: () => window.AMBIENTE_URBANO_ASSENTAMENTO || [], tag: () => 'Assentamento' },
+    { colecao: 'urbano-elemento', lista: () => window.AMBIENTE_URBANO_ELEMENTO || [], tag: () => 'Urbano' },
+  ];
+
+  function renderAmbienteVisaoBusca() {
+    const atalhosEl = document.getElementById('ambienteVisaoAtalhos');
+    const tituloEl = document.getElementById('ambienteVisaoBuscaTitulo');
+    const gridEl = document.getElementById('ambienteVisaoBuscaGrid');
+    if (!gridEl) return;
+
+    if (!_buscaAmbienteVisao) {
+      if (atalhosEl) atalhosEl.style.display = '';
+      if (tituloEl) tituloEl.style.display = 'none';
+      gridEl.innerHTML = '';
+      return;
+    }
+
+    if (atalhosEl) atalhosEl.style.display = 'none';
+    if (tituloEl) tituloEl.style.display = '';
+
+    const encontrados = [];
+    AMBIENTE_VISAO_COLECOES.forEach(c => {
+      c.lista().forEach(item => {
+        if (textoBuscavelAmbiente(item).includes(_buscaAmbienteVisao)) encontrados.push({ item, colecao: c.colecao, tag: c.tag(item) });
+      });
+    });
+    if (tituloEl) tituloEl.textContent = `Resultados da busca (${encontrados.length})`;
+    gridEl.innerHTML = '';
+    if (!encontrados.length) { gridEl.innerHTML = `<div class="cp-poderes-vazio" style="grid-column:1/-1">Nenhum resultado encontrado.</div>`; return; }
+    encontrados.forEach(r => gridEl.appendChild(renderAmbienteCard(r.colecao, r.item, r.tag)));
   }
 
   // ── PAINEL DE DETALHE (compartilhado) ──────────────────────────────
@@ -2596,6 +4197,89 @@ document.addEventListener('DOMContentLoaded', () => {
       document.getElementById(s)?.querySelector('.cards-area')?.classList.remove('encolhido');
     });
     document.querySelectorAll('.eq-card').forEach(c => c.classList.remove('selecionado'));
+  };
+
+  // Clique num nome de equipamento citado em qualquer descrição do site
+  // (kw-item) leva pra seção certa, com a busca já preenchida, e abre o
+  // painel de detalhe direto — mesmo padrão do irParaMagia/irParaPoderGeral.
+  const ITEM_TIPO_CONFIG = {
+    'arma': { secao: 'armas', lista: () => window.ARMAS, estado: () => _armaEstado, render: renderArmasNaSecao, buscaId: 'buscaArmas', filtroGrupos: ['armasFiltroCategoria', 'armasFiltroTipo'] },
+    'armadura': { secao: 'armaduras', lista: () => window.ARMADURAS, estado: () => _armaduraEstado, render: renderArmadurasNaSecao, buscaId: 'buscaArmaduras', filtroGrupos: ['armadurasFiltroCategoria'] },
+    'item-geral': { secao: 'itens-gerais', lista: () => (window.ITENS_GERAIS || []).concat(window.MUNICOES || []), estado: () => _itemGeralEstado, render: renderItensGeraisNaSecao, buscaId: 'buscaItensGerais', filtroGrupos: ['itensGeraisFiltroCategoria', 'itensGeraisFiltroPreco'] },
+    'melhoria': {
+      secao: 'modificadores', lista: () => window.MELHORIAS, estado: () => _modificadorEstado,
+      render: () => {
+        _modificadorEstado.categoria = 'melhoria';
+        document.querySelectorAll('#modificadoresCategoriaFiltro .filtro-btn').forEach(b => b.classList.remove('a'));
+        document.querySelectorAll('#modificadoresCategoriaFiltro .filtro-btn')[0]?.classList.add('a');
+        renderTipoFiltroModificador();
+        renderModificadoresNaSecao();
+      },
+      buscaId: 'buscaModificadores', filtroGrupos: [],
+    },
+    'material': {
+      secao: 'modificadores', lista: () => window.MATERIAIS_ESPECIAIS, estado: () => _modificadorEstado,
+      render: () => {
+        _modificadorEstado.categoria = 'material';
+        document.querySelectorAll('#modificadoresCategoriaFiltro .filtro-btn').forEach(b => b.classList.remove('a'));
+        document.querySelectorAll('#modificadoresCategoriaFiltro .filtro-btn')[2]?.classList.add('a');
+        renderTipoFiltroModificador();
+        renderModificadoresNaSecao();
+      },
+      buscaId: 'buscaModificadores', filtroGrupos: [],
+    },
+    'encanto-arma': {
+      secao: 'modificadores', lista: () => window.ENCANTOS_ARMA, estado: () => _modificadorEstado,
+      render: () => {
+        _modificadorEstado.categoria = 'encantamento';
+        document.querySelectorAll('#modificadoresCategoriaFiltro .filtro-btn').forEach(b => b.classList.remove('a'));
+        document.querySelectorAll('#modificadoresCategoriaFiltro .filtro-btn')[1]?.classList.add('a');
+        renderTipoFiltroModificador();
+        renderModificadoresNaSecao();
+      },
+      buscaId: 'buscaModificadores', filtroGrupos: [],
+    },
+    'encanto-armadura': {
+      secao: 'modificadores', lista: () => window.ENCANTOS_ARMADURA, estado: () => _modificadorEstado,
+      render: () => {
+        _modificadorEstado.categoria = 'encantamento';
+        document.querySelectorAll('#modificadoresCategoriaFiltro .filtro-btn').forEach(b => b.classList.remove('a'));
+        document.querySelectorAll('#modificadoresCategoriaFiltro .filtro-btn')[1]?.classList.add('a');
+        renderTipoFiltroModificador();
+        renderModificadoresNaSecao();
+      },
+      buscaId: 'buscaModificadores', filtroGrupos: [],
+    },
+    'arma-especifica': { secao: 'armas-magicas', lista: () => window.ARMAS_ESPECIFICAS, estado: () => _armasMagicasEstado, render: renderArmasMagicasNaSecao, buscaId: 'buscaArmasMagicas', filtroGrupos: [] },
+    'armadura-especifica': { secao: 'armaduras-magicas', lista: () => window.ARMADURAS_ESCUDOS_ESPECIFICOS, estado: () => _armadurasMagicasEstado, render: renderArmadurasMagicasNaSecao, buscaId: 'buscaArmadurasMagicas', filtroGrupos: [] },
+    'acessorio': { secao: 'acessorios', lista: () => window.ACESSORIOS, estado: () => _acessorioEstado, render: renderAcessoriosNaSecao, buscaId: 'buscaAcessorios', filtroGrupos: ['acessoriosFiltro'] },
+    'artefato': { secao: 'artefatos', lista: () => window.ARTEFATOS, estado: null, render: renderArtefatosNaSecao, buscaId: null, filtroGrupos: [] },
+  };
+
+  window.irParaItem = function(nome, tipo) {
+    const cfg = ITEM_TIPO_CONFIG[tipo];
+    if (!cfg) return;
+    const item = (cfg.lista() || []).find(x => x.nome === nome);
+    if (!item) return;
+
+    mostrarSecao(cfg.secao);
+
+    if (cfg.estado) {
+      const estado = cfg.estado();
+      Object.keys(estado).forEach(k => {
+        if (k === 'busca') estado[k] = nome.toLowerCase();
+        else if (k !== 'modo' && k !== 'categoria') estado[k] = 'todos';
+      });
+      cfg.filtroGrupos.forEach(gid => {
+        document.querySelectorAll(`#${gid} .filtro-btn`).forEach(b => b.classList.remove('a'));
+        document.querySelector(`#${gid} .filtro-btn`)?.classList.add('a');
+      });
+      const buscaInput = document.getElementById(cfg.buscaId);
+      if (buscaInput) buscaInput.value = nome;
+    }
+
+    cfg.render();
+    setTimeout(() => abrirDetalheEquip(tipo, item.id), 50);
   };
 
   // ══════════════════ MAGIAS ══════════════════
@@ -3244,21 +4928,74 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // ── PAINEL DE DETALHE DE ORIGEM ─────────────────────────────
   const origemPainelEl = document.getElementById('origemPainel');
+  let _origemAtual = null;
+  // Escolha ÚNICA de "escolha 2 dos benefícios" — perícias, poderes gerais,
+  // o Poder Único e a Escolha Livre competem pelo MESMO limite (regra real:
+  // é uma lista combinada, não "2 perícias + 1 poder" separados).
+  let _origemSelecoes = { escolhidos: new Set() };
 
-  window.abrirDetalheOrigem = function(o) {
-    if (!o) return;
+  function limiteEscolhaOrigem() { return 2; }
+
+  window.toggleEscolhaOrigem = function(chave) {
+    if (!_origemAtual) return;
+    if (_origemSelecoes.escolhidos.has(chave)) {
+      _origemSelecoes.escolhidos.delete(chave);
+    } else {
+      if (_origemSelecoes.escolhidos.size >= limiteEscolhaOrigem()) return;
+      _origemSelecoes.escolhidos.add(chave);
+    }
+    renderCorpoOrigem(_origemAtual);
+  };
+
+  function renderPericiaOrigemLinha(nomePericia) {
+    const kw = typeof processarKeywords === 'function' ? processarKeywords : (t) => t;
+    const sel = _origemSelecoes.escolhidos.has(nomePericia);
+    const noLimite = !sel && _origemSelecoes.escolhidos.size >= limiteEscolhaOrigem();
+    return `
+      <div class="eq-melhoria-linha ${sel ? 'selecionada' : ''}" style="${noLimite ? 'opacity:.4;cursor:not-allowed;' : ''}" onclick="${noLimite ? '' : `toggleEscolhaOrigem('${nomePericia.replace(/'/g, "\\'")}')`}">
+        <div class="eq-melhoria-check">${sel ? '<i class="ti ti-check" aria-hidden="true"></i>' : ''}</div>
+        <div class="eq-melhoria-corpo"><div class="eq-melhoria-nome">${kw(nomePericia)}</div></div>
+      </div>`;
+  }
+
+  // Reaproveita renderPoderHtml (a mesma função da página de Poderes Gerais)
+  // pra não duplicar código nem manter dois jeitos de mostrar a mesma coisa
+  // — só embrulha num wrapper clicável de seleção. Poder Único e Escolha
+  // Livre não existem em PODERES_GERAIS, então viram um objeto "normalizado"
+  // com os mesmos campos (sem id → o botão "Adicionar ao personagem" nem
+  // aparece pra esses dois, evitando confundir com o sistema de ficha).
+  function renderPoderOrigemCard(chave, poderObj) {
+    const sel = _origemSelecoes.escolhidos.has(chave);
+    const noLimite = !sel && _origemSelecoes.escolhidos.size >= limiteEscolhaOrigem();
+    const htmlPoder = renderPoderHtml(poderObj);
+    return `
+      <div class="op-poder-wrap ${sel ? 'selecionada' : ''}" style="${noLimite ? 'opacity:.45;cursor:not-allowed;' : 'cursor:pointer;'}"
+           onclick="${noLimite ? '' : `if (!event.target.closest('.cp-poder-add-btn')) toggleEscolhaOrigem('${chave}')`}">
+        ${htmlPoder}
+      </div>`;
+  }
+
+  function normalizarPoderEspecial(nome, descricao, prerequisito, fonte) {
+    return { id: null, nome, categoria: 'origem', tipo: 'passivo', custoPM: 0, prerequisito: prerequisito || null, descricao, fonte };
+  }
+
+  function renderCorpoOrigem(o) {
     const kw = typeof processarKeywords === 'function' ? processarKeywords : (t) => t;
 
     document.getElementById('opHeroIcon').className = `ti ${o.icone} dp-hero-icon`;
     document.getElementById('opNome').textContent = o.nome;
     document.getElementById('opSub').textContent = o.temas.join(' · ');
 
-    const periciasHtml = o.periciasOferecidas.length
-      ? `<div class="op-lista-chips">${o.periciasOferecidas.map(p => kw(p)).join('')}</div>` : '';
-    const poderesGeraisHtml = o.poderesGeraisOferecidos.length
-      ? `<div class="op-lista-chips">${o.poderesGeraisOferecidos.map(p => `<span class="op-poder-geral">${p}</span>`).join('')}</div>` : '';
-    const escolhaLivreHtml = o.escolhaLivre
-      ? `<div class="op-escolha-livre"><i class="ti ti-dice" aria-hidden="true"></i> ${kw(o.escolhaLivre.descricao)}</div>` : '';
+    const limite = limiteEscolhaOrigem();
+    const periciasHtml = o.periciasOferecidas.map(p => renderPericiaOrigemLinha(p)).join('');
+
+    const cardsPoder = [];
+    o.poderesGeraisOferecidos.forEach(nomePoder => {
+      const poderReal = (window.PODERES_GERAIS || []).find(p => p.nome === nomePoder);
+      if (poderReal) cardsPoder.push(renderPoderOrigemCard(nomePoder, poderReal));
+    });
+    cardsPoder.push(renderPoderOrigemCard('__unico__', normalizarPoderEspecial(o.poderUnico.nome, o.poderUnico.descricao, o.poderUnico.prerequisito, o.fonte)));
+    if (o.escolhaLivre) cardsPoder.push(renderPoderOrigemCard('__livre__', normalizarPoderEspecial('Escolha Livre', o.escolhaLivre.descricao, null, o.fonte)));
 
     document.getElementById('opBody').innerHTML = `
       <div class="dp-linha"></div>
@@ -3273,21 +5010,17 @@ document.addEventListener('DOMContentLoaded', () => {
       <div class="dp-secao">Itens</div>
       <p style="font-size:12px;color:#888;line-height:1.7;margin-bottom:.9rem">${o.itens.join(', ')}</p>
 
-      <div class="dp-secao">Benefícios · escolha 2</div>
-      ${periciasHtml}
-      ${poderesGeraisHtml}
-      ${escolhaLivreHtml}
+      <div class="dp-secao">Benefícios · escolha ${limite} (${_origemSelecoes.escolhidos.size}/${limite})</div>
+      ${periciasHtml ? `<div class="eq-melhorias-wrap" style="margin-bottom:12px;">${periciasHtml}</div>` : ''}
+      <div style="display:flex;flex-direction:column;">${cardsPoder.join('')}</div>`;
+  }
 
-      <div class="op-poder-unico-painel">
-        <div class="op-pu-hd">
-          <div class="op-pu-ic"><i class="ti ti-award" aria-hidden="true"></i></div>
-          <div>
-            <div class="op-pu-legenda">Poder único · ${o.nome}</div>
-            <div class="op-pu-nome">${o.poderUnico.nome}</div>
-          </div>
-        </div>
-        <div class="op-pu-desc">${kw(o.poderUnico.descricao)}</div>
-      </div>`;
+  window.abrirDetalheOrigem = function(o) {
+    if (!o) return;
+    _origemAtual = o;
+    _origemSelecoes = { escolhidos: new Set() };
+
+    renderCorpoOrigem(o);
 
     document.querySelectorAll('.origem-card').forEach(c => c.classList.remove('selecionado'));
     document.querySelector(`.origem-card[data-id="${o.id}"]`)?.classList.add('selecionado');
@@ -3337,6 +5070,21 @@ document.addEventListener('DOMContentLoaded', () => {
       ? `<p style="font-size:12px;color:#888;line-height:1.6;margin-bottom:.9rem">${d.armaPreferida}</p>`
       : `<p style="font-size:11px;color:#8a7440;line-height:1.6;margin-bottom:.9rem;font-style:italic">${kw(d.armaPreferidaNota)}</p>`;
 
+    // Poderes Concedidos: antes eram só chips de texto que navegavam pra
+    // fora (irParaPoderGeral) — mesmo bug que já tínhamos corrigido em
+    // outras referências. Agora cada um vira um card completo (mesma
+    // renderPoderHtml usada em Poderes Gerais e em Origem), mostrando
+    // categoria/PM/pré-req direto, sem precisar clicar em nada. Diferente
+    // de Origem, aqui NÃO tem seleção com limite — um devoto recebe TODOS
+    // os poderes concedidos listados, não escolhe um subconjunto — por
+    // isso os cards não têm o wrapper de toggle/seleção.
+    const poderesConcedidosHtml = (d.poderesConcedidos || []).map(nomePoder => {
+      const poderReal = (window.PODERES_GERAIS || []).find(p => p.nome === nomePoder);
+      return poderReal
+        ? renderPoderHtml(poderReal)
+        : `<div class="cp-poder"><div class="cp-poder-head"><span class="cp-poder-nome">${nomePoder}</span></div></div>`;
+    }).join('');
+
     document.getElementById('ddBody').innerHTML = `
       <div class="dp-linha"></div>
       <div class="dp-badges">
@@ -3359,9 +5107,7 @@ document.addEventListener('DOMContentLoaded', () => {
       ${devotosHtml}
 
       <div class="dp-secao">Poderes Concedidos</div>
-      <div class="dd-poder-chips">
-        ${d.poderesConcedidos.map(p => `<span class="op-poder-geral" style="cursor:pointer" onclick="irParaPoderGeral('${p.replace(/'/g, "\\'")}', 'concedidos')">${p}</span>`).join('')}
-      </div>
+      <div style="display:flex;flex-direction:column;">${poderesConcedidosHtml}</div>
 
       <div class="dp-secao">Obrigações e Restrições</div>
       <p class="dp-desc">${kw(d.obrigacoes)}</p>
@@ -3483,12 +5229,40 @@ document.addEventListener('DOMContentLoaded', () => {
       </div>`;
   }
 
+  // Link reverso: qual classe (fixa ou opcional) e qual origem concede
+  // treinamento nesta perícia — o compêndio já tinha o caminho contrário
+  // (poder → perícia via kw-pericia), faltava esse.
+  function quemConcedePericia(nomePericia) {
+    const bateNome = (str) => str === nomePericia || str.startsWith(nomePericia + ' (');
+    const classesFixas = (window.CLASSES || []).filter(c => (c.periciasFixas || []).some(bateNome));
+    const classesOpcoes = (window.CLASSES || [])
+      .filter(c => (c.periciasOpcoes || []).some(bateNome))
+      .filter(c => !classesFixas.includes(c));
+    const origens = (window.ORIGENS || []).filter(o => (o.periciasOferecidas || []).includes(nomePericia));
+    return { classesFixas, classesOpcoes, origens };
+  }
+
+  function renderConcedidaPor(p) {
+    const { classesFixas, classesOpcoes, origens } = quemConcedePericia(p.nome);
+    if (!classesFixas.length && !classesOpcoes.length && !origens.length) return '';
+    const linha = (label, nomes) => nomes.length
+      ? `<div class="per-concedida-linha"><span class="per-concedida-label">${label}</span> ${nomes.join(', ')}</div>` : '';
+    return `
+      <div class="per-concedida-por" style="margin:0 12px 10px 34px">
+        <div class="per-concedida-titulo"><i class="ti ti-arrow-back-up" aria-hidden="true"></i> Concedida por</div>
+        ${linha('Classe (fixa):', classesFixas.map(c => c.nome))}
+        ${linha('Classe (opcional):', classesOpcoes.map(c => c.nome))}
+        ${linha('Origem:', origens.map(o => o.nome))}
+      </div>`;
+  }
+
   function renderPericiaLinha(p) {
     const kw = typeof processarKeywords === 'function' ? processarKeywords : (t) => t;
     const temUsos = p.usos && p.usos.length > 0;
     const temNota = !!p.notaGeral;
     const temOpcoes = p.opcoes && p.opcoes.length > 0;
-    const temExpansao = temUsos || temNota || temOpcoes;
+    const concedidaHtml = renderConcedidaPor(p);
+    const temExpansao = temUsos || temNota || temOpcoes || !!concedidaHtml;
 
     const tagTreinada = p.somenteTreinada
       ? '<span class="per-tag per-tag-treinada">Treinada</span>' : '';
@@ -3540,6 +5314,7 @@ document.addEventListener('DOMContentLoaded', () => {
         ${notaHtml}
         ${renderOpcoesPericia(p)}
         ${usosHtml}
+        ${concedidaHtml}
       </div>`;
   }
 
@@ -3785,6 +5560,56 @@ document.addEventListener('DOMContentLoaded', () => {
     _acessorioEstado.busca = buscaAcessoriosEl.value.trim().toLowerCase();
     renderAcessoriosNaSecao();
   });
+  const buscaCriaturasEl = document.getElementById('buscaCriaturas');
+  if (buscaCriaturasEl) buscaCriaturasEl.addEventListener('input', () => {
+    _criaturaEstado.busca = buscaCriaturasEl.value.trim().toLowerCase();
+    renderCriaturasNaSecao();
+  });
+  const buscaPerigosEl = document.getElementById('buscaPerigos');
+  if (buscaPerigosEl) buscaPerigosEl.addEventListener('input', () => {
+    _buscaPerigos = buscaPerigosEl.value.trim().toLowerCase();
+    renderPerigosNaSecao();
+  });
+  const buscaPerigosComplexosEl = document.getElementById('buscaPerigosComplexos');
+  if (buscaPerigosComplexosEl) buscaPerigosComplexosEl.addEventListener('input', () => {
+    _buscaPerigosComplexos = buscaPerigosComplexosEl.value.trim().toLowerCase();
+    renderPerigosComplexosNaSecao();
+  });
+  const buscaPerigosVisaoEl = document.getElementById('buscaPerigosVisao');
+  if (buscaPerigosVisaoEl) buscaPerigosVisaoEl.addEventListener('input', () => {
+    _buscaPerigosVisao = buscaPerigosVisaoEl.value.trim().toLowerCase();
+    renderPerigosVisaoGeral();
+  });
+  const buscaClimaEl = document.getElementById('buscaClima');
+  if (buscaClimaEl) buscaClimaEl.addEventListener('input', () => {
+    _buscaClima = buscaClimaEl.value.trim().toLowerCase();
+    renderClimaNaSecao();
+  });
+  const buscaTerrenosEl = document.getElementById('buscaTerrenos');
+  if (buscaTerrenosEl) buscaTerrenosEl.addEventListener('input', () => {
+    _buscaTerrenos = buscaTerrenosEl.value.trim().toLowerCase();
+    renderTerrenosNaSecao();
+  });
+  const buscaMasmorrasEl = document.getElementById('buscaMasmorras');
+  if (buscaMasmorrasEl) buscaMasmorrasEl.addEventListener('input', () => {
+    _buscaMasmorras = buscaMasmorrasEl.value.trim().toLowerCase();
+    renderMasmorrasNaSecao();
+  });
+  const buscaErmosEl = document.getElementById('buscaErmos');
+  if (buscaErmosEl) buscaErmosEl.addEventListener('input', () => {
+    _buscaErmos = buscaErmosEl.value.trim().toLowerCase();
+    renderErmosNaSecao();
+  });
+  const buscaUrbanoEl = document.getElementById('buscaUrbano');
+  if (buscaUrbanoEl) buscaUrbanoEl.addEventListener('input', () => {
+    _buscaUrbano = buscaUrbanoEl.value.trim().toLowerCase();
+    renderUrbanoNaSecao();
+  });
+  const buscaAmbienteVisaoEl = document.getElementById('buscaAmbienteVisao');
+  if (buscaAmbienteVisaoEl) buscaAmbienteVisaoEl.addEventListener('input', () => {
+    _buscaAmbienteVisao = buscaAmbienteVisaoEl.value.trim().toLowerCase();
+    renderAmbienteVisaoBusca();
+  });
   const buscaArmasEl = document.getElementById('buscaArmas');
   if (buscaArmasEl) buscaArmasEl.addEventListener('input', () => {
     _armaEstado.busca = buscaArmasEl.value.trim().toLowerCase();
@@ -3905,6 +5730,17 @@ document.addEventListener('DOMContentLoaded', () => {
   if (window.PERICIAS) renderPericias(window.PERICIAS);
   if (window.ORIGENS) renderOrigens(window.ORIGENS);
   if (window.DEUSES) renderDeuses(window.DEUSES);
+  if (window.CRIATURAS) { renderCriaturasNaSecao(); carregarCombateSalvo(); atualizarPainelHerois(); }
+  if (window.PERIGOS_SIMPLES) { preencherFiltroCondicoesPerigo(); renderPerigosNaSecao(); }
+  if (window.PERIGOS_COMPLEXOS) renderPerigosComplexosNaSecao();
+  if (window.PERIGOS_SIMPLES || window.PERIGOS_COMPLEXOS) { preencherFiltroCondicoesPerigoVisao(); renderPerigosVisaoGeral(); }
+  if (window.AMBIENTE_CLIMA) renderClimaNaSecao();
+  if (window.AMBIENTE_TERRENO) renderTerrenosNaSecao();
+  if (window.AMBIENTE_MASMORRA_ELEMENTO) renderMasmorrasNaSecao();
+  if (window.AMBIENTE_ERMO_ELEMENTO) renderErmosNaSecao();
+  if (window.AMBIENTE_URBANO_ASSENTAMENTO || window.AMBIENTE_URBANO_ELEMENTO) renderUrbanoNaSecao();
+  if (window.AMBIENTE_VIAGEM_TABELA) { preencherSelectViagem(); calcularViagem(); renderViagemRegras(); }
+  renderAmbienteHub();
   if (window.ARMAS) renderArmasNaSecao();
   if (window.ARMADURAS) renderArmadurasNaSecao();
   if (window.ITENS_GERAIS) renderItensGeraisNaSecao();
@@ -3990,5 +5826,376 @@ document.addEventListener('DOMContentLoaded', () => {
       tooltipEl.style.top  = y + 'px';
     });
   })();
+
+  // ══════════════════ PILHA DE REFERÊNCIAS CRUZADAS ══════════════════
+  // Quando um nome citado dentro de um texto (via processarKeywords, ver
+  // keywords.js) é clicado, o painel do alvo abre flutuando por cima da
+  // seção atual, SEM navegar pra seção dele — diferente de irParaX(), que
+  // os botões do menu lateral usam pra navegação de verdade.
+  //
+  // Os painéis (todos .detalhe-painel, mesma largura padronizada) são
+  // position:absolute ancorados no .main (o container comum, nunca escondido por troca de
+  // seção) — então basta mover o painel-alvo pra ser filho direto de
+  // .main pra ele aparecer por cima de qualquer seção ativa, mesmo que a
+  // seção "dona" dele esteja com display:none. Mesmo princípio já usado
+  // no site pro reaproveitamento do widget de Sortear Perigo/Masmorra/
+  // Perseguição entre seções.
+  //
+  // Todo tipo de bloco clicável em texto tem função de abrir registrada
+  // aqui — padronizado pra todos os painéis de detalhe do site. `buscar`
+  // recebe (chave, extra) — chave é id ou nome dependendo do tipo (segue
+  // a mesma convenção que cada tipo já usava antes: raça/classe/origem/
+  // deus/criatura/perigo por id, magia/item por nome, igual ao resto do
+  // site); `extra` só é usado por item (tipo do equipamento) e ambiente
+  // (coleção). `abrir` chama a função de abrir já existente de cada
+  // painel — nenhuma delas foi reescrita, só reaproveitada.
+  // Conteúdo do mini-painel — versão pequena/flutuante pra referências que
+  // não têm painel grande próprio: Poder Geral, Poder de Classe e Perícia.
+  // Reaproveita renderPoderHtml() (mesma função usada nas listas de
+  // poderes) pros dois primeiros; Perícia ganha um template compacto
+  // próprio, já que o schema é diferente (atributo-chave, usos[], etc.).
+  function renderPericiaMiniHtml(p) {
+    const kw = typeof processarKeywords === 'function' ? processarKeywords : (t) => t;
+    const usosHtml = (p.usos || []).map(u => `
+      <div class="mini-uso">
+        <div class="mini-uso-nome">${u.nome}${u.cd ? ` <span class="mini-uso-cd">CD ${u.cd}</span>` : ''}</div>
+        ${u.descricao ? `<div class="mini-uso-desc">${kw(u.descricao)}</div>` : ''}
+      </div>`).join('');
+    return `
+      <div class="dp-badges">
+        <span class="dp-badge">${p.atributoChave}</span>
+        ${p.somenteTreinada ? `<span class="dp-badge">Só Treinada</span>` : ''}
+        ${p.penalidadeArmadura ? `<span class="dp-badge">Penalidade de Armadura</span>` : ''}
+      </div>
+      <p class="dp-desc">${kw(p.descricao)}</p>
+      ${usosHtml ? `<div class="dp-secao">Usos</div>${usosHtml}` : ''}
+    `;
+  }
+
+  window.abrirMiniPainel = function(tipoLabel, corpoHtml, nome) {
+    document.getElementById('miniTipo').textContent = tipoLabel;
+    document.getElementById('miniNome').textContent = nome;
+    document.getElementById('miniBody').innerHTML = corpoHtml;
+    document.getElementById('miniPainel').classList.add('aberto');
+  };
+  window.fecharMiniPainel = function() {
+    document.getElementById('miniPainel').classList.remove('aberto');
+  };
+
+  const BLOCO_REF_TIPOS = {
+    raca:   { painelId: 'detalhePainel', buscar: id => (window.RACAS   || []).find(x => x.id === id), abrir: obj => window.abrirDetalhe(obj) },
+    classe: { painelId: 'classePainel',  buscar: id => (window.CLASSES || []).find(x => x.id === id), abrir: obj => window.abrirDetalheClasse(obj) },
+    origem: { painelId: 'origemPainel',  buscar: id => (window.ORIGENS || []).find(x => x.id === id), abrir: obj => window.abrirDetalheOrigem(obj) },
+    deus:   { painelId: 'deusPainel',    buscar: id => (window.DEUSES  || []).find(x => x.id === id), abrir: obj => window.abrirDetalheDeus(obj) },
+    magia:  { painelId: 'magiaPainel',   buscar: nome => (window.MAGIAS || []).find(x => x.nome === nome), abrir: obj => window.abrirDetalheMagia(obj.id) },
+    item:   {
+      painelId: 'equipPainel',
+      buscar: (nome, tipo) => {
+        const cfg = (typeof ITEM_TIPO_CONFIG !== 'undefined') ? ITEM_TIPO_CONFIG[tipo] : null;
+        return cfg ? (cfg.lista() || []).find(x => x.nome === nome) : null;
+      },
+      abrir: (obj, tipo) => window.abrirDetalheEquip(tipo, obj.id),
+    },
+    criatura: { painelId: 'criaturaPainel', buscar: id => (window.CRIATURAS || []).find(x => x.id === id), abrir: obj => window.abrirDetalheCriatura(obj.id) },
+    perigo:   { painelId: 'perigoPainel',   buscar: id => (window.PERIGOS_SIMPLES || []).find(x => x.id === id), abrir: obj => window.abrirDetalhePerigo(obj.id) },
+    perigoComplexo: { painelId: 'perigoComplexoPainel', buscar: id => (window.PERIGOS_COMPLEXOS || []).find(x => x.id === id), abrir: obj => window.abrirDetalhePerigoComplexo(obj.id) },
+    ambiente: {
+      painelId: 'ambientePainel',
+      buscar: (id, colecao) => (typeof ambienteBuscarItem === 'function') ? ambienteBuscarItem(colecao, id) : null,
+      abrir: (obj, colecao) => window.abrirDetalheAmbiente(colecao, obj.id),
+    },
+    // Os três abaixo compartilham o MESMO painel físico (miniPainel) — não
+    // têm painel grande próprio no site. Ver tratamento especial dentro de
+    // abrirBlocoReferencia() pra troca de conteúdo em vez de empilhamento
+    // quando o topo atual já é o mini-painel.
+    poderGeral: {
+      painelId: 'miniPainel',
+      buscar: nome => (window.PODERES_GERAIS || []).find(x => x.nome === nome),
+      abrir: obj => window.abrirMiniPainel('Poder Geral', renderPoderHtml(obj), obj.nome),
+    },
+    poderClasse: {
+      painelId: 'miniPainel',
+      buscar: (nome, classeId) => ((window.PODERES_CLASSES && window.PODERES_CLASSES[classeId]) || []).find(x => x.nome === nome),
+      abrir: (obj, classeId) => {
+        // Marca a classe como "contexto atual" (mesma variável que
+        // abrirDetalheClasse usa) — assim, se a descrição deste poder
+        // citar outro poder de nome repetido entre classes (ex: "Aumento
+        // de Atributo"), keywords.js prioriza esta classe em vez de cair
+        // sempre na primeira classe que tem aquele nome.
+        window._classeAtualId = classeId;
+        const classeInfo = (window.CLASSES || []).find(c => c.id === classeId);
+        window.abrirMiniPainel(`Poder de ${classeInfo ? classeInfo.nome : 'Classe'}`, renderPoderHtml(obj), obj.nome);
+      },
+    },
+    pericia: {
+      painelId: 'miniPainel',
+      buscar: nome => (window.PERICIAS || []).find(x => x.nome === nome),
+      abrir: obj => window.abrirMiniPainel('Perícia', renderPericiaMiniHtml(obj), obj.nome),
+    },
+  };
+
+  // Todo painel de detalhe conhecido no site — usado só pra achar/rotular
+  // o que já estava aberto quando uma referência é clicada, mesmo que seja
+  // de um tipo ainda sem função de abrir registrada acima.
+  const _TODOS_PAINEIS_REF = [
+    { painelId: 'detalhePainel',       nomeSel: '#dpNome' },
+    { painelId: 'classePainel',        nomeSel: '#cpNome' },
+    { painelId: 'origemPainel',        nomeSel: '#opNome' },
+    { painelId: 'deusPainel',          nomeSel: '#ddNome' },
+    { painelId: 'criaturaPainel',      nomeSel: '#crNome' },
+    { painelId: 'perigoPainel',        nomeSel: '#pgNome' },
+    { painelId: 'perigoComplexoPainel',nomeSel: '#pgcNome' },
+    { painelId: 'ambientePainel',      nomeSel: '#ambNome' },
+    { painelId: 'equipPainel',         nomeSel: '#eqNome' },
+    { painelId: 'magiaPainel',         nomeSel: '#mgNome' },
+    { painelId: 'miniPainel',          nomeSel: '#miniNome' },
+  ];
+
+  // [{ painelId, nome, chave }] — índice 0 é a base, o último é o topo
+  // visível. `chave` identifica o CONTEÚDO (não só o painel), necessário
+  // porque miniPainel é um único elemento físico reaproveitado por 3
+  // tipos diferentes — duas referências pro mini-painel em sequência não
+  // empilham duas vezes o mesmo elemento, só trocam o conteúdo nele.
+  let _pilhaRef = [];
+
+  function _aplicarEmpilhamentoVisual() {
+    _pilhaRef.forEach((item, i) => {
+      const el = document.getElementById(item.painelId);
+      if (!el) return;
+      const profundidade = _pilhaRef.length - 1 - i; // 0 = topo (na frente)
+      el.style.zIndex = String(200 + i);
+      el.classList.toggle('ref-empilhado', profundidade > 0);
+      el.style.setProperty('--ref-prof', profundidade);
+
+      // Etiqueta vertical na tira visível de painéis grandes recuados —
+      // mostra o nome de quem está atrás e pula direto pra ele ao
+      // clicar (efeito baralho: dá pra reconhecer e escolher qualquer
+      // painel visível na pilha, não só voltar um nível de cada vez). O
+      // mini-painel não entra aqui — ele recua com um "pop" pequeno, não
+      // faz sentido nele.
+      if (item.painelId === 'miniPainel') return;
+      let label = el.querySelector(':scope > .ref-prof-label');
+      if (profundidade > 0) {
+        if (!label) {
+          label = document.createElement('div');
+          label.className = 'ref-prof-label';
+          el.insertBefore(label, el.firstChild);
+        }
+        label.textContent = item.nome;
+        label.title = `Voltar para ${item.nome}`;
+        label.onclick = (e) => { e.stopPropagation(); window.voltarReferencia(i + 1); };
+      } else if (label) {
+        label.remove();
+      }
+    });
+  }
+
+  function _renderTrilhaReferencia() {
+    document.querySelectorAll('.ref-trilha').forEach(el => el.remove());
+    if (_pilhaRef.length < 2) return; // só mostra a trilha quando há empilhamento de verdade
+    const topo = _pilhaRef[_pilhaRef.length - 1];
+    const painelTopoEl = document.getElementById(topo.painelId);
+    if (!painelTopoEl) return;
+    const trilha = document.createElement('div');
+    trilha.className = 'ref-trilha';
+    trilha.innerHTML = _pilhaRef.map((item, i) => {
+      const ultimo = i === _pilhaRef.length - 1;
+      return `<span class="ref-trilha-item ${ultimo ? 'ref-trilha-atual' : ''}"
+                    ${ultimo ? '' : `onclick="event.stopPropagation(); window.voltarReferencia(${i + 1})"`}>${item.nome}</span>${
+        !ultimo ? '<i class="ti ti-chevron-right ref-trilha-sep" aria-hidden="true"></i>' : ''
+      }`;
+    }).join('');
+    painelTopoEl.insertBefore(trilha, painelTopoEl.firstChild);
+  }
+
+  // Bolinha no canto do painel do topo mostrando quantos níveis tem por
+  // baixo — atalho visual pra quem não quer ler a trilha inteira. Clicar
+  // nela volta um nível (igual clicar no penúltimo item da trilha).
+  function _renderBadgeProfundidade() {
+    document.querySelectorAll('.ref-prof-badge').forEach(el => el.remove());
+    if (_pilhaRef.length < 2) return;
+    const topo = _pilhaRef[_pilhaRef.length - 1];
+    const painelTopoEl = document.getElementById(topo.painelId);
+    if (!painelTopoEl) return;
+    const badge = document.createElement('div');
+    badge.className = 'ref-prof-badge';
+    const qtd = _pilhaRef.length - 1;
+    badge.textContent = String(qtd);
+    badge.title = `${qtd} painel${qtd > 1 ? 'éis' : ''} aberto${qtd > 1 ? 's' : ''} por trás — clique pra voltar um nível`;
+    badge.onclick = (e) => { e.stopPropagation(); window.voltarReferencia(_pilhaRef.length - 1); };
+    painelTopoEl.appendChild(badge);
+  }
+
+  // Abre o painel de uma referência citada em texto, empilhando sobre o
+  // que já estiver aberto (sem navegar de seção). Chamada pelos links
+  // gerados em processarKeywords() (keywords.js).
+  window.abrirBlocoReferencia = function(tipo, id, extra) {
+    const info = BLOCO_REF_TIPOS[tipo];
+    if (!info) return;
+    const obj = info.buscar(id, extra);
+    if (!obj) return;
+
+    const el = document.getElementById(info.painelId);
+    if (!el) return;
+
+    const chave = `${tipo}::${id}::${extra || ''}`;
+    const topoAtual = _pilhaRef[_pilhaRef.length - 1];
+
+    // Já é o topo atual (clicou de novo na mesma referência) — não faz nada.
+    if (topoAtual && topoAtual.chave === chave) return;
+
+    // O topo atual já usa o MESMO painel físico (caso do mini-painel,
+    // compartilhado por Poder Geral/Poder de Classe/Perícia) — troca o
+    // conteúdo no lugar em vez de tentar empilhar o mesmo elemento duas
+    // vezes (fisicamente só existe UM miniPainel no DOM).
+    if (topoAtual && topoAtual.painelId === info.painelId) {
+      info.abrir(obj, extra);
+      topoAtual.nome = obj.nome;
+      topoAtual.chave = chave;
+      _renderTrilhaReferencia();
+      _renderBadgeProfundidade();
+      return;
+    }
+
+    // Primeira referência clicada nesta sessão de navegação: registra
+    // como base da pilha qualquer painel que já estivesse aberto (de
+    // qualquer tipo, mesmo sem função de abrir registrada acima).
+    if (_pilhaRef.length === 0) {
+      const abertoAntes = _TODOS_PAINEIS_REF.find(p => {
+        if (p.painelId === info.painelId) return false;
+        const pEl = document.getElementById(p.painelId);
+        return pEl && pEl.classList.contains('aberto');
+      });
+      if (abertoAntes) {
+        const nomeEl = document.querySelector(abertoAntes.nomeSel);
+        _pilhaRef.push({ painelId: abertoAntes.painelId, nome: nomeEl ? nomeEl.textContent : '…', chave: `base::${abertoAntes.painelId}` });
+      }
+    }
+
+    // Se o alvo já estava em algum ponto da pilha, só volta pra ele (evita
+    // duplicar a mesma referência duas vezes empilhada).
+    const idxExistente = _pilhaRef.findIndex(item => item.chave === chave);
+    if (idxExistente !== -1) {
+      window.voltarReferencia(idxExistente + 1);
+      return;
+    }
+
+    // Move o painel-alvo pra ser filho direto de .main — garante que ele
+    // apareça por cima da seção ativa mesmo que sua seção "dona" esteja
+    // com display:none.
+    const mainEl = document.querySelector('.main');
+    if (mainEl && el.parentElement !== mainEl) mainEl.appendChild(el);
+
+    info.abrir(obj, extra);
+    el.classList.add('aberto');
+    _pilhaRef.push({ painelId: info.painelId, nome: obj.nome, chave });
+    _aplicarEmpilhamentoVisual();
+    _renderBadgeProfundidade();
+    _renderTrilhaReferencia();
+  };
+
+  // Volta a pilha até restar `nivelAlvo` painéis (1-based). Os painéis
+  // acima nunca foram fechados de verdade — só empilhados visualmente por
+  // trás — então "voltar" é apenas revelar de novo, sem reabrir nada.
+  window.voltarReferencia = function(nivelAlvo) {
+    while (_pilhaRef.length > nivelAlvo) {
+      const removido = _pilhaRef.pop();
+      const el = document.getElementById(removido.painelId);
+      if (el) {
+        el.classList.remove('aberto', 'ref-empilhado');
+        el.style.zIndex = '';
+        el.style.removeProperty('--ref-prof');
+        // Painel saiu de vez da pilha (não só recuou) — tira a etiqueta
+        // vertical dele também, senão ela fica órfã e reaparece torta da
+        // próxima vez que esse mesmo painel for aberto do zero.
+        el.querySelector(':scope > .ref-prof-label')?.remove();
+      }
+    }
+    _aplicarEmpilhamentoVisual();
+    _renderTrilhaReferencia();
+    _renderBadgeProfundidade();
+  };
+
+  window.fecharPilhaReferencias = function() {
+    window.voltarReferencia(0);
+  };
+
+  // Esc fecha só o painel do topo da pilha de referências (um nível por
+  // vez), em vez de fechar tudo de uma vez.
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && _pilhaRef.length > 0) {
+      window.voltarReferencia(_pilhaRef.length - 1);
+    }
+  });
+
+  // Clicar FORA do mini-painel fecha ele (um nível, igual Esc/badge) —
+  // ele é pequeno e flutuante, então se comporta como um pop-up de
+  // verdade em vez de exigir achar o X. Só entra em ação quando o
+  // mini-painel é realmente o topo da pilha; todo link kw (raça, classe,
+  // poder etc.) já dá stopPropagation() no próprio clique, então nunca
+  // chega aqui — isso só pega clique em espaço vazio, num card, na
+  // sidebar etc.
+  document.addEventListener('click', (e) => {
+    const mini = document.getElementById('miniPainel');
+    if (!mini || !mini.classList.contains('aberto') || mini.contains(e.target)) return;
+    const topo = _pilhaRef[_pilhaRef.length - 1];
+    if (!topo || topo.painelId !== 'miniPainel') return;
+    window.voltarReferencia(_pilhaRef.length - 1);
+  });
+
+  // ── CORREÇÃO: fechar pelo X nativo do painel também tira da pilha ──
+  // Bug: cada painel tem seu próprio botão de fechar (fecharDetalheDeus,
+  // fecharDetalheMagia etc.), que sempre existiu ANTES da pilha de
+  // referências e só sabe fechar a si mesmo — não sabia que existia uma
+  // pilha. Se um painel empilhado (ex: Magia aberta por cima de Classe)
+  // for fechado pelo X em vez de pela trilha/Esc, o painel de baixo
+  // (Classe) ficava com a classe .ref-empilhado presa pra sempre —
+  // recuado e com pointer-events:none, ou seja, travado, sem reação a
+  // clique. Corrige interceptando o fechar nativo de cada painel: além
+  // de fazer o que sempre fez, agora também tira aquele painel (e
+  // qualquer coisa acima dele) da pilha e restaura a interatividade de
+  // quem ficar exposto de novo.
+  const _PAINEL_FECHAR_FN = {
+    detalhePainel: 'fecharDetalhe',
+    classePainel: 'fecharDetalheClasse',
+    origemPainel: 'fecharDetalheOrigem',
+    deusPainel: 'fecharDetalheDeus',
+    criaturaPainel: 'fecharDetalheCriatura',
+    perigoPainel: 'fecharDetalhePerigo',
+    perigoComplexoPainel: 'fecharDetalhePerigoComplexo',
+    ambientePainel: 'fecharDetalheAmbiente',
+    equipPainel: 'fecharDetalheEquip',
+    magiaPainel: 'fecharDetalheMagia',
+    miniPainel: 'fecharMiniPainel',
+  };
+
+  function _removerDaPilhaRef(painelId) {
+    const idx = _pilhaRef.findIndex(item => item.painelId === painelId);
+    if (idx === -1) return;
+    // Tira esse painel e qualquer coisa empilhada ACIMA dele (não deveria
+    // existir nada acima já que só o topo tem o X clicável, mas cobre o
+    // caso mesmo assim). O painel que disparou o fechar (painelId) já tem
+    // sua própria classe 'aberto' removida pela função original — aqui só
+    // limpamos o estado de empilhamento de quem sobrar visível.
+    const removidos = _pilhaRef.splice(idx);
+    // Mesma limpeza de etiqueta órfã do voltarReferencia() — esses
+    // painéis saíram de vez da pilha, não só recuaram.
+    removidos.forEach(item => {
+      document.getElementById(item.painelId)?.querySelector(':scope > .ref-prof-label')?.remove();
+    });
+    _aplicarEmpilhamentoVisual();
+    _renderTrilhaReferencia();
+    _renderBadgeProfundidade();
+  }
+
+  Object.entries(_PAINEL_FECHAR_FN).forEach(([painelId, nomeFn]) => {
+    const original = window[nomeFn];
+    if (typeof original !== 'function') return;
+    window[nomeFn] = function (...args) {
+      const resultado = original.apply(this, args);
+      _removerDaPilhaRef(painelId);
+      return resultado;
+    };
+  });
 
 });

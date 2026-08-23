@@ -4,12 +4,19 @@
    5 mapas: Arton Norte, Lamnor, Ta-mura, Moreania, Doherimm
 ============================================================ */
 
-/* ── CONFIGURAÇÃO DOS MAPAS (camadas) ─────────────────────── */
+/* ── CONFIGURAÇÃO DOS MAPAS (camadas) ─────────────────────────────────
+   `tiles`, `nativo` (largura/altura reais em px) e `maxZoom` vêm da
+   pirâmide de tiles gerada em tiles/<id>/<z>/<x>/<y>.jpg (ver
+   tiles/manifest.json) — usados pelo Leaflet (CRS.Simple) pra saber o
+   tamanho do "mundo" de cada mapa e até que zoom os tiles existem.
+──────────────────────────────────────────────────────────────────── */
 const MAPAS = {
   arton: {
     id: 'arton',
     nome: 'Arton Norte',
-    arquivo: '../images/mapa-arton.jpg',
+    tiles: '../tiles/arton/{z}/{x}/{y}.jpg',
+    nativo: [5906, 4134],
+    maxZoom: 5,
     cor: '#c9a84c',
     atmosfera: 'medieval',
     neblina: 'rgba(5,3,3,0.92)',
@@ -18,7 +25,9 @@ const MAPAS = {
   lamnor: {
     id: 'lamnor',
     nome: 'Lamnor',
-    arquivo: '../images/mapa-lamnor.jpg',
+    tiles: '../tiles/lamnor/{z}/{x}/{y}.jpg',
+    nativo: [1270, 1034],
+    maxZoom: 3,
     cor: '#44aa66',
     atmosfera: 'mistico',
     neblina: 'rgba(3,6,3,0.9)',
@@ -27,7 +36,9 @@ const MAPAS = {
   tamura: {
     id: 'tamura',
     nome: 'Ta-mura',
-    arquivo: '../images/mapa-tamura.jpg',
+    tiles: '../tiles/tamura/{z}/{x}/{y}.jpg',
+    nativo: [797, 1092],
+    maxZoom: 3,
     cor: '#44aaaa',
     atmosfera: 'jade',
     neblina: 'rgba(3,5,5,0.9)',
@@ -36,7 +47,9 @@ const MAPAS = {
   moreania: {
     id: 'moreania',
     nome: 'Moreania',
-    arquivo: '../images/mapa-moreania.jpg',
+    tiles: '../tiles/moreania/{z}/{x}/{y}.jpg',
+    nativo: [1329, 871],
+    maxZoom: 3,
     cor: '#8888ff',
     atmosfera: 'naval',
     neblina: 'rgba(3,3,8,0.9)',
@@ -45,7 +58,9 @@ const MAPAS = {
   doherimm: {
     id: 'doherimm',
     nome: 'Doherimm',
-    arquivo: '../images/mapa-doherimm.jpg',
+    tiles: '../tiles/doherimm/{z}/{x}/{y}.jpg',
+    nativo: [1683, 1270],
+    maxZoom: 3,
     cor: '#cc8844',
     atmosfera: 'subterraneo',
     neblina: 'rgba(2,2,2,0.95)',
@@ -508,17 +523,20 @@ const LOCAIS = {
   ],
 };
 
-/* ── REGIÕES (polígonos SVG por mapa) ────────────────────── */
+/* ── REGIÕES (polígonos por mapa, pontos em % 0-100) ───────────────────
+   labelX/labelY/labelTexto: posição e texto do rótulo flutuante da região
+   (antes fixo como <div> estático no HTML — movido pra cá pra virar
+   L.marker no Leaflet, já que precisa recalcular posição com pan/zoom). */
 const REGIOES = {
   arton: [
-    { id:'reinado',    nome:'O Reinado',            cor:'#c9a84c', fill:'rgba(201,168,76,0.2)',  stroke:'rgba(201,168,76,0.55)', pontos:'36,48 40,43 45,41 50,42 54,43 57,47 58,53 56,59 52,63 47,65 42,63 38,58 36,53', governo:'Shivara I', tipo:'Reino', pagina:44 },
-    { id:'tauron',     nome:'Império de Tauron',    cor:'#cc6644', fill:'rgba(204,102,68,0.2)', stroke:'rgba(204,102,68,0.55)', pontos:'16,40 20,34 26,31 32,32 36,36 38,42 36,48 32,52 26,51 20,47 16,43', governo:'Senado Tauríco', tipo:'Império', pagina:282 },
-    { id:'supremacia', nome:'Supremacia Purista',   cor:'#8B0000', fill:'rgba(139,0,0,0.22)',   stroke:'rgba(139,0,0,0.65)',   pontos:'42,46 46,43 51,44 54,47 53,52 50,55 46,55 42,52', governo:'Von Krauser', tipo:'Teocracia', pagina:174 },
-    { id:'namalkah',   nome:'Namalkah',             cor:'#6688cc', fill:'rgba(102,136,204,0.2)',stroke:'rgba(102,136,204,0.55)',pontos:'43,30 47,26 53,25 59,28 61,34 59,40 55,43 50,44 46,42 42,37 40,33', governo:'Rainha Zallia', tipo:'Reino Nômade', pagina:94 },
-    { id:'aslothia',   nome:'Aslothia',             cor:'#664466', fill:'rgba(102,68,102,0.22)',stroke:'rgba(102,68,102,0.65)', pontos:'65,52 70,48 76,49 79,55 77,62 71,65 65,62', governo:'Arquilich Asloth', tipo:'Reino dos Mortos', pagina:192 },
-    { id:'lamnor-reg', nome:'Lamnor (Sul)',          cor:'#44aa66', fill:'rgba(68,170,102,0.2)', stroke:'rgba(68,170,102,0.55)', pontos:'16,70 22,65 30,63 37,64 41,70 39,78 32,83 22,83 16,77', governo:'Variado', tipo:'Continente Sul', pagina:326 },
-    { id:'ubani',      nome:'Ubani',                cor:'#aa8844', fill:'rgba(170,136,68,0.2)', stroke:'rgba(170,136,68,0.55)', pontos:'28,16 36,12 46,11 54,14 58,20 56,28 50,31 43,32 35,30 26,24', governo:'Tribal', tipo:'Planícies', pagina:362 },
-    { id:'zona-tormenta', nome:'Zona da Tormenta',  cor:'#8B0000', fill:'rgba(139,0,0,0.28)',   stroke:'rgba(139,0,0,0.8)',    pontos:'41,44 44,42 47,43 48,46 47,49 44,50 41,49', governo:'Aharadak', tipo:'Anomalia', pagina:10 },
+    { id:'reinado',    nome:'O Reinado',            cor:'#c9a84c', fill:'rgba(201,168,76,0.2)',  stroke:'rgba(201,168,76,0.55)', pontos:'36,48 40,43 45,41 50,42 54,43 57,47 58,53 56,59 52,63 47,65 42,63 38,58 36,53', governo:'Shivara I', tipo:'Reino', pagina:44, labelX:44, labelY:57, labelTexto:'O Reinado' },
+    { id:'tauron',     nome:'Império de Tauron',    cor:'#cc6644', fill:'rgba(204,102,68,0.2)', stroke:'rgba(204,102,68,0.55)', pontos:'16,40 20,34 26,31 32,32 36,36 38,42 36,48 32,52 26,51 20,47 16,43', governo:'Senado Tauríco', tipo:'Império', pagina:282, labelX:20, labelY:43, labelTexto:'Império de Tauron' },
+    { id:'supremacia', nome:'Supremacia Purista',   cor:'#8B0000', fill:'rgba(139,0,0,0.22)',   stroke:'rgba(139,0,0,0.65)',   pontos:'42,46 46,43 51,44 54,47 53,52 50,55 46,55 42,52', governo:'Von Krauser', tipo:'Teocracia', pagina:174, labelX:43, labelY:50, labelTexto:'Supremacia Purista' },
+    { id:'namalkah',   nome:'Namalkah',             cor:'#6688cc', fill:'rgba(102,136,204,0.2)',stroke:'rgba(102,136,204,0.55)',pontos:'43,30 47,26 53,25 59,28 61,34 59,40 55,43 50,44 46,42 42,37 40,33', governo:'Rainha Zallia', tipo:'Reino Nômade', pagina:94, labelX:46, labelY:31, labelTexto:'Namalkah' },
+    { id:'aslothia',   nome:'Aslothia',             cor:'#664466', fill:'rgba(102,68,102,0.22)',stroke:'rgba(102,68,102,0.65)', pontos:'65,52 70,48 76,49 79,55 77,62 71,65 65,62', governo:'Arquilich Asloth', tipo:'Reino dos Mortos', pagina:192, labelX:67, labelY:56, labelTexto:'Aslothia' },
+    { id:'lamnor-reg', nome:'Lamnor (Sul)',          cor:'#44aa66', fill:'rgba(68,170,102,0.2)', stroke:'rgba(68,170,102,0.55)', pontos:'16,70 22,65 30,63 37,64 41,70 39,78 32,83 22,83 16,77', governo:'Variado', tipo:'Continente Sul', pagina:326, labelX:22, labelY:73, labelTexto:'Lamnor' },
+    { id:'ubani',      nome:'Ubani',                cor:'#aa8844', fill:'rgba(170,136,68,0.2)', stroke:'rgba(170,136,68,0.55)', pontos:'28,16 36,12 46,11 54,14 58,20 56,28 50,31 43,32 35,30 26,24', governo:'Tribal', tipo:'Planícies', pagina:362, labelX:37, labelY:18, labelTexto:'Ubani' },
+    { id:'zona-tormenta', nome:'Zona da Tormenta',  cor:'#8B0000', fill:'rgba(139,0,0,0.28)',   stroke:'rgba(139,0,0,0.8)',    pontos:'41,44 44,42 47,43 48,46 47,49 44,50 41,49', governo:'Aharadak', tipo:'Anomalia', pagina:10, labelX:39, labelY:46, labelTexto:'⚠ Tormenta' },
   ],
   lamnor: [],
   tamura: [],

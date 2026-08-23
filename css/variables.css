@@ -24,6 +24,10 @@
   --cor-texto-mudo:      #555555;
   --cor-texto-escuro:    #333333;
 
+  /* Variantes acessíveis — usar SOMENTE em texto (contraste AA verificado sobre fundo escuro) */
+  --cor-primaria-texto:        #d64545; /* 4.52:1 sobre --cor-fundo — use no lugar de --cor-primaria quando for cor de texto */
+  --cor-texto-mudo-acessivel:  #808080; /* 5.01:1 sobre --cor-fundo — use no lugar de --cor-texto-mudo quando for texto legível (não decorativo) */
+
   /* === TIPOGRAFIA === */
   --fonte-titulo:        'Cinzel', serif;
   --fonte-corpo:         'Crimson Text', serif;

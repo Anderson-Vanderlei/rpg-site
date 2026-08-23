@@ -26,17 +26,11 @@
    Custo-base por círculo (Tabela 4-1, pra somar no painel):
    1º=1PM, 2º=3PM, 3º=6PM, 4º=10PM, 5º=15PM
 
-   CAPÍTULO DE MAGIAS COMPLETO — 196 magias, Círculos 1 a 5, todos fechados.
-
-   ⚠️ Pendências de verificação (marcadas, não inventadas):
-   - Um fragmento SEM NOME e SEM DESCRIÇÃO apareceu entre "Soco de Arsenal"
-     e "Sombra Assassina" (extração do Círculo 2), com só a linha de
-     estatísticas e dois aprimoramentos sobrevivendo: "Execução: padrão;
-     Alcance: curto; Alvo: 1 humanoide; Duração: cena; Resistência: Vontade
-     parcial." + "+2 PM: aumenta o dano em +1d6." + "+5 PM: muda o tipo do
-     dano para essência." Não dá pra saber a que magia pertence só por isso
-     (é um padrão comum em várias magias de ataque do livro) — não incluído
-     em lugar nenhum ainda, não descartado.
+   CAPÍTULO DE MAGIAS COMPLETO — 198 magias, Círculos 1 a 5, todos fechados,
+   zero pendências. (A antiga pendência do "fragmento entre Soco de Arsenal
+   e Sombra Assassina" era, na verdade, os 2 aprimoramentos finais da
+   própria Soco de Arsenal que tinham se perdido na extração — resolvida,
+   nada foi inventado, o usuário confirmou o texto oficial completo.)
 ============================================================ */
 
 const CUSTO_POR_CIRCULO = { 1: 1, 2: 3, 3: 6, 4: 10, 5: 15 };
@@ -1051,7 +1045,9 @@ const MAGIAS = [
     descricao: 'Ninguém sabe se Mestre Arsenal foi realmente o criador desta magia — mas ele foi o primeiro a utilizá-la. Você fecha o punho e gesticula como se estivesse golpeando o alvo, causando dano de impacto igual a 4d6 + sua Força. A vítima é empurrada 3m na direção oposta à sua. Passar no teste de resistência reduz o dano à metade e evita o empurrão.',
     aprimoramentos: [
       { custoPM: 1, tipo: 'muda', efeito: 'muda o alcance para pessoal, o alvo para você, a duração para cena e a resistência para nenhuma. Em vez do normal, seus ataques corpo a corpo passam a acertar inimigos distantes. Seu alcance natural aumenta em 3m; uma criatura Média pode atacar adversários a até 4,5m, por exemplo.' },
+      { custoPM: 2, tipo: 'aumenta', efeito: 'aumenta o dano em +1d6.' },
       { custoPM: 4, tipo: 'aumenta', efeito: 'aumenta o empurrão em +3m.' },
+      { custoPM: 5, tipo: 'muda', efeito: 'muda o tipo do dano para essência.' },
     ],
   },
   {

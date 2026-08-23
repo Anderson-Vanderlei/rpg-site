@@ -299,10 +299,20 @@
           <i class="ti ti-paw" aria-hidden="true"></i>
           <span class="sub-label">Criaturas</span>
         </div>
-        <div class="nav-sub-item" data-secao="perigos"
+        <div class="nav-sub-item" data-secao="calc-combate"
+             onclick="toggleSubItem(this,'calc-combate')">
+          <i class="ti ti-calculator" aria-hidden="true"></i>
+          <span class="sub-label">Calculadora de Combate</span>
+        </div>
+        <div class="nav-sub-item tem-filhos" data-secao="perigos"
              onclick="toggleSubItem(this,'perigos')">
           <i class="ti ti-alert-triangle" aria-hidden="true"></i>
-          <span class="sub-label">Perigos Complexos</span>
+          <span class="sub-label">Perigos</span>
+          <i class="ti ti-chevron-right seta" style="margin-left:auto;font-size:10px" aria-hidden="true"></i>
+        </div>
+        <div class="nav-sub-sub" style="display:none">
+          <div class="nav-sub-sub-item" data-secao="perigos-simples" onclick="mostrarSecao('perigos-simples')"><span>Perigos Simples</span></div>
+          <div class="nav-sub-sub-item" data-secao="perigos-complexos" onclick="mostrarSecao('perigos-complexos')"><span>Perigos Complexos</span></div>
         </div>
         <div class="nav-sub-item tem-filhos" data-secao="ambiente"
              onclick="toggleSubItem(this,'ambiente')">
@@ -313,6 +323,10 @@
         <div class="nav-sub-sub" style="display:none">
           <div class="nav-sub-sub-item" data-secao="clima" onclick="mostrarSecao('clima')"><span>Clima</span></div>
           <div class="nav-sub-sub-item" data-secao="terrenos" onclick="mostrarSecao('terrenos')"><span>Terrenos</span></div>
+          <div class="nav-sub-sub-item" data-secao="masmorras" onclick="mostrarSecao('masmorras')"><span>Masmorras</span></div>
+          <div class="nav-sub-sub-item" data-secao="ermos" onclick="mostrarSecao('ermos')"><span>Ermos</span></div>
+          <div class="nav-sub-sub-item" data-secao="urbano" onclick="mostrarSecao('urbano')"><span>Urbano</span></div>
+          <div class="nav-sub-sub-item" data-secao="viagens" onclick="mostrarSecao('viagens')"><span>Viagens</span></div>
         </div>
         <div class="nav-sub-item" data-secao="complicacoes"
              onclick="toggleSubItem(this,'complicacoes')">
@@ -473,8 +487,10 @@
         <div class="cards-grid" id="classesGrid"></div>
       </div>
 
-      <!-- Painel de detalhe da classe (mais largo que o de raças: 420px) -->
-      <div class="classe-painel" id="classePainel">
+      <!-- Painel de detalhe da classe — mesma largura padronizada de todos os
+           painéis de detalhe (.detalhe-painel), pra cascata funcionar igual
+           não importa a ordem em que os painéis são abertos -->
+      <div class="detalhe-painel" id="classePainel">
         <div class="cp-hero" id="cpHero">
           <div class="cp-hero-bg" id="cpHeroBg"></div>
           <div class="cp-hero-img-wrap" id="cpHeroImgWrap">
@@ -1317,20 +1333,529 @@
         <!-- preenchido pelo JS -->
       </div>
     </div>
-    <div id="secao-criaturas"       class="secao-conteudo placeholder-area" style="display:none">
-      <i class="ti ti-paw" aria-hidden="true"></i><h2>Criaturas</h2><p>Em breve — aguardando livro de criaturas</p>
+    <div id="secao-criaturas" class="secao-conteudo" style="display:none;flex-direction:column;flex:1;overflow:hidden;">
+      <div class="section-hero">
+        <div class="section-hero-bg"></div>
+        <h1>Bestiário</h1>
+        <p>Criaturas do Capítulo 7 — Ameaças, organizadas por Nível de Desafio (ND). De glops a dragões-reis.</p>
+      </div>
+      <div class="toolbar" style="flex-direction:column;align-items:stretch;gap:8px;">
+        <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
+          <div class="search-inline">
+            <i class="ti ti-search" aria-hidden="true"></i>
+            <input type="text" id="buscaCriaturas" placeholder="Buscar criatura…" />
+          </div>
+          <div style="display:flex;gap:6px;margin-left:auto;">
+            <button class="pg-modo-btn a" id="criaturasModoCards" onclick="setModoVisualCriaturas('cards')" title="Ver como cards">
+              <i class="ti ti-layout-grid" aria-hidden="true"></i>
+            </button>
+            <button class="pg-modo-btn" id="criaturasModoTabela" onclick="setModoVisualCriaturas('tabela')" title="Ver como tabela">
+              <i class="ti ti-table" aria-hidden="true"></i>
+            </button>
+          </div>
+          <span class="filtro-count" id="criaturasCount">26 criaturas</span>
+        </div>
+        <div id="criaturasFiltroND" style="display:flex;gap:8px;flex-wrap:wrap;">
+          <button class="filtro-btn a" onclick="setFiltroCriatura('nd',this,'todos')">Todos os ND</button>
+          <button class="filtro-btn" onclick="setFiltroCriatura('nd',this,'0-1')">ND ¼–1</button>
+          <button class="filtro-btn" onclick="setFiltroCriatura('nd',this,'2-5')">ND 2–5</button>
+          <button class="filtro-btn" onclick="setFiltroCriatura('nd',this,'6-10')">ND 6–10</button>
+          <button class="filtro-btn" onclick="setFiltroCriatura('nd',this,'11-15')">ND 11–15</button>
+          <button class="filtro-btn" onclick="setFiltroCriatura('nd',this,'16-20')">ND 16–20</button>
+        </div>
+        <div id="criaturasFiltroGrupo" style="display:flex;gap:8px;flex-wrap:wrap;">
+          <button class="filtro-btn a" onclick="setFiltroCriatura('grupo',this,'todos')">Todos os grupos</button>
+          <button class="filtro-btn" onclick="setFiltroCriatura('grupo',this,'masmorras')">Masmorras</button>
+          <button class="filtro-btn" onclick="setFiltroCriatura('grupo',this,'ermos')">Ermos</button>
+          <button class="filtro-btn" onclick="setFiltroCriatura('grupo',this,'puristas')">Os Puristas</button>
+          <button class="filtro-btn" onclick="setFiltroCriatura('grupo',this,'mortos')">Reino dos Mortos</button>
+          <button class="filtro-btn" onclick="setFiltroCriatura('grupo',this,'duyshidakk')">Os Duyshidakk</button>
+          <button class="filtro-btn" onclick="setFiltroCriatura('grupo',this,'sszzaazitas')">Os Sszzaazitas</button>
+          <button class="filtro-btn" onclick="setFiltroCriatura('grupo',this,'trolls')">Os Trolls Nobres</button>
+          <button class="filtro-btn" onclick="setFiltroCriatura('grupo',this,'dragoes')">Os Dragões</button>
+          <button class="filtro-btn" onclick="setFiltroCriatura('grupo',this,'tormenta')">A Tormenta</button>
+        </div>
+        <div id="criaturasFiltroPapel" style="display:flex;gap:8px;flex-wrap:wrap;">
+          <button class="filtro-btn a" onclick="setFiltroCriatura('papel',this,'todos')">Solo, lacaio e especial</button>
+          <button class="filtro-btn" onclick="setFiltroCriatura('papel',this,'solo')">Solo</button>
+          <button class="filtro-btn" onclick="setFiltroCriatura('papel',this,'lacaio')">Lacaio</button>
+          <button class="filtro-btn" onclick="setFiltroCriatura('papel',this,'especial')">Especial</button>
+        </div>
+      </div>
+
+      <div class="cards-area">
+        <div class="cards-grid" id="criaturasGrid"></div>
+        <div id="criaturasTabelaWrap" style="display:none"></div>
+      </div>
+    </div><!-- /secao-criaturas -->
+
+    <div id="secao-calc-combate" class="secao-conteudo" style="display:none;flex-direction:column;flex:1;overflow:auto;">
+      <div class="section-hero">
+        <div class="section-hero-bg"></div>
+        <h1>Calculadora de Combate</h1>
+        <p>Monte um combate com criaturas do Bestiário e calcule o ND pela regra do livro (Capítulo 7, "Construindo Combates", p. 282).</p>
+      </div>
+
+      <div class="cards-area">
+        <div class="calc-combate calc-combate-full">
+          <p class="calc-combate-nota">Some grupos de inimigos idênticos (mesmo ND) — o site calcula o ND do combate pela regra do livro: para ND menor que 1, o ND do combate é o ND × quantidade; para ND 1 ou maior, o ND do combate é o ND da criatura +2 a cada dobra na quantidade.</p>
+
+          <div class="calc-combate-linha">
+            <div class="calc-busca-wrap">
+              <input type="text" id="calcCombateInput" placeholder="Buscar criatura..." autocomplete="off"
+                     onfocus="abrirDropdownCalculadora()" oninput="filtrarDropdownCalculadora()"
+                     onblur="setTimeout(fecharDropdownCalculadora, 150)" />
+              <div class="calc-busca-dropdown" id="calcCombateDropdown"></div>
+            </div>
+            <input type="number" id="calcCombateQtd" min="1" value="1" style="width:70px" />
+            <button class="pg-modo-btn a" onclick="adicionarGrupoCombate()"><i class="ti ti-plus" aria-hidden="true"></i></button>
+          </div>
+
+          <div class="calc-resumo-linha" id="calcCombateResumo"></div>
+
+          <div class="calc-combate-lista" id="calcCombateGrupos"></div>
+
+          <div class="calc-combate-acoes">
+            <button class="calc-btn-acao" onclick="salvarCombateCalculadora()">
+              <i class="ti ti-device-floppy" aria-hidden="true"></i> Salvar combate
+            </button>
+            <button class="calc-btn-acao" onclick="limparCombateCalculadora()">
+              <i class="ti ti-trash" aria-hidden="true"></i> Limpar
+            </button>
+            <span class="calc-combate-salvo-info" id="calcCombateSalvoInfo"></span>
+          </div>
+
+          <div class="calc-combate-heroes">
+            <div class="calc-combate-header">
+              <span><i class="ti ti-shield-chevron" aria-hidden="true"></i> Comparar com o grupo de heróis</span>
+            </div>
+            <div class="calc-combate-linha">
+              <label class="calc-combate-campo">Quantidade de heróis
+                <input type="number" id="calcHeroisQtd" min="1" value="4" oninput="atualizarPainelHerois()" />
+              </label>
+              <label class="calc-combate-campo">Nível do grupo
+                <input type="number" id="calcHeroisNivel" min="1" max="20" value="1" oninput="atualizarPainelHerois()" />
+              </label>
+            </div>
+            <div id="calcCombateComparacao"></div>
+            <div id="calcCombateSugestoes"></div>
+          </div>
+        </div>
+      </div>
+    </div><!-- /secao-calc-combate -->
+
+    <div class="detalhe-painel" id="criaturaPainel">
+      <div class="dp-hero" id="crHero">
+        <div class="dp-hero-bg" id="crHeroBg"></div>
+        <i class="ti ti-paw dp-hero-icon" id="crHeroIcon" aria-hidden="true"></i>
+        <div class="dp-hero-content">
+          <div class="dp-tipo" id="crTipo"><i class="ti ti-paw" aria-hidden="true"></i> Criatura</div>
+          <div class="dp-nome" id="crNome">—</div>
+          <div class="dp-sub" id="crSub">—</div>
+          <div class="eq-preco-fixo" id="crNdFixo">
+            <i class="ti ti-shield-chevron" aria-hidden="true"></i>
+            <span id="crNdFixoValor">ND —</span>
+          </div>
+        </div>
+        <button class="dp-fechar" onclick="fecharDetalheCriatura()">
+          <i class="ti ti-x" aria-hidden="true"></i>
+        </button>
+      </div>
+      <div class="dp-body" id="crBody"></div>
     </div>
-    <div id="secao-perigos"         class="secao-conteudo placeholder-area" style="display:none">
-      <i class="ti ti-alert-triangle" aria-hidden="true"></i><h2>Perigos Complexos</h2><p>Em breve</p>
+
+    <div class="detalhe-painel" id="perigoPainel">
+      <div class="dp-hero" id="pgHero">
+        <div class="dp-hero-bg" id="pgHeroBg"></div>
+        <i class="ti ti-alert-triangle dp-hero-icon" id="pgHeroIcon" aria-hidden="true"></i>
+        <div class="dp-hero-content">
+          <div class="dp-tipo" id="pgTipo"><i class="ti ti-alert-triangle" aria-hidden="true"></i> Perigo</div>
+          <div class="dp-nome" id="pgNome">—</div>
+          <div class="dp-sub" id="pgSub">—</div>
+        </div>
+        <button class="dp-fechar" onclick="fecharDetalhePerigo()">
+          <i class="ti ti-x" aria-hidden="true"></i>
+        </button>
+      </div>
+      <div class="dp-body" id="pgBody"></div>
     </div>
-    <div id="secao-ambiente"        class="secao-conteudo placeholder-area" style="display:none">
-      <i class="ti ti-cloud" aria-hidden="true"></i><h2>Ambiente</h2><p>Em breve</p>
+
+    <div class="detalhe-painel" id="perigoComplexoPainel">
+      <div class="dp-hero" id="pgcHero">
+        <div class="dp-hero-bg" id="pgcHeroBg"></div>
+        <i class="ti ti-flame dp-hero-icon" id="pgcHeroIcon" aria-hidden="true"></i>
+        <div class="dp-hero-content">
+          <div class="dp-tipo" id="pgcTipo"><i class="ti ti-flame" aria-hidden="true"></i> Perigo Complexo</div>
+          <div class="dp-nome" id="pgcNome">—</div>
+          <div class="eq-preco-fixo" id="pgcNdFixo">
+            <i class="ti ti-shield-chevron" aria-hidden="true"></i>
+            <span id="pgcNdFixoValor">ND —</span>
+          </div>
+        </div>
+        <button class="dp-fechar" onclick="fecharDetalhePerigoComplexo()">
+          <i class="ti ti-x" aria-hidden="true"></i>
+        </button>
+      </div>
+      <div class="dp-body" id="pgcBody"></div>
     </div>
-    <div id="secao-clima"           class="secao-conteudo placeholder-area" style="display:none">
-      <i class="ti ti-cloud-rain" aria-hidden="true"></i><h2>Clima</h2><p>Em breve</p>
+
+    <!-- Painel de detalhe compartilhado por TODAS as sub-abas de Ambiente
+         (Clima, Terrenos, Masmorras, Ermos, Urbano) — todas têm o mesmo
+         formato (nome + tag + prosa + estatísticas + fonte), então em vez
+         de duplicar seis painéis quase idênticos, abrirDetalheAmbiente()
+         só troca o conteúdo deste aqui, como já fizemos com o widget de
+         sortear perigo. -->
+    <div class="detalhe-painel" id="ambientePainel">
+      <div class="dp-hero" id="ambHero">
+        <div class="dp-hero-bg" id="ambHeroBg"></div>
+        <i class="ti ti-cloud dp-hero-icon" id="ambHeroIcon" aria-hidden="true"></i>
+        <div class="dp-hero-content">
+          <div class="dp-tipo" id="ambTipo">Ambiente</div>
+          <div class="dp-nome" id="ambNome">—</div>
+          <div class="dp-sub" id="ambSub">—</div>
+        </div>
+        <button class="dp-fechar" onclick="fecharDetalheAmbiente()">
+          <i class="ti ti-x" aria-hidden="true"></i>
+        </button>
+      </div>
+      <div class="dp-body" id="ambBody"></div>
     </div>
-    <div id="secao-terrenos"        class="secao-conteudo placeholder-area" style="display:none">
-      <i class="ti ti-mountain" aria-hidden="true"></i><h2>Terrenos</h2><p>Em breve</p>
+
+    <!-- Mini-painel compartilhado — versão pequena/flutuante do painel de
+         detalhe, usada pra referências citadas em texto que não têm (e não
+         precisam de) um painel grande próprio: Poder Geral, Poder de Classe
+         e Perícia. Mesmo princípio do ambientePainel acima (um painel só,
+         conteúdo trocado por quem chama abrirMiniPainel()), só que menor e
+         com animação de "pop" em vez de slide — reforça visualmente que é
+         uma consulta rápida, não uma tela cheia. -->
+    <div class="mini-painel" id="miniPainel">
+      <button class="dp-fechar" onclick="fecharMiniPainel()">
+        <i class="ti ti-x" aria-hidden="true"></i>
+      </button>
+      <div class="mini-tipo" id="miniTipo">—</div>
+      <div class="mini-nome" id="miniNome">—</div>
+      <div class="mini-corpo" id="miniBody"></div>
+    </div>
+
+    <div id="secao-perigos" class="secao-conteudo" style="display:none;flex-direction:column;flex:1;overflow:hidden;">
+      <div class="section-hero">
+        <div class="section-hero-bg"></div>
+        <h1>Perigos</h1>
+        <p>Armadilhas, doenças, riscos ambientais e cenas de perigo complexo — visão geral do Capítulo 7 (Tormenta 20, p. 317-321).</p>
+      </div>
+      <div class="toolbar" style="gap:10px;flex-wrap:wrap;align-items:center;">
+        <div class="search-inline">
+          <i class="ti ti-search" aria-hidden="true"></i>
+          <input type="text" id="buscaPerigosVisao" placeholder="Buscar em todos os perigos…" />
+        </div>
+        <button class="pg-modo-btn" id="btnSortearArmadilhaVisao" onclick="toggleSortearArmadilha('secao-perigos')" title="Sortear perigo">
+          <i class="ti ti-dice" aria-hidden="true"></i>
+        </button>
+        <select id="perigosVisaoFiltroCondicao" class="filtro-select" onchange="setFiltroCondicaoPerigoVisao(this.value)">
+          <option value="todas">Filtrar por condição…</option>
+        </select>
+        <label class="t20-checkbox">
+          <input type="checkbox" id="perigosVisaoExcluirUsados" onchange="setExcluirUsadosVisao(this.checked)" />
+          Excluir usados
+        </label>
+        <button class="filtro-btn" onclick="mostrarSecao('perigos-simples')"><i class="ti ti-alert-triangle" aria-hidden="true"></i> Só Perigos Simples <i class="ti ti-arrow-right" aria-hidden="true"></i></button>
+        <button class="filtro-btn" onclick="mostrarSecao('perigos-complexos')"><i class="ti ti-flame" aria-hidden="true"></i> Só Perigos Complexos <i class="ti ti-arrow-right" aria-hidden="true"></i></button>
+      </div>
+      <div class="cards-area">
+        <div class="dp-secao" id="perigosVisaoTituloSimples">Perigos Simples</div>
+        <div class="cards-grid" id="perigosVisaoGrid"></div>
+
+        <div class="dp-secao" id="perigosVisaoTituloComplexos" style="margin-top:26px">Perigos Complexos</div>
+        <div class="cards-grid" id="perigosComplexosVisaoGrid"></div>
+      </div>
+    </div>
+
+    <div id="secao-perigos-simples" class="secao-conteudo" style="display:none;flex-direction:column;flex:1;overflow:hidden;">
+      <div class="section-hero">
+        <div class="section-hero-bg"></div>
+        <h1>Perigos</h1>
+        <p>Armadilhas, doenças e outras ameaças que não são criaturas — Capítulo 7, "Perigos" (Tormenta 20, p. 317-319).</p>
+      </div>
+      <div class="toolbar" style="flex-direction:column;align-items:stretch;gap:8px;">
+        <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
+          <div class="search-inline">
+            <i class="ti ti-search" aria-hidden="true"></i>
+            <input type="text" id="buscaPerigos" placeholder="Buscar perigo…" />
+          </div>
+          <button class="pg-modo-btn" id="btnSortearArmadilha" onclick="toggleSortearArmadilha('secao-perigos-simples')" title="Sortear perigo">
+            <i class="ti ti-dice" aria-hidden="true"></i>
+          </button>
+          <select id="perigosFiltroCondicao" class="filtro-select" onchange="setFiltroCondicaoPerigo(this.value)">
+            <option value="todas">Filtrar por condição…</option>
+          </select>
+          <span class="filtro-count" id="perigosCount">43 perigos</span>
+        </div>
+        <div id="perigosFiltroCategoria" style="display:flex;gap:8px;flex-wrap:wrap;">
+          <button class="filtro-btn a" onclick="setFiltroPerigo(this,'todos')">Todos</button>
+          <button class="filtro-btn" onclick="setFiltroPerigo(this,'ambiental')">Ambientais</button>
+          <button class="filtro-btn" onclick="setFiltroPerigo(this,'armadilha')">Armadilhas</button>
+          <button class="filtro-btn" onclick="setFiltroPerigo(this,'doenca')">Doenças</button>
+        </div>
+      </div>
+
+      <div class="cards-area">
+        <div class="sortear-armadilha" id="sortearArmadilha" style="display:none">
+          <div class="calc-combate-header">
+            <span><i class="ti ti-dice" aria-hidden="true"></i> Sortear Perigo</span>
+            <button class="calc-x-btn" onclick="toggleSortearArmadilha()"><i class="ti ti-x" aria-hidden="true"></i></button>
+          </div>
+          <p class="calc-combate-nota">Escolhe um perigo aleatório do livro — útil pra improvisar uma cena ou montar masmorra rápido.</p>
+          <div class="calc-combate-linha">
+            <label class="calc-combate-campo">Tipo
+              <select id="sortearTipoPerigo" onchange="atualizarVisibilidadeNdSortear()">
+                <option value="qualquer">Qualquer perigo simples</option>
+                <option value="ambiental">Ambiental</option>
+                <option value="armadilha">Armadilha</option>
+                <option value="doenca">Doença</option>
+                <option value="complexo">Perigo Complexo</option>
+              </select>
+            </label>
+            <button class="pg-modo-btn a" onclick="sortearPerigo()" title="Sortear"><i class="ti ti-dice" aria-hidden="true"></i></button>
+          </div>
+          <label class="t20-checkbox" id="sortearFiltrarNdWrap">
+            <input type="checkbox" id="sortearUsarNd" onchange="atualizarVisibilidadeNdSortear()" />
+            Filtrar por faixa de ND
+          </label>
+          <div class="calc-combate-linha" id="sortearNdWrap" style="display:none">
+            <label class="calc-combate-campo">ND mínimo
+              <select id="sortearNdMin"></select>
+            </label>
+            <label class="calc-combate-campo">ND máximo
+              <select id="sortearNdMax"></select>
+            </label>
+          </div>
+          <label class="t20-checkbox">
+            <input type="checkbox" id="sortearExcluirUsados" />
+            Excluir perigos já marcados como "usado"
+          </label>
+          <div id="sortearArmadilhaAviso"></div>
+          <div id="sortearArmadilhaResultado"></div>
+        </div>
+        <div class="cards-grid" id="perigosGrid"></div>
+      </div>
+    </div><!-- /secao-perigos-simples -->
+
+    <div id="secao-perigos-complexos" class="secao-conteudo" style="display:none;flex-direction:column;flex:1;overflow:hidden;">
+      <div class="section-hero">
+        <div class="section-hero-bg"></div>
+        <h1>Perigos Complexos</h1>
+        <p>Cenas de ação fora de combate — testes estendidos com objetivo, efeito e ações. Capítulo 7 (Tormenta 20, p. 320-321).</p>
+      </div>
+      <div class="toolbar" style="flex-direction:column;align-items:stretch;gap:8px;">
+        <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
+          <div class="search-inline">
+            <i class="ti ti-search" aria-hidden="true"></i>
+            <input type="text" id="buscaPerigosComplexos" placeholder="Buscar perigo complexo…" />
+          </div>
+          <button class="pg-modo-btn" id="btnSortearArmadilhaPC" onclick="toggleSortearArmadilha('secao-perigos-complexos')" title="Sortear perigo complexo">
+            <i class="ti ti-dice" aria-hidden="true"></i>
+          </button>
+          <span class="filtro-count" id="perigosComplexosCount">4 perigos complexos</span>
+        </div>
+      </div>
+
+      <div class="cards-area">
+        <div class="cards-grid" id="perigosComplexosGrid"></div>
+      </div>
+    </div><!-- /secao-perigos-complexos -->
+
+    <div id="secao-ambiente" class="secao-conteudo" style="display:none;flex-direction:column;flex:1;overflow:hidden;">
+      <div class="section-hero">
+        <div class="section-hero-bg"></div>
+        <h1>Ambiente</h1>
+        <p>Clima, terrenos, masmorras, ermos, cidades e viagens — "Ambientes de Aventura", Capítulo 6, "O Mestre" (Tormenta 20, p. 263-275).</p>
+      </div>
+      <div class="toolbar" style="gap:10px;flex-wrap:wrap;">
+        <div class="search-inline">
+          <i class="ti ti-search" aria-hidden="true"></i>
+          <input type="text" id="buscaAmbienteVisao" placeholder="Buscar em todo o Ambiente…" />
+        </div>
+      </div>
+      <div class="cards-area">
+        <div id="ambienteVisaoAtalhos" class="amb-hub-grid"></div>
+        <div id="ambienteVisaoBuscaTitulo" class="dp-secao" style="display:none">Resultados da busca</div>
+        <div class="cards-grid" id="ambienteVisaoBuscaGrid"></div>
+      </div>
+    </div>
+
+    <div id="secao-clima" class="secao-conteudo" style="display:none;flex-direction:column;flex:1;overflow:hidden;">
+      <div class="section-hero">
+        <div class="section-hero-bg"></div>
+        <h1>Clima</h1>
+        <p>Calor, frio, precipitação e vento — como eles afetam uma cena (Tormenta 20, p. 267).</p>
+      </div>
+      <div class="toolbar" style="flex-direction:column;align-items:stretch;gap:8px;">
+        <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
+          <div class="search-inline">
+            <i class="ti ti-search" aria-hidden="true"></i>
+            <input type="text" id="buscaClima" placeholder="Buscar efeito de clima…" />
+          </div>
+          <span class="filtro-count" id="climaCount">10 efeitos</span>
+        </div>
+        <div id="climaFiltroCategoria" style="display:flex;gap:8px;flex-wrap:wrap;">
+          <button class="filtro-btn a" onclick="setFiltroClima(this,'todos')">Todos</button>
+          <button class="filtro-btn" onclick="setFiltroClima(this,'temperatura')">Temperatura</button>
+          <button class="filtro-btn" onclick="setFiltroClima(this,'precipitacao')">Precipitação</button>
+          <button class="filtro-btn" onclick="setFiltroClima(this,'vento')">Vento</button>
+          <button class="filtro-btn" onclick="setFiltroClima(this,'visibilidade')">Visibilidade</button>
+        </div>
+      </div>
+      <div class="cards-area">
+        <div class="cards-grid" id="climaGrid"></div>
+      </div>
+    </div>
+
+    <div id="secao-terrenos" class="secao-conteudo" style="display:none;flex-direction:column;flex:1;overflow:hidden;">
+      <div class="section-hero">
+        <div class="section-hero-bg"></div>
+        <h1>Terrenos</h1>
+        <p>Colinas, desertos, florestas, montanhas, pântanos, planícies, árticos e aquáticos — os elementos mecânicos de cada tipo (Tormenta 20, p. 268-269).</p>
+      </div>
+      <div class="toolbar" style="flex-direction:column;align-items:stretch;gap:8px;">
+        <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
+          <div class="search-inline">
+            <i class="ti ti-search" aria-hidden="true"></i>
+            <input type="text" id="buscaTerrenos" placeholder="Buscar elemento de terreno…" />
+          </div>
+          <span class="filtro-count" id="terrenosCount">19 elementos</span>
+        </div>
+        <div id="terrenosFiltroTipo" style="display:flex;gap:8px;flex-wrap:wrap;">
+          <button class="filtro-btn a" onclick="setFiltroTerreno(this,'todos')">Todos</button>
+          <button class="filtro-btn" onclick="setFiltroTerreno(this,'colinas')">Colinas</button>
+          <button class="filtro-btn" onclick="setFiltroTerreno(this,'desertos')">Desertos</button>
+          <button class="filtro-btn" onclick="setFiltroTerreno(this,'florestas')">Florestas</button>
+          <button class="filtro-btn" onclick="setFiltroTerreno(this,'montanhas')">Montanhas</button>
+          <button class="filtro-btn" onclick="setFiltroTerreno(this,'pantanos')">Pântanos</button>
+          <button class="filtro-btn" onclick="setFiltroTerreno(this,'planicies')">Planícies</button>
+          <button class="filtro-btn" onclick="setFiltroTerreno(this,'artico')">Ártico</button>
+          <button class="filtro-btn" onclick="setFiltroTerreno(this,'aquatico')">Aquático</button>
+          <button class="filtro-btn" onclick="setFiltroTerreno(this,'geral')">Geral</button>
+        </div>
+      </div>
+      <div class="cards-area">
+        <div class="cards-grid" id="terrenosGrid"></div>
+      </div>
+    </div>
+
+    <div id="secao-masmorras" class="secao-conteudo" style="display:none;flex-direction:column;flex:1;overflow:hidden;">
+      <div class="section-hero">
+        <div class="section-hero-bg"></div>
+        <h1>Masmorras</h1>
+        <p>Pisos, paredes, portas e outros elementos estruturais — mais uma ferramenta pra sortear uma ideia de masmorra (Tormenta 20, p. 263-265).</p>
+      </div>
+      <div class="toolbar" style="flex-direction:column;align-items:stretch;gap:8px;">
+        <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
+          <div class="search-inline">
+            <i class="ti ti-search" aria-hidden="true"></i>
+            <input type="text" id="buscaMasmorras" placeholder="Buscar elemento de masmorra…" />
+          </div>
+          <button class="pg-modo-btn" id="btnSortearMasmorra" onclick="toggleSortearMasmorra()" title="Sortear ideia de masmorra">
+            <i class="ti ti-dice" aria-hidden="true"></i>
+          </button>
+          <span class="filtro-count" id="masmorrasCount">16 elementos</span>
+        </div>
+        <div id="masmorrasFiltroTipo" style="display:flex;gap:8px;flex-wrap:wrap;">
+          <button class="filtro-btn a" onclick="setFiltroMasmorra(this,'todos')">Todos</button>
+          <button class="filtro-btn" onclick="setFiltroMasmorra(this,'piso')">Pisos</button>
+          <button class="filtro-btn" onclick="setFiltroMasmorra(this,'parede')">Paredes</button>
+          <button class="filtro-btn" onclick="setFiltroMasmorra(this,'porta')">Portas</button>
+          <button class="filtro-btn" onclick="setFiltroMasmorra(this,'pilar')">Pilares</button>
+          <button class="filtro-btn" onclick="setFiltroMasmorra(this,'outro')">Outros</button>
+        </div>
+      </div>
+      <div class="cards-area">
+        <div class="sortear-armadilha" id="sortearMasmorra" style="display:none">
+          <div class="calc-combate-header">
+            <span><i class="ti ti-dice" aria-hidden="true"></i> Sortear Ideia de Masmorra</span>
+            <button class="calc-x-btn" onclick="toggleSortearMasmorra()"><i class="ti ti-x" aria-hidden="true"></i></button>
+          </div>
+          <p class="calc-combate-nota">Rola 1d20 na Tabela 6-2 do livro pra ter um conceito de masmorra pronto pra começar a montar.</p>
+          <div class="calc-combate-linha">
+            <button class="pg-modo-btn a" onclick="sortearIdeiaMasmorra()" title="Sortear"><i class="ti ti-dice" aria-hidden="true"></i></button>
+          </div>
+          <div id="sortearMasmorraResultado"></div>
+        </div>
+        <div class="cards-grid" id="masmorrasGrid"></div>
+      </div>
+    </div>
+
+    <div id="secao-ermos" class="secao-conteudo" style="display:none;flex-direction:column;flex:1;overflow:hidden;">
+      <div class="section-hero">
+        <div class="section-hero-bg"></div>
+        <h1>Ermos</h1>
+        <p>Florestas sombrias, montanhas escarpadas e o fundo do mar — o que se pode encontrar por lá (Tormenta 20, p. 266 e 269).</p>
+      </div>
+      <div class="toolbar" style="gap:10px;flex-wrap:wrap;">
+        <div class="search-inline">
+          <i class="ti ti-search" aria-hidden="true"></i>
+          <input type="text" id="buscaErmos" placeholder="Buscar elemento dos ermos…" />
+        </div>
+        <span class="filtro-count" id="ermosCount">3 elementos</span>
+      </div>
+      <div class="cards-area">
+        <div class="cards-grid" id="ermosGrid"></div>
+      </div>
+    </div>
+
+    <div id="secao-urbano" class="secao-conteudo" style="display:none;flex-direction:column;flex:1;overflow:hidden;">
+      <div class="section-hero">
+        <div class="section-hero-bg"></div>
+        <h1>Ambientes Urbanos</h1>
+        <p>Aldeias, vilas, cidades e metrópoles, seus elementos e uma ferramenta de perseguição (Tormenta 20, p. 270-275).</p>
+      </div>
+      <div class="toolbar" style="flex-direction:column;align-items:stretch;gap:8px;">
+        <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
+          <div class="search-inline">
+            <i class="ti ti-search" aria-hidden="true"></i>
+            <input type="text" id="buscaUrbano" placeholder="Buscar assentamento ou elemento urbano…" />
+          </div>
+          <button class="pg-modo-btn" id="btnSortearPerseguicao" onclick="toggleSortearPerseguicao()" title="Rolar evento de perseguição">
+            <i class="ti ti-dice" aria-hidden="true"></i>
+          </button>
+        </div>
+      </div>
+      <div class="cards-area">
+        <div class="sortear-armadilha" id="sortearPerseguicao" style="display:none">
+          <div class="calc-combate-header">
+            <span><i class="ti ti-dice" aria-hidden="true"></i> Evento de Perseguição</span>
+            <button class="calc-x-btn" onclick="toggleSortearPerseguicao()"><i class="ti ti-x" aria-hidden="true"></i></button>
+          </div>
+          <p class="calc-combate-nota">Rola 1d20 na Tabela 6-5 pra decidir se a rodada de perseguição tem um obstáculo, um atalho, ou nada de especial.</p>
+          <div class="calc-combate-linha">
+            <button class="pg-modo-btn a" onclick="sortearEventoPerseguicao()" title="Rolar"><i class="ti ti-dice" aria-hidden="true"></i></button>
+          </div>
+          <div id="sortearPerseguicaoResultado"></div>
+        </div>
+
+        <div class="dp-secao">Tipos de Comunidade</div>
+        <div class="cards-grid" id="urbanoAssentamentoGrid"></div>
+
+        <div class="dp-secao" style="margin-top:26px">Outros Elementos Urbanos</div>
+        <div class="cards-grid" id="urbanoElementoGrid"></div>
+      </div>
+    </div>
+
+    <div id="secao-viagens" class="secao-conteudo" style="display:none;flex-direction:column;flex:1;overflow:hidden;">
+      <div class="section-hero">
+        <div class="section-hero-bg"></div>
+        <h1>Viagens</h1>
+        <p>Velocidade de viagem por hora e por dia, de acordo com o deslocamento do grupo (Tormenta 20, p. 270).</p>
+      </div>
+      <div class="cards-area">
+        <div class="calc-grupo-card" style="max-width:520px;flex-direction:column;align-items:stretch;gap:10px;padding:16px;">
+          <label class="calc-combate-campo">Deslocamento do membro mais lento
+            <select id="viagemDeslocamento" onchange="calcularViagem()"></select>
+          </label>
+          <div id="viagemResultado"></div>
+        </div>
+        <div class="dp-secao" style="margin-top:26px">Regras</div>
+        <div id="viagemRegras"></div>
+      </div>
     </div>
     <div id="secao-complicacoes"    class="secao-conteudo placeholder-area" style="display:none">
       <i class="ti ti-help" aria-hidden="true"></i><h2>Complicações</h2><p>Em breve</p>
@@ -1353,6 +1878,7 @@
 </div><!-- /layout -->
 
 <!-- SCRIPTS -->
+<script src="../js/acessibilidade.js"></script>
 <script src="../js/data/racas.js"></script>
 <script src="../js/data/classes.js"></script>
 <script src="../js/data/poderes_classes.js"></script>
@@ -1372,6 +1898,9 @@
 <script src="../js/data/pocoes_pergaminhos.js"></script>
 <script src="../js/data/acessorios.js"></script>
 <script src="../js/data/artefatos.js"></script>
+<script src="../js/data/criaturas.js"></script>
+<script src="../js/data/perigos.js"></script>
+<script src="../js/data/ambiente.js"></script>
 <script src="../js/keywords.js"></script>
 <script src="../js/compendio.js"></script>
 

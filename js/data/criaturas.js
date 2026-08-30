@@ -47,6 +47,19 @@
      diferente de 'terrenos' — indica o capítulo/facção do livro onde a
      criatura aparece, não o bioma onde ela vive. Os dois campos não
      devem ser confundidos nem derivados um do outro.
+   - parceiro (OPCIONAL, ausente na maioria das criaturas): quando o
+     livro já apresenta esta criatura como um parceiro pronto (ex.:
+     Urso das Neves, p. 291 — tem um parágrafo "Parceiro" na própria
+     ficha, junto de Perícias/Tesouro), preencha
+     { tipo: 'montaria' | <um id de TIPOS_PARCEIRO, ex. 'guardiao'>,
+       tamanho: 'Grande' (só quando fizer sentido pro tipo, como
+         montaria), niveis: [{label:'Iniciante'|'Veterano'|'Mestre',
+         descricao}] } — MESMA forma usada em MONTARIAS_PARCEIRO
+     (js/data/parceiros.js). NÃO duplique a ficha da criatura lá — a
+     página de Parceiros lê este campo direto daqui (função
+     `criaturasComParceiro()` em compendio.js) e linka de volta pra
+     esta ficha completa. Deixe o campo simplesmente ausente (não
+     escreva `parceiro: null`) nas criaturas que não são parceiros.
    Campos separados em divs individuais no site (grid + painel de
    detalhe) para permitir busca avançada futura por qualquer estatística.
 ============================================================ */

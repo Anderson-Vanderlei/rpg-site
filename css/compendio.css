@@ -861,6 +861,169 @@ html, body {
 .eq-hab-tag { font-size:8px; color:#8a7440; background:rgba(201,168,76,.06); border-radius:2px; padding:1px 5px; }
 .eq-tags-fixas { display:flex; flex-wrap:wrap; gap:6px; justify-content:flex-start; }
 
+/* ── Toques Finais (Cap. 1, pp. 106-111): cards informativos. A maioria
+   é só consulta (Tamanho, Envelhecimento) — mas Recuperação de PV/PM e
+   Alinhamento ganharam um modo selecionável (`.tf-selecionavel`, só um
+   `.selecionado` por vez dentro do mesmo grupo, ver `_selecionarCardUnico`
+   em compendio.js): reaproveita a mesma caixa visual do .eq-card (fundo,
+   borda, raio), com cursor/hover só nos que são clicáveis. */
+.tf-mini-grid {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 10px; margin-top: 10px;
+}
+.tf-mini-card {
+  background:#0d0a0a; border:.5px solid #1e1e1e; border-radius:6px; padding:10px 12px;
+  transition: border-color .2s, transform .2s, box-shadow .2s;
+}
+.tf-mini-card .tf-mini-titulo { font-family:'Cinzel',serif; font-size:12px; color:#c9a84c; letter-spacing:.03em; margin-bottom:4px; }
+.tf-mini-card .tf-mini-valor { font-family:'Cinzel',serif; font-size:11px; color:#e8e8e8; margin-bottom:4px; }
+.tf-mini-card .tf-mini-desc { font-size:10.5px; color:#777; line-height:1.5; }
+
+/* Selo "casa" — sinaliza um card que é reorganização/interpretação do
+   site, não uma categoria separada que o livro define (ex: "Ancião" em
+   Envelhecimento). Cinza e discreto de propósito, pra nunca ser
+   confundido com regra oficial do livro. */
+.tf-casa-selo {
+  font-family:'Cinzel',serif; font-size:7px; letter-spacing:.08em; text-transform:uppercase;
+  padding:1px 5px; border-radius:2px; border:.5px dashed #444; color:#888; vertical-align:middle;
+}
+
+/* Selo "configuração" — mesma ideia visual do "casa" acima (discreto,
+   borda tracejada), mas pra sinalizar uma FERRAMENTA/calculadora do site
+   (não é texto do livro reorganizado, é uma ferramenta interativa) — ex:
+   a nota da Calculadora de Recuperação de PV/PM. Serve pra já ir marcando
+   o que é "hub de configuração de regras mecânicas" nessa página, citado
+   pelo usuário como algo que só cresce com os suplementos futuros. */
+.tf-config-selo {
+  font-family:'Cinzel',serif; font-size:7px; letter-spacing:.08em; text-transform:uppercase;
+  padding:1px 5px; border-radius:2px; border:.5px dashed #444; color:#888;
+  margin-right:6px; display:inline-block;
+}
+
+.tf-alinhamento-grid {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 10px; margin-top: 10px;
+}
+.tf-alinhamento-card {
+  background:#0d0a0a; border:.5px solid #1e1e1e; border-radius:6px; padding:10px 12px;
+  transition: border-color .2s, transform .2s, box-shadow .2s;
+}
+.tf-alinhamento-card .tf-alin-sigla {
+  font-family:'Cinzel',serif; font-size:10px; letter-spacing:.08em; padding:1px 6px; border-radius:2px;
+  background:rgba(201,168,76,.1); color:#c9a84c; border:.5px solid rgba(201,168,76,.3); display:inline-block; margin-bottom:6px;
+}
+.tf-alinhamento-card .tf-alin-nome { font-family:'Cinzel',serif; font-size:12.5px; color:#e8e8e8; margin-bottom:4px; }
+.tf-alinhamento-card .tf-alin-desc { font-size:10.5px; color:#999; line-height:1.5; margin-bottom:6px; }
+.tf-alinhamento-card .tf-alin-exemplo { font-size:10px; color:#666; line-height:1.5; font-style:italic; border-top:.5px solid #1e1e1e; padding-top:6px; }
+
+/* Cores por alinhamento maligno/bondoso — só um sutil filete lateral,
+   mesmo princípio das bordas coloridas de Modificador (mod-borda-*). */
+.tf-alinhamento-card.tf-bom   { border-left:2px solid rgba(126,200,160,.4); }
+.tf-alinhamento-card.tf-mau   { border-left:2px solid rgba(204,68,68,.4); }
+.tf-alinhamento-card.tf-neutro { border-left:2px solid rgba(153,153,153,.35); }
+
+/* Card selecionável (condição de descanso / alinhamento) — cursor de
+   clique, hover levanta um pouco (igual .eq-card), e o estado ativo tem
+   destaque dourado forte o bastante pra bater o olho no meio da grade. */
+.tf-selecionavel { cursor: pointer; }
+.tf-selecionavel:hover { border-color: rgba(201,168,76,.4); transform: translateY(-2px); box-shadow: 0 6px 20px rgba(0,0,0,.5); }
+.tf-selecionavel.selecionado {
+  border-color: #c9a84c; box-shadow: 0 0 0 1px rgba(201,168,76,.3), 0 6px 20px rgba(0,0,0,.4);
+  background: rgba(201,168,76,.05);
+}
+.tf-selecionavel.selecionado .tf-mini-titulo,
+.tf-selecionavel.selecionado .tf-alin-nome { color: #e8c878; }
+
+#tfIdadeResultado { margin-top:10px; }
+.tf-resultado-box {
+  background:rgba(201,168,76,.06); border:.5px solid rgba(201,168,76,.25); border-radius:6px;
+  padding:10px 12px; font-size:12px; color:#e8e8e8; line-height:1.7;
+}
+.tf-resultado-box strong { color:#c9a84c; }
+
+/* Calculadora de Recuperação de PV/PM — 4ª reorganização (23/ago, feedback
+   do usuário depois de ver o print da 3ª: o ícone de personagem da linha
+   de Nível ficou desalinhado por estar do LADO do campo, enquanto PV/PM
+   têm o ícone EM CIMA, no título do grupo — corrigido reaproveitando a
+   mesma estrutura `.tf-recup-grupo > .tf-recup-grupo-titulo` pros 3
+   grupos (Nível/PV/PM), então os 3 ícones ficam na mesma posição relativa
+   (acima da fileira de campos), sem mais o `<i>` solto do lado). Também
+   trocado o título do card de "Características Derivadas" pra "Recuperação
+   de PM e PV" (o card já era dominado pelo calculador desde o item 14) e
+   a nota de cima parou de repetir Defesa/Deslocamento/PV,PM máximo (que
+   não tinham mais relação com o conteúdo do card) — agora explica a
+   regra de recuperação em si (nível × multiplicador da condição de
+   descanso), com o selo `.tf-config-selo` deixando claro que essa nota é
+   sobre a FERRAMENTA (calculadora interativa do site), não é um trecho
+   novo do livro. Os campos calculados (Recuperado/Final de PV e PM)
+   continuam sendo `<div class="tf-recup-valor">` copiando o CSS do
+   input[number] (fundo, borda, padding, fonte, largura), pra ficarem
+   visualmente idênticos aos campos digitáveis. Tudo centralizado
+   (`justify-content:center`). */
+.tf-recup-grupo { display: flex; flex-direction: column; align-items: center; margin-bottom: 14px; }
+.tf-recup-grupo:last-child { margin-bottom: 0; }
+.tf-recup-grupo-titulo {
+  display: flex; align-items: center; gap: 5px; margin-bottom: 8px;
+  font-family: 'Cinzel', serif; font-size: 10.5px; letter-spacing: .08em; text-transform: uppercase;
+}
+.tf-recup-grupo-titulo i { font-size: 13px; }
+.tf-recup-nivel .tf-recup-grupo-titulo { color: #c9a84c; }
+.tf-recup-pv .tf-recup-grupo-titulo { color: #cc4444; }
+.tf-recup-pm .tf-recup-grupo-titulo { color: #7ecaf0; }
+
+.tf-recup-linha { justify-content: center; align-items: flex-end; flex-wrap: wrap; row-gap: 10px; }
+.tf-recup-nivel-linha input[type="number"] { width: 90px; }
+.tf-recup-pv .calc-combate-campo { color: rgba(204,68,68,.75); }
+.tf-recup-pm .calc-combate-campo { color: rgba(126,202,240,.75); }
+
+/* Caixa dos campos calculados — cópia visual de `.calc-combate-linha
+   input[type="number"]`, só que é uma <div> (não recebe digitação). */
+.tf-recup-valor {
+  width: 90px; background:#0a0707; border:.5px solid #222; color:#ccc;
+  padding:6px 8px; border-radius:4px; font-size:12px;
+}
+.tf-recup-pv .tf-recup-valor { border-color: rgba(204,68,68,.35); color:#cc4444; font-weight:600; }
+.tf-recup-pm .tf-recup-valor { border-color: rgba(126,202,240,.35); color:#7ecaf0; font-weight:600; }
+
+/* Roletor de Idade Inicial — trocado de <select> por mini-cards de
+   classe (ícone + nome, mesmo princípio de seleção única do
+   .tf-selecionavel) porque o <select> nativo, mesmo já esticando a
+   largura certa, ficava com uma "caixa de texto enorme" meio sem graça
+   ao lado de um botão pequeno — pedido do usuário pra ficar mais
+   "jogo", menos formulário. Um grupo por fórmula de dado (1d6+15/2d4+15/
+   2d6+15), cada um com seu próprio rótulo pequeno acima da fileira de
+   cards, preservando a mesma informação que os <optgroup> mostravam. */
+.tf-idade-grupo { margin-bottom: 14px; }
+.tf-idade-grupo:last-child { margin-bottom: 0; }
+.tf-idade-grupo-label {
+  font-family:'Cinzel',serif; font-size:9px; letter-spacing:.06em; text-transform:uppercase;
+  color:#777; margin-bottom:8px;
+}
+.tf-idade-grupo-label strong { color:#c9a84c; }
+.tf-classe-grid {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(84px, 1fr)); gap: 8px;
+}
+.tf-classe-card {
+  display: flex; flex-direction: column; align-items: center; gap: 6px;
+  background:#0d0a0a; border:.5px solid #1e1e1e; border-radius:6px; padding:10px 6px;
+  transition: border-color .2s, transform .2s, box-shadow .2s;
+}
+.tf-classe-card i { font-size: 18px; color: #999; transition: color .2s; }
+.tf-classe-card span { font-family:'Cinzel',serif; font-size:9.5px; color:#aaa; text-align:center; letter-spacing:.02em; }
+.tf-classe-card.selecionado i, .tf-classe-card.selecionado span { color: #e8c878; }
+
+/* Botão de rolar, centralizado abaixo da grade de classes — ícone
+   grande em cima, rótulo pequeno embaixo, em vez do botão-quadrado
+   pequeno que ficava perdido ao lado do <select>. */
+.tf-idade-rolar-wrap { display: flex; justify-content: center; margin-top: 14px; }
+.tf-idade-rolar-btn {
+  display: flex; flex-direction: column; align-items: center; gap: 4px;
+  background: rgba(201,168,76,.08); border: .5px solid rgba(201,168,76,.35); border-radius: 8px;
+  padding: 10px 26px; cursor: pointer; color: #c9a84c;
+  font-family:'Cinzel',serif; font-size: 9px; letter-spacing:.08em; text-transform: uppercase;
+  transition: all .2s;
+}
+.tf-idade-rolar-btn i { font-size: 20px; }
+.tf-idade-rolar-btn:hover { background: rgba(201,168,76,.15); border-color: #c9a84c; transform: translateY(-2px); }
+
 .eq-stats-grid {
   display:grid; grid-template-columns:1fr 1fr; gap:8px 16px;
   background:rgba(255,255,255,.02); border:.5px solid #1a1a1a; border-radius:5px;
@@ -887,6 +1050,8 @@ html, body {
 }
 .eq-tabela th:hover { color:#e8c878; }
 .eq-tabela th i { font-size:9px; margin-left:3px; opacity:.5; }
+.eq-tabela th.eq-th-ativo { color:#e8c878; }
+.eq-tabela th.eq-th-ativo i { opacity:1; }
 .eq-tabela td { padding:7px 10px; border-bottom:.5px solid #1a1a1a; color:#aaa; white-space:nowrap; }
 .eq-tabela tr { cursor:pointer; transition:background .15s; }
 .eq-tabela tr:hover td { background:rgba(201,168,76,.04); color:#ddd; }
@@ -963,6 +1128,18 @@ html, body {
 .dp-hab-nome { font-family:'Cinzel',serif; font-size:9px; color:var(--hc,#c9a84c); letter-spacing:.06em; margin-bottom:3px; }
 .dp-hab-desc { font-size:12px; color:#666; line-height:1.65; }
 .dp-habilidade.penalidade { --hc:#8B0000; border-color:rgba(139,0,0,.3); }
+
+/* Painel de Parceiros — bônus por patamar (Iniciante/Veterano/Mestre).
+   Reaproveita .cp-var-nivel/.cp-var-nivel-badge (já existem, tuned pra
+   exatamente esses 3 rótulos) mas SEM o wrapper .cp-esc-opt original
+   (esse é verde, pensado pro contexto de "escolha de opção" nos poderes
+   — destoaria do fundo escuro neutro do painel de detalhe). Container
+   próprio + cor de texto ajustada pro contraste aqui. */
+.dp-niveis-parceiro {
+  background: #0a0707; border: .5px solid #111; border-radius: 3px;
+  padding: .65rem .8rem;
+}
+.dp-niveis-parceiro .cp-var-nivel-desc { color: #999; }
 
 /* Classes recomendadas */
 .dp-classes { display:flex; gap:5px; flex-wrap:wrap; }
@@ -1628,6 +1805,22 @@ html, body {
 .calc-combate-linha input[type="number"] {
   background:#0a0707; border:.5px solid #222; color:#ccc; padding:6px 8px; border-radius:4px; font-size:12px;
 }
+
+/* Bug real (achado 23/ago, testando o Roletor de Idade Inicial de Toques
+   Finais — mas era pré-existente em todo `<select>` dentro de um
+   `<label class="calc-combate-campo">`, ex: "Tipo" do Sortear Perigo, "ND
+   mínimo/máximo", "Deslocamento" de Viagens): `.calc-combate-campo` é um
+   flex container em COLUNA (label em cima, campo embaixo), então o
+   `flex:1` do `<select>` (regra acima) afasta na direção vertical, não
+   horizontal — e o `width:100%` do select resolve contra a largura do
+   próprio `<label>`, que por sua vez não tem largura definida (encolhe
+   pro conteúdo). Resultado: o select nunca estica, fica espremido do
+   tamanho da opção selecionada, bem menor que os campos de número ao
+   lado (que têm largura fixa em px, por isso nunca sofreram disso).
+   `.calc-combate-campo-grow` dá ao `<label>` uma largura de verdade pra
+   o `width:100%` do select ter contra o que resolver. */
+.calc-combate-linha .calc-combate-campo-grow { flex: 1 1 160px; }
+.calc-combate-campo-grow select { width: 100%; }
 
 /* Campo de busca de criatura com dropdown próprio (substitui <datalist>,
    que em vários navegadores só sugere opções depois de digitar algo) */
@@ -2387,4 +2580,115 @@ html, body {
 }
 .dp-tabela-faixa {
   font-family:'Cinzel',serif; font-size:11px; color:#c9a84c; letter-spacing:.04em; flex-shrink:0; min-width:32px;
+}
+
+/* ── Atributos Básicos — calculadora de Compra de Atributos (Tabela 1-1,
+   p.17) + modificadores raciais (Tabela 1-2, p.18, via `atributosCalc` de
+   cada raça em racas.js). Página nova (23/ago), pedida pelo usuário como
+   um "recurso muito utilizado e bastante importante" — por isso persiste
+   em localStorage (ver `LS_ATRIB_*` em compendio.js), diferente do resto
+   de Toques Finais que ainda é só em memória. */
+.tf-atrib-chips { display:flex; flex-wrap:wrap; gap:8px; margin-bottom:14px; }
+.tf-atrib-chip {
+  font-family:'Cinzel',serif; font-size:11px; letter-spacing:.05em; color:#999;
+  background:#0d0a0a; border:.5px solid #262626; border-radius:20px; padding:6px 14px;
+  cursor:pointer; transition:border-color .2s, color .2s, background .2s;
+}
+.tf-atrib-chip:hover { border-color:rgba(201,168,76,.4); color:#ccc; }
+.tf-atrib-chip.selecionado { border-color:#c9a84c; color:#e8c878; background:rgba(201,168,76,.08); }
+.tf-atrib-chip.desabilitado { opacity:.35; cursor:not-allowed; }
+.tf-atrib-chip.desabilitado:hover { border-color:#262626; color:#999; }
+
+/* Correção (23/ago, feedback do usuário: "vi que ficou desalinhado a
+   tabela") — a `.eq-tabela` genérica (feita pra tabelas de referência tipo
+   Tamanho, com linhas clicáveis) tem `th{text-align:left}` mas aqui as
+   células de dado usavam `text-align:center`: cabeçalho e valor nunca
+   ficavam um embaixo do outro. Também sem `table-layout:fixed` o navegador
+   distribuía a largura das colunas de forma imprevisível (cada uma com uma
+   largura diferente a cada render, dependendo do conteúdo). Fixado: layout
+   de colunas em % (soma 100%), cabeçalho e célula com o MESMO
+   `text-align` coluna a coluna, e a linha parou de imitar linha clicável
+   (cursor/hover de `.eq-tabela tr` são pra ir a um painel de detalhe, que
+   não existe aqui). */
+.atrib-tabela { table-layout: fixed; }
+.atrib-tabela th, .atrib-tabela td { text-align: center; }
+.atrib-tabela th:first-child, .atrib-tabela td:first-child { text-align: left; }
+.atrib-tabela th:first-child, .atrib-tabela td:first-child { font-family:'Cinzel',serif; letter-spacing:.05em; }
+.atrib-tabela th:nth-child(1), .atrib-tabela td:nth-child(1) { width: 26%; }
+.atrib-tabela th:nth-child(2), .atrib-tabela td:nth-child(2) { width: 15%; }
+.atrib-tabela th:nth-child(3), .atrib-tabela td:nth-child(3) { width: 14%; }
+.atrib-tabela th:nth-child(4), .atrib-tabela td:nth-child(4) { width: 15%; }
+.atrib-tabela th:nth-child(5), .atrib-tabela td:nth-child(5) { width: 15%; }
+.atrib-tabela th:nth-child(6), .atrib-tabela td:nth-child(6) { width: 15%; }
+.atrib-tabela th { cursor: default; }
+.atrib-tabela th:hover { color: #c9a84c; }
+.atrib-tabela tr { cursor: default; }
+.atrib-tabela tr:hover td { background: none; color: #aaa; }
+.atrib-tabela td:first-child:hover, .atrib-tabela tr:hover td:first-child { color: #e8e8e8; }
+.atrib-input-valor {
+  width:56px; background:#0a0707; border:.5px solid #222; color:#ccc; text-align:center;
+  padding:5px 6px; border-radius:4px; font-size:12px;
+}
+.atrib-input-valor.atrib-fora-padrao { border-color:rgba(204,68,68,.5); color:#cc4444; }
+.atrib-raca-valor.positivo { color:#7ecaf0; }
+.atrib-raca-valor.negativo { color:#cc4444; }
+/* Coluna "Bônus" — pontos avulsos que NÃO vêm da compra por pontos nem da
+   raça (poder/habilidade que dá +1 num atributo, aumento de nível, item
+   mágico, etc.), por isso não entra no cálculo de custo/pontos gastos, só
+   soma direto no Total. Cor dourada pra diferenciar visualmente do azul
+   (raça) e do branco (total). */
+.atrib-input-bonus {
+  width:56px; background:#0a0707; border:.5px solid rgba(201,168,76,.25); color:#c9a84c; text-align:center;
+  padding:5px 6px; border-radius:4px; font-size:12px;
+}
+.atrib-total-valor { font-weight:600; color:#e8e8e8; }
+.atrib-custo-valor.atrib-custo-indefinido { color:#666; font-style:italic; }
+
+/* Correção (23/ago, feedback do usuário: "ficou desalinhado o botão de
+   zerar... é por causa do texto de Raças que sobe o nível da div") — o
+   botão "Zerar" é irmão de `.calc-combate-campo` (rótulo RAÇA em cima +
+   select embaixo, mesmo padrão usado em toda calculadora do site). A
+   linha (`.calc-combate-linha`) usa `align-items:center` por padrão, que
+   centraliza o botão na altura TOTAL da linha (rótulo + select juntos) —
+   como o botão não tem rótulo em cima, ele fica mais alto que o select,
+   dando a impressão de desalinhamento. `align-items:flex-end` alinha os
+   dois pela base, batendo com a borda inferior do select. */
+.atrib-raca-linha { align-items: flex-end; }
+
+.atrib-resumo {
+  display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px;
+  margin-top:16px; padding-top:14px; border-top:.5px solid #1a1010;
+}
+.atrib-excecao-check {
+  display:flex; align-items:center; gap:8px; font-size:11px; color:#888; cursor:pointer;
+}
+.atrib-excecao-check input { cursor:pointer; }
+.atrib-pontos { font-family:'Cinzel',serif; font-size:13px; color:#ccc; }
+.atrib-pontos strong { color:#c9a84c; font-size:15px; }
+.atrib-pontos.atrib-pontos-estourou strong { color:#cc4444; }
+
+/* Resumo final compacto ("FOR +2 · DES +1 · ...") — pra consulta/cópia
+   rápida sem reler a tabela inteira; some se ficar vazio (nunca fica,
+   `recalcularAtributos` sempre preenche as 6 siglas). */
+.atrib-resumo-final {
+  margin-top:10px; padding-top:10px; border-top:.5px dashed #1a1a1a;
+  font-family:'Cinzel',serif; font-size:11px; letter-spacing:.05em; color:#888; text-align:center;
+}
+
+/* Ícone de informação ao lado do nome do atributo — resumo de pra-que-serve
+   (Atletismo/Luta pra Força, Fortitude pra Constituição etc.), só com
+   `title` nativo (mesmo `cursor:help` já usado nas keywords `.kw` do
+   site), sem precisar de popover próprio. */
+.atrib-info-icone { font-size:11px; color:#555; cursor:help; margin-left:2px; }
+.atrib-info-icone:hover { color:#c9a84c; }
+
+/* Correção (23/ago, achado num teste em largura de celular — a tabela de
+   6 colunas ficava espremida, com o valor de Raça/Custo quase colado no
+   campo de input ao lado): abaixo de 640px a tabela ganha uma largura
+   mínima maior que a tela, então o `.eq-tabela-scroll` (que já tem
+   `overflow-x:auto`) passa a rolar horizontalmente — mesmo padrão que o
+   site já usa pra tabelas largas, em vez de espremer 6 colunas numa tela
+   estreita. */
+@media (max-width: 640px) {
+  .atrib-tabela { min-width: 560px; }
 }

@@ -304,6 +304,11 @@
           <i class="ti ti-calculator" aria-hidden="true"></i>
           <span class="sub-label">Calculadora de Combate</span>
         </div>
+        <div class="nav-sub-item" data-secao="condicoes"
+             onclick="toggleSubItem(this,'condicoes')">
+          <i class="ti ti-alert-octagon" aria-hidden="true"></i>
+          <span class="sub-label">Condições</span>
+        </div>
         <div class="nav-sub-item tem-filhos" data-secao="perigos"
              onclick="toggleSubItem(this,'perigos')">
           <i class="ti ti-alert-triangle" aria-hidden="true"></i>
@@ -452,12 +457,67 @@
 
     </div><!-- /secao-racas -->
 
+    <div id="secao-atributos" class="secao-conteudo" style="display:none;flex-direction:column;flex:1;overflow:hidden;">
+
+      <div class="section-hero">
+        <div class="section-hero-bg"></div>
+        <h1>Atributos Básicos</h1>
+        <p>Força, Destreza, Constituição, Inteligência, Sabedoria e Carisma — a base mecânica de qualquer personagem (Capítulo 1, pp. 17-18).</p>
+      </div>
+
+      <div class="cards-area">
+        <div class="calc-combate calc-combate-full">
+          <div class="calc-combate-header"><span><i class="ti ti-adjustments" aria-hidden="true"></i> Compra de Atributos</span></div>
+          <p class="calc-combate-nota">
+            Você começa com todos os atributos em 0 e recebe <strong>10 pontos</strong> pra aumentá-los, conforme a tabela abaixo. Também pode reduzir um atributo pra –1 pra ganhar +1 ponto adicional (Tabela 1-1, p.17). A coluna <strong>Bônus</strong> é livre — use pra somar pontos que não vêm da compra inicial nem da raça (poder de classe, aumento de atributo por nível, item mágico etc.); ela não conta no custo em pontos.
+          </p>
+
+          <div class="calc-combate-linha atrib-raca-linha">
+            <label class="calc-combate-campo calc-combate-campo-grow">Raça
+              <select id="atribRaca" onchange="selecionarRacaAtributos(this.value)"></select>
+            </label>
+            <button class="calc-btn-acao" onclick="zerarAtributos()" title="Volta todos os atributos, a raça e o checkbox de exceção ao padrão">
+              <i class="ti ti-refresh" aria-hidden="true"></i> Zerar
+            </button>
+          </div>
+          <p class="calc-combate-nota" id="atribRacaResumo" style="display:none;"></p>
+
+          <div id="atribEscolhaLivreWrap" style="display:none;">
+            <p class="calc-combate-nota" style="margin-bottom:8px;">
+              Escolha <strong id="atribEscolhaLivreQtd">3</strong> atributos diferentes pra receber +1 (bônus de escolha livre da raça):
+            </p>
+            <div id="atribEscolhaLivreChips" class="tf-atrib-chips"></div>
+          </div>
+
+          <div id="atribVarianteWrap" style="display:none;">
+            <p class="calc-combate-nota" style="margin-bottom:8px;">Escolha a variante da raça:</p>
+            <div id="atribVarianteChips" class="tf-atrib-chips"></div>
+          </div>
+
+          <div class="eq-tabela-scroll" style="margin-top:14px;">
+            <table class="eq-tabela atrib-tabela">
+              <thead>
+                <tr><th>Atributo</th><th>Valor</th><th>Raça</th><th>Bônus</th><th>Total</th><th>Custo</th></tr>
+              </thead>
+              <tbody id="atribTabelaBody"></tbody>
+            </table>
+          </div>
+
+          <div class="atrib-resumo">
+            <label class="atrib-excecao-check">
+              <input type="checkbox" id="atribPermitirExcecao" onchange="recalcularAtributos()" />
+              <span class="tf-config-selo" title="Destrava valores fora de –1 a 4 — não é regra oficial do livro, é flexibilização de mesa">configuração</span>
+              Permitir valores fora do padrão (–1 a 4)
+            </label>
+            <div class="atrib-pontos" id="atribPontosResumo">Pontos: <strong>10</strong> / 10</div>
+          </div>
+          <div class="atrib-resumo-final" id="atribResumoFinal"></div>
+        </div>
+      </div>
+
+    </div><!-- /secao-atributos -->
+
     <!-- ── SEÇÕES EM CONSTRUÇÃO (placeholder) ── -->
-    <div id="secao-atributos"       class="secao-conteudo placeholder-area" style="display:none">
-      <i class="ti ti-list" aria-hidden="true"></i>
-      <h2>Atributos Básicos</h2>
-      <p>Em breve — p. 17 do livro de regras</p>
-    </div>
     <div id="secao-classes" class="secao-conteudo" style="display:none;flex-direction:column;flex:1;overflow:hidden;">
 
       <div class="section-hero">
@@ -623,11 +683,105 @@
       </div>
 
     </div><!-- /secao-deuses -->
-    <div id="secao-toques"          class="secao-conteudo placeholder-area" style="display:none">
-      <i class="ti ti-wand" aria-hidden="true"></i>
-      <h2>Toques Finais</h2>
-      <p>Em breve — p. 106 do livro de regras</p>
-    </div>
+    <div id="secao-toques" class="secao-conteudo" style="display:none;flex-direction:column;flex:1;overflow:auto;">
+      <div class="section-hero">
+        <div class="section-hero-bg"></div>
+        <h1>Toques Finais</h1>
+        <p>Características derivadas, idade, envelhecimento e alinhamento — os últimos passos da criação de personagem (Capítulo 1, pp. 106-111).</p>
+      </div>
+
+      <div class="cards-area">
+        <div class="calc-combate calc-combate-full">
+          <div class="calc-combate-header"><span><i class="ti ti-heartbeat" aria-hidden="true"></i> Recuperação de PM e PV</span></div>
+          <p class="calc-combate-nota">
+            <span class="tf-config-selo" title="Calculadora interativa do site — não é texto do livro, é uma ferramenta de configuração de mesa">configuração</span>
+            Ao final de uma noite de descanso, o personagem recupera PV e PM iguais ao <strong>nível</strong> multiplicado pela condição de descanso escolhida abaixo — <strong>Ruim</strong> (metade), <strong>Normal</strong> (igual), <strong>Confortável</strong> (dobro) ou <strong>Luxuosa</strong> (triplo) — sem nunca ultrapassar o máximo (Sobrevivência, p.123; Hospedagem, p.163).
+          </p>
+
+          <div class="tf-recup-grupo tf-recup-nivel">
+            <div class="tf-recup-grupo-titulo"><i class="ti ti-user" aria-hidden="true"></i> Nível</div>
+            <div class="calc-combate-linha tf-recup-linha tf-recup-nivel-linha">
+              <input type="number" id="tfCalcNivel" min="1" max="20" value="1" oninput="calcularRecuperacaoPvPm()" />
+            </div>
+          </div>
+
+          <div class="tf-recup-grupo tf-recup-pv">
+            <div class="tf-recup-grupo-titulo"><i class="ti ti-heart" aria-hidden="true"></i> PV</div>
+            <div class="calc-combate-linha tf-recup-linha">
+              <label class="calc-combate-campo">PV máximo
+                <input type="number" id="tfCalcPvMax" min="0" value="0" oninput="calcularRecuperacaoPvPm()" />
+              </label>
+              <label class="calc-combate-campo">PV atual
+                <input type="number" id="tfCalcPvAtual" min="0" value="0" oninput="calcularRecuperacaoPvPm()" />
+              </label>
+              <div class="calc-combate-campo">Recuperado
+                <div class="tf-recup-valor" id="tfPvSoma">+0</div>
+              </div>
+              <div class="calc-combate-campo">PV final
+                <div class="tf-recup-valor" id="tfPvFinal">0</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="tf-recup-grupo tf-recup-pm">
+            <div class="tf-recup-grupo-titulo"><i class="ti ti-sparkles" aria-hidden="true"></i> PM</div>
+            <div class="calc-combate-linha tf-recup-linha">
+              <label class="calc-combate-campo">PM máximo
+                <input type="number" id="tfCalcPmMax" min="0" value="0" oninput="calcularRecuperacaoPvPm()" />
+              </label>
+              <label class="calc-combate-campo">PM atual
+                <input type="number" id="tfCalcPmAtual" min="0" value="0" oninput="calcularRecuperacaoPvPm()" />
+              </label>
+              <div class="calc-combate-campo">Recuperado
+                <div class="tf-recup-valor" id="tfPmSoma">+0</div>
+              </div>
+              <div class="calc-combate-campo">PM final
+                <div class="tf-recup-valor" id="tfPmFinal">0</div>
+              </div>
+            </div>
+          </div>
+          <p class="calc-combate-nota" style="margin-top:10px;">Escolha a condição de descanso da noite — o cálculo de recuperação acima atualiza na hora.</p>
+          <div id="tfRecuperacaoGrid" class="tf-mini-grid"></div>
+        </div>
+
+        <div class="calc-combate calc-combate-full">
+          <div class="calc-combate-header"><span><i class="ti ti-ruler-2" aria-hidden="true"></i> Tamanho</span></div>
+          <p class="calc-combate-nota" id="tfTamanhoNota"></p>
+          <div class="eq-tabela-scroll">
+            <table class="eq-tabela" id="tfTamanhoTabela"></table>
+          </div>
+        </div>
+
+        <div class="calc-combate calc-combate-full">
+          <div class="calc-combate-header"><span><i class="ti ti-dice" aria-hidden="true"></i> Roletor de Idade Inicial</span></div>
+          <p class="calc-combate-nota">Escolha a classe do personagem e role a idade inicial pela fórmula do grupo dela.</p>
+          <div id="tfIdadeClasseGrupos"></div>
+          <div class="tf-idade-rolar-wrap">
+            <button class="tf-idade-rolar-btn" onclick="rolarIdadeInicial()" title="Rolar idade inicial">
+              <i class="ti ti-dice" aria-hidden="true"></i>
+              <span>Rolar Idade</span>
+            </button>
+          </div>
+          <div id="tfIdadeResultado"></div>
+        </div>
+
+        <div class="calc-combate calc-combate-full">
+          <div class="calc-combate-header"><span><i class="ti ti-clock" aria-hidden="true"></i> Envelhecimento</span></div>
+          <p class="calc-combate-nota">Modificadores cumulativos por categoria etária. Longevidade máxima: <strong id="tfLongevidadeFormula"></strong> — anões e qaeen multiplicam por 2; dahllan, elfos, golens, osteon e sílfides multiplicam por 5 (na prática, não envelhecem).</p>
+          <div id="tfEnvelhecimentoGrid" class="tf-mini-grid"></div>
+        </div>
+
+        <div class="calc-combate calc-combate-full">
+          <div class="calc-combate-header"><span><i class="ti ti-scale" aria-hidden="true"></i> Alinhamento</span></div>
+          <p class="calc-combate-nota">Os nove alinhamentos combinam o eixo ético (Bondade/Neutralidade/Maldade) com o eixo moral (Lei/Neutralidade/Caos). Clique num card pra marcar o alinhamento do seu personagem — é só um recurso visual de referência por enquanto, nada é salvo.</p>
+          <p class="calc-combate-nota" style="background:rgba(255,255,255,.03);border-radius:4px;padding:8px 10px;">
+            <i class="ti ti-info-circle" aria-hidden="true"></i> <strong>Guia de leitura:</strong> cada card traz, em itálico, como aquele alinhamento reagiria à mesma cena — uma criança faminta furtando um pedaço de pão de um mercador. É o mesmo teste repetido nos nove, pra comparar de forma direta como cada um se comporta diante da mesma situação.
+          </p>
+          <div id="tfAlinhamentoGrid" class="tf-alinhamento-grid"></div>
+        </div>
+      </div>
+    </div><!-- /secao-toques -->
+
     <div id="secao-pericias" class="secao-conteudo" style="display:none;flex-direction:column;flex:1;overflow:hidden;">
 
       <div class="section-hero">
@@ -1537,6 +1691,38 @@
       <div class="mini-corpo" id="miniBody"></div>
     </div>
 
+    <div id="secao-condicoes" class="secao-conteudo" style="display:none;flex-direction:column;flex:1;overflow:hidden;">
+      <div class="section-hero">
+        <div class="section-hero-bg"></div>
+        <h1>Condições</h1>
+        <p>35 condições que alteram o estado de um personagem em combate — Apêndice, pp. 394-395.</p>
+      </div>
+      <div class="toolbar" style="flex-direction:column;align-items:stretch;gap:8px;">
+        <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
+          <div class="search-inline">
+            <i class="ti ti-search" aria-hidden="true"></i>
+            <input type="text" id="buscaCondicoes" placeholder="Buscar condição…" />
+          </div>
+          <span class="filtro-count" id="condicoesCount" style="margin-left:auto;">35 condições</span>
+        </div>
+        <div id="condicoesFiltro" style="display:flex;gap:8px;flex-wrap:wrap;">
+          <button class="filtro-btn a" onclick="setFiltroCondicao(this,'todos')">Todas</button>
+          <button class="filtro-btn" onclick="setFiltroCondicao(this,'medo')">Medo</button>
+          <button class="filtro-btn" onclick="setFiltroCondicao(this,'mental')">Mental</button>
+          <button class="filtro-btn" onclick="setFiltroCondicao(this,'movimento')">Movimento</button>
+          <button class="filtro-btn" onclick="setFiltroCondicao(this,'sentidos')">Sentidos</button>
+          <button class="filtro-btn" onclick="setFiltroCondicao(this,'metabolismo')">Metabolismo</button>
+          <button class="filtro-btn" onclick="setFiltroCondicao(this,'veneno')">Veneno</button>
+          <button class="filtro-btn" onclick="setFiltroCondicao(this,'cansaco')">Cansaço</button>
+          <button class="filtro-btn" onclick="setFiltroCondicao(this,'metamorfose')">Metamorfose</button>
+          <button class="filtro-btn" onclick="setFiltroCondicao(this,'geral')">Geral</button>
+        </div>
+      </div>
+      <div class="cards-area">
+        <div class="cards-grid" id="condicoesGrid"></div>
+      </div>
+    </div><!-- /secao-condicoes -->
+
     <div id="secao-perigos" class="secao-conteudo" style="display:none;flex-direction:column;flex:1;overflow:hidden;">
       <div class="section-hero">
         <div class="section-hero-bg"></div>
@@ -1606,7 +1792,7 @@
           </div>
           <p class="calc-combate-nota">Escolhe um perigo aleatório do livro — útil pra improvisar uma cena ou montar masmorra rápido.</p>
           <div class="calc-combate-linha">
-            <label class="calc-combate-campo">Tipo
+            <label class="calc-combate-campo calc-combate-campo-grow">Tipo
               <select id="sortearTipoPerigo" onchange="atualizarVisibilidadeNdSortear()">
                 <option value="qualquer">Qualquer perigo simples</option>
                 <option value="ambiental">Ambiental</option>
@@ -1622,10 +1808,10 @@
             Filtrar por faixa de ND
           </label>
           <div class="calc-combate-linha" id="sortearNdWrap" style="display:none">
-            <label class="calc-combate-campo">ND mínimo
+            <label class="calc-combate-campo calc-combate-campo-grow">ND mínimo
               <select id="sortearNdMin"></select>
             </label>
-            <label class="calc-combate-campo">ND máximo
+            <label class="calc-combate-campo calc-combate-campo-grow">ND máximo
               <select id="sortearNdMax"></select>
             </label>
           </div>
@@ -1848,7 +2034,7 @@
       </div>
       <div class="cards-area">
         <div class="calc-grupo-card" style="max-width:520px;flex-direction:column;align-items:stretch;gap:10px;padding:16px;">
-          <label class="calc-combate-campo">Deslocamento do membro mais lento
+          <label class="calc-combate-campo calc-combate-campo-grow">Deslocamento do membro mais lento
             <select id="viagemDeslocamento" onchange="calcularViagem()"></select>
           </label>
           <div id="viagemResultado"></div>
@@ -1866,9 +2052,64 @@
     <div id="secao-povo"            class="secao-conteudo placeholder-area" style="display:none">
       <i class="ti ti-users" aria-hidden="true"></i><h2>Povo</h2><p>Em breve</p>
     </div>
-    <div id="secao-parceiros"       class="secao-conteudo placeholder-area" style="display:none">
-      <i class="ti ti-heart" aria-hidden="true"></i><h2>Parceiros</h2><p>Em breve</p>
-    </div>
+    <div id="secao-parceiros" class="secao-conteudo" style="display:none;flex-direction:column;flex:1;overflow:hidden;">
+
+      <div class="section-hero">
+        <div class="section-hero-bg"></div>
+        <h1>Parceiros</h1>
+        <p>NPCs que se aventuram ao lado do grupo — adquiridos por uma habilidade de classe, contratados, comprados ou recebidos como recompensa. Cada parceiro concede um bônus fixo, que cresce conforme o patamar dele (Iniciante, Veterano ou Mestre) — Capítulo 6, pp. 260-262.</p>
+      </div>
+
+      <div class="toolbar" style="flex-direction:column;align-items:stretch;gap:8px;">
+        <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
+          <div class="search-inline">
+            <i class="ti ti-search" aria-hidden="true"></i>
+            <input type="text" id="buscaParceiros" placeholder="Buscar parceiro…" />
+          </div>
+          <span class="filtro-count" id="parceirosCount" style="margin-left:auto;">12 tipos</span>
+        </div>
+        <div id="parceirosFiltroGrupo" style="display:flex;gap:8px;flex-wrap:wrap;">
+          <button class="filtro-btn a" data-grupo="tipos" onclick="setGrupoParceiro(this,'tipos')">Tipos de Parceiro</button>
+          <button class="filtro-btn" data-grupo="montarias" onclick="setGrupoParceiro(this,'montarias')">Montarias Nomeadas</button>
+          <button class="filtro-btn" data-grupo="bestiario" onclick="setGrupoParceiro(this,'bestiario')">Parceiros do Bestiário</button>
+        </div>
+        <div id="parceirosFiltroTamanho" style="display:none;gap:8px;flex-wrap:wrap;"></div>
+      </div>
+
+      <p class="calc-combate-nota" id="parceirosNota" style="margin:0 20px 14px;"></p>
+
+      <div class="calc-combate" style="margin:0 20px 14px;max-width:460px;">
+        <div class="calc-combate-header"><span><i class="ti ti-calculator" aria-hidden="true"></i> Quantos Parceiros Posso Ter?</span></div>
+        <div class="calc-combate-linha">
+          <label class="calc-combate-campo">Nível do personagem
+            <input type="number" id="parceiroCalcNivel" min="1" max="20" value="1" oninput="calcularLimiteParceiros()" />
+          </label>
+        </div>
+        <p class="calc-combate-nota" id="parceiroCalcResultado" style="margin-top:8px;"></p>
+      </div>
+
+      <div class="cards-area">
+        <div class="cards-grid" id="parceirosGrid"></div>
+      </div>
+
+      <!-- Painel de detalhe do parceiro (tipo genérico ou montaria nomeada) -->
+      <div class="detalhe-painel" id="parceiroPainel">
+        <div class="dp-hero" id="parceiroHero">
+          <div class="dp-hero-bg" id="parceiroHeroBg"></div>
+          <i class="ti ti-paw dp-hero-icon" id="parceiroHeroIcon" aria-hidden="true"></i>
+          <div class="dp-hero-content">
+            <div class="dp-tipo" id="parceiroTipo">Tipo de Parceiro</div>
+            <div class="dp-nome" id="parceiroNome">—</div>
+            <div class="dp-sub" id="parceiroSub">—</div>
+          </div>
+          <button class="dp-fechar" onclick="fecharDetalheParceiro()">
+            <i class="ti ti-x" aria-hidden="true"></i>
+          </button>
+        </div>
+        <div class="dp-body" id="parceiroBody"></div>
+      </div>
+
+    </div><!-- /secao-parceiros -->
     <div id="secao-montarias"       class="secao-conteudo placeholder-area" style="display:none">
       <i class="ti ti-horse" aria-hidden="true"></i><h2>Montarias</h2><p>Em breve</p>
     </div>
@@ -1880,11 +2121,14 @@
 <!-- SCRIPTS -->
 <script src="../js/acessibilidade.js"></script>
 <script src="../js/data/racas.js"></script>
+<script src="../js/data/atributos_basicos.js"></script>
 <script src="../js/data/classes.js"></script>
 <script src="../js/data/poderes_classes.js"></script>
 <script src="../js/data/pericias.js"></script>
+<script src="../js/data/condicoes.js"></script>
 <script src="../js/data/origens.js"></script>
 <script src="../js/data/deuses.js"></script>
+<script src="../js/data/toques_finais.js"></script>
 <script src="../js/data/poderes_gerais.js"></script>
 <script src="../js/data/magias.js"></script>
 <script src="../js/data/armas.js"></script>
@@ -1899,6 +2143,7 @@
 <script src="../js/data/acessorios.js"></script>
 <script src="../js/data/artefatos.js"></script>
 <script src="../js/data/criaturas.js"></script>
+<script src="../js/data/parceiros.js"></script>
 <script src="../js/data/perigos.js"></script>
 <script src="../js/data/ambiente.js"></script>
 <script src="../js/keywords.js"></script>

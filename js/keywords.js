@@ -274,6 +274,23 @@ function _buildKeywordList() {
 
 const _KEYWORD_LIST = _buildKeywordList();
 
+// Mapa "variante em minúsculas" → nome canônico (o que window.CONDICOES usa
+// em `nome`, ex: 'Abalado', 'Em Chamas') — cada entrada de KEYWORDS_T20.cond
+// lista o próprio nome oficial como primeiro padrão, então basta usar
+// padroes[0]. Evita passar "abalado" (minúsculo) pra abrirBlocoReferencia,
+// que faz busca exata por nome em window.CONDICOES.
+let _COND_NOME_CANONICO = null;
+function _condNomeCanonico(capture) {
+  if (!_COND_NOME_CANONICO) {
+    _COND_NOME_CANONICO = {};
+    (KEYWORDS_T20.cond || []).forEach(item => {
+      const padroes = Array.isArray(item.padroes) ? item.padroes : [item.padroes];
+      padroes.forEach(p => { _COND_NOME_CANONICO[p.toLowerCase()] = padroes[0]; });
+    });
+  }
+  return _COND_NOME_CANONICO[capture.toLowerCase()] || capture;
+}
+
 // Cache da lista de Poderes Gerais pra keyword — construída sob demanda na
 // primeira vez que processarKeywords() rodar (ver função principal abaixo),
 // porque depende de window.PODERES_GERAIS já estar carregado.
@@ -362,9 +379,14 @@ function processarKeywords(texto) {
     resultado = resultado.replace(kw.regex, (_, capture) => {
       const idx = placeholders.length;
       const nomeEscapado = _escapeHtml(capture);
-      // Perícias abrem o mini-painel compartilhado (pilha de referências)
+      // Perícias e Condições abrem o mesmo mini-painel compartilhado (pilha
+      // de referências) — Condição precisa do nome canônico (capitalizado
+      // como em window.CONDICOES), já que o dicionário casa tanto "Abalado"
+      // quanto "abalado" no meio de uma frase.
       const clickAttr = kw.tipo === 'pericia'
         ? ` onclick="event.stopPropagation(); window.abrirBlocoReferencia && window.abrirBlocoReferencia('pericia', '${nomeEscapado.replace(/'/g, "\\'")}')" style="cursor:pointer"`
+        : kw.tipo === 'cond'
+        ? ` onclick="event.stopPropagation(); window.abrirBlocoReferencia && window.abrirBlocoReferencia('condicao', '${_escapeHtml(_condNomeCanonico(capture)).replace(/'/g, "\\'")}')" style="cursor:pointer"`
         : '';
       placeholders.push(
         `<span class="kw kw-${kw.tipo}"` +
@@ -455,7 +477,8 @@ function processarKeywords(texto) {
   // armas, armaduras, itens gerais, munições, melhorias, materiais especiais,
   // encantos de arma/armadura, armas/armaduras específicas, acessórios e
   // artefatos. Combina as 12 listas numa cache só, cada nome guardando o
-  // "tipo" que window.irParaItem() usa pra saber pra qual seção navegar.
+  // "tipo" que abrirBlocoReferencia('item', nome, tipo) usa pra achar o item
+  // certo em ITEM_TIPO_CONFIG (ver BLOCO_REF_TIPOS.item em compendio.js).
   // Roda DEPOIS de Poderes Gerais e Magias de propósito: se um nome colidir
   // com um poder ou magia (ex: "Acrobático" existe como poder E como
   // encanto), o texto já virou placeholder antes de chegar aqui, então o

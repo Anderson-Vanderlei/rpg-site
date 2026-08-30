@@ -240,8 +240,11 @@ document.addEventListener('DOMContentLoaded', () => {
     document.querySelectorAll('.secao-conteudo').forEach(s => s.style.display = 'none');
     const el = document.getElementById('secao-' + nome);
     if (el) el.style.display = 'flex';
-    fecharDetalhe();
-    fecharDetalheClasse();
+    // Fecha todo painel de detalhe aberto (qualquer seção) e limpa a pilha de
+    // referências — antes só fechava Raça/Classe (hardcoded, de antes da
+    // pilha existir), o que deixava outros painéis flutuando por cima da
+    // seção nova ao trocar de aba pela sidebar. Corrigido em 23/ago.
+    if (typeof window.fecharTodosPaineisDetalhe === 'function') window.fecharTodosPaineisDetalhe();
     atualizarBreadcrumb(nome);
     localStorage.setItem(LS_SECAO, nome);
     if (window.innerWidth <= 768) toggleSidebarMobile(false);
@@ -552,6 +555,57 @@ document.addEventListener('DOMContentLoaded', () => {
       });
       grid.appendChild(card);
     });
+  }
+
+  // ── RITUAL COMPARTILHADO DE FECHAR PAINEL DE DETALHE ────────────────
+  // Todo painel de detalhe (Raça, Classe, Origem, Deus, Criatura, Perigo,
+  // Perigo Complexo, Ambiente, Equipamento, Magia) fecha do MESMO jeito:
+  // tira 'aberto' do painel, tira 'encolhido' da(s) área(s) de cards da(s)
+  // seção(ões) dona(s) (que encolheu(ram) pra abrir espaço pro painel), e —
+  // pros que vêm de uma grade com card "selecionado" — tira essa classe de
+  // todo card. Antes cada fecharDetalheX() reescrevia esse ritual na mão,
+  // igual mostrarSecao() reescrevia (mal, só pra 2 dos 10 painéis) a lista
+  // de quem fechar — mesma classe de bug, corrigida em 23/ago (ver
+  // fecharTodosPaineisDetalhe() mais abaixo). Centralizando o ritual aqui,
+  // uma correção futura nele (não no conteúdo específico de cada painel —
+  // isso continua em cada abrirDetalheX) só precisa acontecer neste lugar,
+  // em vez de arriscar corrigir 9 dos 10 e esquecer o décimo.
+  function _fecharPainelDetalhe(painelEl, areasSelector, cardSelector) {
+    painelEl?.classList.remove('aberto');
+    if (areasSelector) {
+      document.querySelectorAll(areasSelector).forEach(el => el.classList.remove('encolhido'));
+    }
+    if (cardSelector) {
+      document.querySelectorAll(cardSelector).forEach(c => c.classList.remove('selecionado'));
+    }
+  }
+
+  // Mesma ideia, pro outro ritual repetido pelo site inteiro: os grupos de
+  // botão-filtro (categoria, tipo, ND, círculo...) em toda seção com listagem
+  // (Armas, Armaduras, Criaturas, Magias, Poderes, Raças, Classes...) fazem
+  // sempre a mesma coisa quando um botão é clicado — tira '.a' de todo botão
+  // irmão no grupo, bota '.a' só no clicado. Cada setFiltroX() reescrevia
+  // essas 2 linhas na mão (17 ocorrências no arquivo); centralizado aqui pelo
+  // mesmo motivo do ritual de painel acima: uma correção futura no "como
+  // marcar botão de filtro ativo" só precisa acontecer neste lugar. O que
+  // continua específico de cada setFiltroX() é decidir QUAL grupo (o
+  // seletor) e o que fazer com o valor escolhido (estado + re-render).
+  function _ativarFiltroBtn(grupoSelector, btnEl) {
+    document.querySelectorAll(`${grupoSelector} .filtro-btn`).forEach(b => b.classList.remove('a'));
+    btnEl?.classList.add('a');
+  }
+
+  // Terceiro ritual repetido que achamos pelo site inteiro (24/ago): quase
+  // toda seção com busca fazia a MESMA coisa pra ligar o campo de texto —
+  // pegar o elemento por id, checar se existe, escutar 'input', tirar
+  // espaço nas pontas do valor. Só o que cada seção faz DEPOIS (guardar
+  // lowercase ou não, em qual variável de estado, qual função re-renderiza)
+  // varia. `_ligarBusca(inputId, aoDigitar)` cobre só a parte comum —
+  // `aoDigitar` recebe o valor já com `.trim()` feito, e decide o resto.
+  function _ligarBusca(inputId, aoDigitar) {
+    const el = document.getElementById(inputId);
+    if (!el) return;
+    el.addEventListener('input', () => aoDigitar(el.value.trim()));
   }
 
   // ── 4C. PAINEL DE DETALHES DE CLASSE ───────────────────────
@@ -1216,8 +1270,48 @@ document.addEventListener('DOMContentLoaded', () => {
     return parseFloat(match[0].replace(',', '.'));
   }
 
+  // ── Ordenação genérica das tabelas de equipamento (clique no cabeçalho) ──
+  // Reaproveitada por Armas, Armaduras, Armas Mágicas, Armaduras Mágicas e
+  // Acessórios — cada tabela só declara suas colunas (label + como extrair
+  // o valor de ordenação de cada linha) e usa esses 3 helpers.
+  function _compararOrdenacao(va, vb) {
+    if (typeof va === 'string') va = va.toLowerCase();
+    if (typeof vb === 'string') vb = vb.toLowerCase();
+    if (va == null) va = '';
+    if (vb == null) vb = '';
+    if (va < vb) return -1;
+    if (va > vb) return 1;
+    return 0;
+  }
+
+  function _ordenarLinhas(lista, colunas, estado) {
+    if (!estado.ordenarCampo) return lista;
+    const col = colunas.find(c => c.campo === estado.ordenarCampo);
+    if (!col) return lista;
+    const arr = lista.slice();
+    arr.sort((a, b) => _compararOrdenacao(col.valor(a), col.valor(b)) * (estado.ordenarAsc ? 1 : -1));
+    return arr;
+  }
+
+  function _theadOrdenavel(colunas, estado, funcNome) {
+    return '<tr>' + colunas.map(c => {
+      if (!c.campo) return `<th>${c.label}</th>`;
+      const ativo = estado.ordenarCampo === c.campo;
+      const icone = ativo
+        ? `<i class="ti ${estado.ordenarAsc ? 'ti-arrow-up' : 'ti-arrow-down'}" aria-hidden="true"></i>`
+        : '';
+      return `<th class="${ativo ? 'eq-th-ativo' : ''}" onclick="event.stopPropagation(); ${funcNome}('${c.campo}')" title="Ordenar por ${c.label}">${c.label}${icone}</th>`;
+    }).join('') + '</tr>';
+  }
+
+  function _ordenarTabelaEquip(estado, campo, renderFn) {
+    if (estado.ordenarCampo === campo) estado.ordenarAsc = !estado.ordenarAsc;
+    else { estado.ordenarCampo = campo; estado.ordenarAsc = true; }
+    renderFn();
+  }
+
   // ── ARMAS ──────────────────────────────────────────
-  const _armaEstado = { categoria: 'todos', tipoAtaque: 'todos', busca: '', modo: 'cards' };
+  const _armaEstado = { categoria: 'todos', tipoAtaque: 'todos', busca: '', modo: 'cards', ordenarCampo: null, ordenarAsc: true };
 
   function renderArmaCard(a) {
     const card = document.createElement('div');
@@ -1271,8 +1365,20 @@ document.addEventListener('DOMContentLoaded', () => {
     lista.forEach(a => grid.appendChild(renderArmaCard(a)));
   }
 
+  const ARMAS_COLUNAS = [
+    { label: 'Nome', campo: 'nome', valor: a => a.nome },
+    { label: 'Categoria', campo: 'categoria', valor: a => CATEGORIA_ARMA_INFO[a.categoria].label },
+    { label: 'Dano', campo: 'dano', valor: a => a.dano || '' },
+    { label: 'Crítico', campo: 'critico', valor: a => a.critico || '' },
+    { label: 'Alcance', campo: 'alcance', valor: a => a.alcance || '' },
+    { label: 'Tipo', campo: 'tipoDano', valor: a => a.tipoDano || '' },
+    { label: 'Espaços', campo: 'espacos', valor: a => a.espacos },
+    { label: 'Preço', campo: 'preco', valor: a => precoParaNumero(a.preco) },
+  ];
+
   function renderArmasTabela(lista) {
-    const linhas = lista.map(a => `
+    const ordenada = _ordenarLinhas(lista, ARMAS_COLUNAS, _armaEstado);
+    const linhas = ordenada.map(a => `
       <tr onclick="abrirDetalheEquip('arma','${a.id}')">
         <td>${a.nome}</td>
         <td>${CATEGORIA_ARMA_INFO[a.categoria].label}</td>
@@ -1286,16 +1392,17 @@ document.addEventListener('DOMContentLoaded', () => {
     return `
       <div class="eq-tabela-scroll">
         <table class="eq-tabela">
-          <thead><tr><th>Nome</th><th>Categoria</th><th>Dano</th><th>Crítico</th><th>Alcance</th><th>Tipo</th><th>Espaços</th><th>Preço</th></tr></thead>
+          <thead>${_theadOrdenavel(ARMAS_COLUNAS, _armaEstado, 'ordenarTabelaArmas')}</thead>
           <tbody>${linhas}</tbody>
         </table>
       </div>`;
   }
 
+  window.ordenarTabelaArmas = campo => _ordenarTabelaEquip(_armaEstado, campo, renderArmasNaSecao);
+
   window.setFiltroArma = (eixo, btn, valor) => {
     const grupoId = eixo === 'categoria' ? 'armasFiltroCategoria' : 'armasFiltroTipo';
-    document.querySelectorAll(`#${grupoId} .filtro-btn`).forEach(b => b.classList.remove('a'));
-    btn.classList.add('a');
+    _ativarFiltroBtn(`#${grupoId}`, btn);
     _armaEstado[eixo] = valor;
     renderArmasNaSecao();
   };
@@ -1308,7 +1415,7 @@ document.addEventListener('DOMContentLoaded', () => {
   };
 
   // ── ARMADURAS ──────────────────────────────────────────
-  const _armaduraEstado = { categoria: 'todos', busca: '', modo: 'cards' };
+  const _armaduraEstado = { categoria: 'todos', busca: '', modo: 'cards', ordenarCampo: null, ordenarAsc: true };
 
   function renderArmaduraCard(a) {
     const card = document.createElement('div');
@@ -1358,8 +1465,18 @@ document.addEventListener('DOMContentLoaded', () => {
     lista.forEach(a => grid.appendChild(renderArmaduraCard(a)));
   }
 
+  const ARMADURAS_COLUNAS = [
+    { label: 'Nome', campo: 'nome', valor: a => a.nome },
+    { label: 'Categoria', campo: 'categoria', valor: a => CATEGORIA_ARMADURA_INFO[a.categoria].label },
+    { label: 'Defesa', campo: 'bonusDefesa', valor: a => a.bonusDefesa },
+    { label: 'Penalidade', campo: 'penalidadeArmadura', valor: a => a.penalidadeArmadura },
+    { label: 'Espaços', campo: 'espacos', valor: a => a.espacos },
+    { label: 'Preço', campo: 'preco', valor: a => precoParaNumero(a.preco) },
+  ];
+
   function renderArmadurasTabela(lista) {
-    const linhas = lista.map(a => `
+    const ordenada = _ordenarLinhas(lista, ARMADURAS_COLUNAS, _armaduraEstado);
+    const linhas = ordenada.map(a => `
       <tr onclick="abrirDetalheEquip('armadura','${a.id}')">
         <td>${a.nome}</td>
         <td>${CATEGORIA_ARMADURA_INFO[a.categoria].label}</td>
@@ -1371,15 +1488,16 @@ document.addEventListener('DOMContentLoaded', () => {
     return `
       <div class="eq-tabela-scroll">
         <table class="eq-tabela">
-          <thead><tr><th>Nome</th><th>Categoria</th><th>Defesa</th><th>Penalidade</th><th>Espaços</th><th>Preço</th></tr></thead>
+          <thead>${_theadOrdenavel(ARMADURAS_COLUNAS, _armaduraEstado, 'ordenarTabelaArmaduras')}</thead>
           <tbody>${linhas}</tbody>
         </table>
       </div>`;
   }
 
+  window.ordenarTabelaArmaduras = campo => _ordenarTabelaEquip(_armaduraEstado, campo, renderArmadurasNaSecao);
+
   window.setFiltroArmadura = (btn, valor) => {
-    document.querySelectorAll('#armadurasFiltroCategoria .filtro-btn').forEach(b => b.classList.remove('a'));
-    btn.classList.add('a');
+    _ativarFiltroBtn('#armadurasFiltroCategoria', btn);
     _armaduraEstado.categoria = valor;
     renderArmadurasNaSecao();
   };
@@ -1444,14 +1562,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
   window.setFiltroItemGeral = (eixo, btn, valor) => {
     const grupoId = eixo === 'categoria' ? 'itensGeraisFiltroCategoria' : 'itensGeraisFiltroPreco';
-    document.querySelectorAll(`#${grupoId} .filtro-btn`).forEach(b => b.classList.remove('a'));
-    btn.classList.add('a');
+    _ativarFiltroBtn(`#${grupoId}`, btn);
     _itemGeralEstado[eixo] = valor;
     renderItensGeraisNaSecao();
   };
 
   // ── ARMAS MÁGICAS (armas específicas) ──────────────────────
-  const _armasMagicasEstado = { busca: '', modo: 'cards' };
+  const _armasMagicasEstado = { busca: '', modo: 'cards', ordenarCampo: null, ordenarAsc: true };
+  function _armaBaseDe(a) { return (window.ARMAS || []).find(x => x.id === a.baseId); }
 
   function renderArmaEspecificaCard(a) {
     const base = (window.ARMAS || []).find(x => x.id === a.baseId);
@@ -1470,9 +1588,21 @@ document.addEventListener('DOMContentLoaded', () => {
     return card;
   }
 
+  const ARMAS_ESPECIFICAS_COLUNAS = [
+    { label: 'Nome', campo: 'nome', valor: a => a.nome },
+    { label: 'Base', campo: 'base', valor: a => (_armaBaseDe(a) || {}).nome || '' },
+    { label: 'Dano', campo: 'dano', valor: a => (_armaBaseDe(a) || {}).dano || '' },
+    { label: 'Crítico', campo: 'critico', valor: a => (_armaBaseDe(a) || {}).critico || '' },
+    { label: 'Alcance', campo: 'alcance', valor: a => (_armaBaseDe(a) || {}).alcance || '' },
+    { label: 'Tipo', campo: 'tipoDano', valor: a => (_armaBaseDe(a) || {}).tipoDano || '' },
+    { label: 'Espaços', campo: 'espacos', valor: a => (_armaBaseDe(a) || {}).espacos ?? '' },
+    { label: 'Preço', campo: 'preco', valor: a => precoParaNumero(a.preco) },
+  ];
+
   function renderArmasEspecificasTabela(lista) {
-    const linhas = lista.map(a => {
-      const base = (window.ARMAS || []).find(x => x.id === a.baseId);
+    const ordenada = _ordenarLinhas(lista, ARMAS_ESPECIFICAS_COLUNAS, _armasMagicasEstado);
+    const linhas = ordenada.map(a => {
+      const base = _armaBaseDe(a);
       return `
       <tr onclick="abrirDetalheEquip('arma-especifica','${a.id}')">
         <td>${a.nome}</td>
@@ -1488,11 +1618,13 @@ document.addEventListener('DOMContentLoaded', () => {
     return `
       <div class="eq-tabela-scroll">
         <table class="eq-tabela">
-          <thead><tr><th>Nome</th><th>Base</th><th>Dano</th><th>Crítico</th><th>Alcance</th><th>Tipo</th><th>Espaços</th><th>Preço</th></tr></thead>
+          <thead>${_theadOrdenavel(ARMAS_ESPECIFICAS_COLUNAS, _armasMagicasEstado, 'ordenarTabelaArmasMagicas')}</thead>
           <tbody>${linhas}</tbody>
         </table>
       </div>`;
   }
+
+  window.ordenarTabelaArmasMagicas = campo => _ordenarTabelaEquip(_armasMagicasEstado, campo, renderArmasMagicasNaSecao);
 
   function renderArmasMagicasNaSecao() {
     const grid = document.getElementById('armasMagicasGrid');
@@ -1529,7 +1661,8 @@ document.addEventListener('DOMContentLoaded', () => {
   };
 
   // ── ARMADURAS MÁGICAS (só itens específicos — encantos foram pra Modificadores) ──
-  const _armadurasMagicasEstado = { busca: '', modo: 'cards' };
+  const _armadurasMagicasEstado = { busca: '', modo: 'cards', ordenarCampo: null, ordenarAsc: true };
+  function _armaduraBaseDe(a) { return (window.ARMADURAS || []).find(x => x.id === a.baseId); }
 
   function renderArmaduraEspecificaCard(a) {
     const base = (window.ARMADURAS || []).find(x => x.id === a.baseId);
@@ -1548,9 +1681,19 @@ document.addEventListener('DOMContentLoaded', () => {
     return card;
   }
 
+  const ARMADURAS_ESPECIFICAS_COLUNAS = [
+    { label: 'Nome', campo: 'nome', valor: a => a.nome },
+    { label: 'Base', campo: 'base', valor: a => (_armaduraBaseDe(a) || {}).nome || '' },
+    { label: 'Defesa', campo: 'bonusDefesa', valor: a => (_armaduraBaseDe(a) || {}).bonusDefesa ?? '' },
+    { label: 'Penalidade', campo: 'penalidadeArmadura', valor: a => (_armaduraBaseDe(a) || {}).penalidadeArmadura ?? '' },
+    { label: 'Espaços', campo: 'espacos', valor: a => (_armaduraBaseDe(a) || {}).espacos ?? '' },
+    { label: 'Preço', campo: 'preco', valor: a => precoParaNumero(a.preco) },
+  ];
+
   function renderArmadurasEspecificasTabela(lista) {
-    const linhas = lista.map(a => {
-      const base = (window.ARMADURAS || []).find(x => x.id === a.baseId);
+    const ordenada = _ordenarLinhas(lista, ARMADURAS_ESPECIFICAS_COLUNAS, _armadurasMagicasEstado);
+    const linhas = ordenada.map(a => {
+      const base = _armaduraBaseDe(a);
       return `
       <tr onclick="abrirDetalheEquip('armadura-especifica','${a.id}')">
         <td>${a.nome}</td>
@@ -1564,11 +1707,13 @@ document.addEventListener('DOMContentLoaded', () => {
     return `
       <div class="eq-tabela-scroll">
         <table class="eq-tabela">
-          <thead><tr><th>Nome</th><th>Base</th><th>Defesa</th><th>Penalidade</th><th>Espaços</th><th>Preço</th></tr></thead>
+          <thead>${_theadOrdenavel(ARMADURAS_ESPECIFICAS_COLUNAS, _armadurasMagicasEstado, 'ordenarTabelaArmadurasMagicas')}</thead>
           <tbody>${linhas}</tbody>
         </table>
       </div>`;
   }
+
+  window.ordenarTabelaArmadurasMagicas = campo => _ordenarTabelaEquip(_armadurasMagicasEstado, campo, renderArmadurasMagicasNaSecao);
 
   function renderArmadurasMagicasNaSecao() {
     const grid = document.getElementById('armadurasMagicasGrid');
@@ -1732,8 +1877,7 @@ document.addEventListener('DOMContentLoaded', () => {
   };
 
   window.setCategoriaModificador = (btn, categoria) => {
-    document.querySelectorAll('#modificadoresCategoriaFiltro .filtro-btn').forEach(b => b.classList.remove('a'));
-    btn.classList.add('a');
+    _ativarFiltroBtn('#modificadoresCategoriaFiltro', btn);
     _modificadorEstado.categoria = categoria;
     _modificadorEstado.tipo = 'todos';
     renderTipoFiltroModificador();
@@ -1741,11 +1885,18 @@ document.addEventListener('DOMContentLoaded', () => {
   };
 
   window.setTipoFiltroModificador = (btn, tipo) => {
-    document.querySelectorAll('#modificadoresTipoFiltro .filtro-btn').forEach(b => b.classList.remove('a'));
-    btn.classList.add('a');
+    _ativarFiltroBtn('#modificadoresTipoFiltro', btn);
     _modificadorEstado.tipo = tipo;
     renderModificadoresNaSecao();
   };
+
+  // _renderModificadorPorCategoriaFixa() foi removida em 23/ago — existia só
+  // pra 4 campos `render` de ITEM_TIPO_CONFIG (melhoria/material/
+  // encanto-arma/encanto-armadura) que, na varredura de duplicação daquele
+  // dia, se confirmaram DEAD CODE: nada no site lia `.render` de
+  // ITEM_TIPO_CONFIG (só `.lista()` é usado, por
+  // BLOCO_REF_TIPOS.item.buscar). Removidos os campos junto (ver
+  // ITEM_TIPO_CONFIG mais abaixo).
 
   // ── POÇÕES & PERGAMINHOS (catálogo + gerador dinâmico) ──────────────────────
   const _pocoesEstado = { modo: 'catalogo' };
@@ -1782,8 +1933,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   window.setModoPocoes = (btn, modo) => {
-    document.querySelectorAll('#pocoesModoFiltro .filtro-btn').forEach(b => b.classList.remove('a'));
-    btn.classList.add('a');
+    _ativarFiltroBtn('#pocoesModoFiltro', btn);
     _pocoesEstado.modo = modo;
     fecharDetalheEquip();
     document.getElementById('pocoesCatalogoArea').style.display = modo === 'catalogo' ? '' : 'none';
@@ -1959,7 +2109,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // ── ACESSÓRIOS ──────────────────────────────────────────
-  const _acessorioEstado = { categoria: 'todos', busca: '', modo: 'cards' };
+  const _acessorioEstado = { categoria: 'todos', busca: '', modo: 'cards', ordenarCampo: null, ordenarAsc: true };
   const CATEGORIA_ACESSORIO_INFO = { menor: 'Menor', medio: 'Médio', maior: 'Maior' };
 
   function renderAcessorioCard(a) {
@@ -1978,8 +2128,15 @@ document.addEventListener('DOMContentLoaded', () => {
     return card;
   }
 
+  const ACESSORIOS_COLUNAS = [
+    { label: 'Nome', campo: 'nome', valor: a => a.nome },
+    { label: 'Categoria', campo: 'categoria', valor: a => CATEGORIA_ACESSORIO_INFO[a.categoria] || '' },
+    { label: 'Preço', campo: 'preco', valor: a => precoParaNumero(a.preco) },
+  ];
+
   function renderAcessoriosTabela(lista) {
-    const linhas = lista.map(a => `
+    const ordenada = _ordenarLinhas(lista, ACESSORIOS_COLUNAS, _acessorioEstado);
+    const linhas = ordenada.map(a => `
       <tr onclick="abrirDetalheEquip('acessorio','${a.id}')">
         <td>${a.nome}</td>
         <td>${CATEGORIA_ACESSORIO_INFO[a.categoria]}</td>
@@ -1988,11 +2145,13 @@ document.addEventListener('DOMContentLoaded', () => {
     return `
       <div class="eq-tabela-scroll">
         <table class="eq-tabela">
-          <thead><tr><th>Nome</th><th>Categoria</th><th>Preço</th></tr></thead>
+          <thead>${_theadOrdenavel(ACESSORIOS_COLUNAS, _acessorioEstado, 'ordenarTabelaAcessorios')}</thead>
           <tbody>${linhas}</tbody>
         </table>
       </div>`;
   }
+
+  window.ordenarTabelaAcessorios = campo => _ordenarTabelaEquip(_acessorioEstado, campo, renderAcessoriosNaSecao);
 
   function renderAcessoriosNaSecao() {
     const grid = document.getElementById('acessoriosGrid');
@@ -2030,8 +2189,7 @@ document.addEventListener('DOMContentLoaded', () => {
   };
 
   window.setFiltroAcessorio = (btn, valor) => {
-    document.querySelectorAll('#acessoriosFiltro .filtro-btn').forEach(b => b.classList.remove('a'));
-    btn.classList.add('a');
+    _ativarFiltroBtn('#acessoriosFiltro', btn);
     _acessorioEstado.categoria = valor;
     renderAcessoriosNaSecao();
   };
@@ -2057,7 +2215,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // ── CRIATURAS (Bestiário) ──────────────────────────────────────────
-  const _criaturaEstado = { nd: 'todos', grupo: 'todos', papel: 'todos', busca: '', modo: 'cards' };
+  const _criaturaEstado = { nd: 'todos', grupo: 'todos', papel: 'todos', busca: '', modo: 'cards', ordenarCampo: null, ordenarAsc: true };
 
   const PAPEL_ICONE = { solo: 'ti-shield-lock', lacaio: 'ti-users', especial: 'ti-star' };
   const PAPEL_LABEL = { solo: 'Solo', lacaio: 'Lacaio', especial: 'Especial' };
@@ -2126,7 +2284,11 @@ document.addEventListener('DOMContentLoaded', () => {
       const t = _criaturaEstado.busca;
       lista = lista.filter(c => textoBuscavelCriatura(c).includes(t));
     }
-    lista = [...lista].sort((a, b) => a.ndValor - b.ndValor);
+    // Ordenação padrão por ND (como no livro); se o usuário clicou num
+    // cabeçalho, essa ordenação assume o lugar da ordenação padrão.
+    lista = _criaturaEstado.ordenarCampo
+      ? _ordenarLinhas(lista, CRIATURAS_COLUNAS, _criaturaEstado)
+      : [...lista].sort((a, b) => a.ndValor - b.ndValor);
 
     const countEl = document.getElementById('criaturasCount');
     if (countEl) countEl.textContent = lista.length + (lista.length !== 1 ? ' criaturas' : ' criatura');
@@ -2147,9 +2309,22 @@ document.addEventListener('DOMContentLoaded', () => {
     lista.forEach(c => grid.appendChild(renderCriaturaCard(c)));
   }
 
+  function _grupoCriaturaDe(c) { return (window.GRUPOS_CRIATURAS || {})[c.grupo] || { label: c.grupo }; }
+
+  const CRIATURAS_COLUNAS = [
+    { label: 'Nome', campo: 'nome', valor: c => c.nome },
+    { label: 'ND', campo: 'nd', valor: c => c.ndValor },
+    { label: 'Grupo', campo: 'grupo', valor: c => _grupoCriaturaDe(c).label },
+    { label: 'Papel', campo: 'papel', valor: c => PAPEL_LABEL[c.papel] || '' },
+    { label: 'PV', campo: 'pv', valor: c => c.pv },
+    { label: 'Defesa', campo: 'defesa', valor: c => c.defesa },
+    { label: 'Tipo', campo: 'tipo', valor: c => c.tipo },
+    { label: 'Tamanho', campo: 'tamanho', valor: c => c.tamanho || '' },
+  ];
+
   function renderCriaturasTabela(lista) {
     const linhas = lista.map(c => {
-      const grupoInfo = (window.GRUPOS_CRIATURAS || {})[c.grupo] || { label: c.grupo };
+      const grupoInfo = _grupoCriaturaDe(c);
       return `
       <tr onclick="abrirDetalheCriatura('${c.id}')">
         <td>${c.nome}${c.magias ? ' <i class="ti ti-wand" title="Conjurador" aria-hidden="true"></i>' : ''}</td>
@@ -2165,16 +2340,17 @@ document.addEventListener('DOMContentLoaded', () => {
     return `
       <div class="eq-tabela-scroll">
         <table class="eq-tabela">
-          <thead><tr><th>Nome</th><th>ND</th><th>Grupo</th><th>Papel</th><th>PV</th><th>Defesa</th><th>Tipo</th><th>Tamanho</th></tr></thead>
+          <thead>${_theadOrdenavel(CRIATURAS_COLUNAS, _criaturaEstado, 'ordenarTabelaCriaturas')}</thead>
           <tbody>${linhas}</tbody>
         </table>
       </div>`;
   }
 
+  window.ordenarTabelaCriaturas = campo => _ordenarTabelaEquip(_criaturaEstado, campo, renderCriaturasNaSecao);
+
   window.setFiltroCriatura = (eixo, btn, valor) => {
     const grupoId = eixo === 'nd' ? 'criaturasFiltroND' : eixo === 'grupo' ? 'criaturasFiltroGrupo' : 'criaturasFiltroPapel';
-    document.querySelectorAll(`#${grupoId} .filtro-btn`).forEach(b => b.classList.remove('a'));
-    btn.classList.add('a');
+    _ativarFiltroBtn(`#${grupoId}`, btn);
     _criaturaEstado[eixo] = valor;
     renderCriaturasNaSecao();
   };
@@ -2257,6 +2433,22 @@ document.addEventListener('DOMContentLoaded', () => {
     return `<div class="dp-grupo"><div class="dp-grupo-titulo">${titulo}</div><div class="dp-grupo-itens">${chips}</div></div>`;
   }
 
+  // Quando a própria criatura do Bestiário também serve de parceiro (campo
+  // opcional `parceiro`, ver cabeçalho de criaturas.js — ex.: Urso das
+  // Neves) mostra o bônus por patamar aqui mesmo, com um link pra página
+  // de Parceiros. `renderNiveisParceiro` é definida mais abaixo (seção
+  // PARCEIROS) mas, sendo function declaration, já está disponível aqui.
+  function blocoParceiroDaCriatura(c) {
+    if (!c.parceiro) return '';
+    return `
+      <div class="dp-secao">Parceiro</div>
+      <p class="dp-desc">Esta criatura também serve de parceiro${c.parceiro.tamanho ? ` (${c.parceiro.tamanho})` : ''}.</p>
+      ${renderNiveisParceiro(c.parceiro.niveis)}
+      <button class="btn-ghost" style="margin-top:8px" onclick="irParaParceiro('bestiario', '${c.id}')">
+        <i class="ti ti-arrow-right" aria-hidden="true"></i> Ver na página de Parceiros
+      </button>`;
+  }
+
   window.abrirDetalheCriatura = (id) => {
     const c = (window.CRIATURAS || []).find(x => x.id === id);
     if (!c) return;
@@ -2334,6 +2526,8 @@ document.addEventListener('DOMContentLoaded', () => {
       <div class="dp-secao">Tesouro</div>
       <p class="dp-desc">${processarKeywords(c.tesouro || 'Nenhum')}</p>
 
+      ${blocoParceiroDaCriatura(c)}
+
       <div class="dp-fonte-pagina">Tormenta 20, p. ${c.pagina || '—'}</div>
     `;
 
@@ -2345,9 +2539,194 @@ document.addEventListener('DOMContentLoaded', () => {
   };
 
   window.fecharDetalheCriatura = () => {
-    document.getElementById('criaturaPainel').classList.remove('aberto');
-    document.querySelectorAll('#secao-criaturas .cards-area, #secao-calc-combate .cards-area')
-      .forEach(el => el.classList.remove('encolhido'));
+    _fecharPainelDetalhe(document.getElementById('criaturaPainel'), '#secao-criaturas .cards-area, #secao-calc-combate .cards-area');
+  };
+
+  // ── PARCEIROS ──────────────────────────────────────────
+  // Três coleções, mesmo formato de "niveis" (Iniciante/Veterano/Mestre)
+  // — por isso reaproveitam o mesmo card, o mesmo painel de detalhe e o
+  // mesmo helper renderNiveisParceiro, só trocando rótulo/ícone/link:
+  //   'tipos'     → TIPOS_PARCEIRO (js/data/parceiros.js, os 12 tipos)
+  //   'montarias' → MONTARIAS_PARCEIRO (as 6 montarias nomeadas do livro,
+  //                 sem ficha de criatura própria)
+  //   'bestiario' → criaturas de CRIATURAS que têm o campo opcional
+  //                 `.parceiro` (ex.: Urso das Neves) — a ficha completa
+  //                 mora no Bestiário; aqui só lemos o campo, sem copiar.
+  const _parceiroEstado = { grupo: 'tipos', tamanho: 'todos', busca: '' };
+
+  // Criaturas que também servem de parceiro — lidas direto de CRIATURAS,
+  // nunca duplicadas aqui. Cada uma expõe { id, nome, descricao, ...,
+  // parceiro: {tipo, tamanho, niveis} } — ver cabeçalho de criaturas.js.
+  function criaturasComParceiro() {
+    return (window.CRIATURAS || []).filter(c => c.parceiro);
+  }
+
+  function _listaParceiroPorGrupo(grupo) {
+    if (grupo === 'montarias') return window.MONTARIAS_PARCEIRO || [];
+    if (grupo === 'bestiario') return criaturasComParceiro();
+    return window.TIPOS_PARCEIRO || [];
+  }
+
+  // Tamanho só existe pra montarias/bestiario (item.tamanho ou
+  // item.parceiro.tamanho) — tipos abstratos não têm tamanho físico.
+  function _tamanhoDoParceiro(item, grupo) {
+    return grupo === 'bestiario' ? (item.parceiro && item.parceiro.tamanho) : item.tamanho;
+  }
+
+  function renderNiveisParceiro(niveis) {
+    if (!niveis || !niveis.length) return '';
+    return `<div class="dp-niveis-parceiro">
+      ${niveis.map(n => `
+        <div class="cp-var-nivel">
+          <span class="cp-var-nivel-badge cp-var-nivel-${n.label.toLowerCase()}">${n.label}</span>
+          <span class="cp-var-nivel-desc">${processarKeywords(n.descricao || '')}</span>
+        </div>`).join('')}
+    </div>`;
+  }
+
+  function renderParceiroCard(item, grupo) {
+    const card = document.createElement('div');
+    card.className = 'eq-card';
+    card.dataset.id = item.id;
+    const tamanho = _tamanhoDoParceiro(item, grupo);
+    const categoriaTag = grupo === 'tipos' ? 'Tipo de Parceiro' : (tamanho || '—');
+    const fichaTag = grupo === 'bestiario' ? `<span class="eq-hab-tag">ND ${item.nd} · Ficha no Bestiário</span>` : '';
+    card.innerHTML = `
+      <div class="eq-card-top">
+        <span class="eq-categoria-tag">${categoriaTag}</span>
+      </div>
+      <div class="eq-nome"><i class="ti ${item.icone || 'ti-paw'}" aria-hidden="true"></i> ${item.nome}</div>
+      <div class="eq-desc">${truncarTexto(item.descricao, 110)}</div>
+      <div class="eq-footer">${fichaTag}<span class="rc-badge badge-fonte">Tormenta 20</span></div>`;
+    card.addEventListener('click', () => abrirDetalheParceiro(grupo, item.id));
+    return card;
+  }
+
+  function renderFiltroTamanhoParceiro(grupo, lista) {
+    const wrap = document.getElementById('parceirosFiltroTamanho');
+    if (!wrap) return;
+    if (grupo === 'tipos') { wrap.style.display = 'none'; wrap.innerHTML = ''; return; }
+    const tamanhos = [...new Set(lista.map(i => _tamanhoDoParceiro(i, grupo)).filter(Boolean))];
+    if (tamanhos.length < 2) { wrap.style.display = 'none'; return; }
+    wrap.style.display = 'flex';
+    wrap.innerHTML = `<button class="filtro-btn${_parceiroEstado.tamanho === 'todos' ? ' a' : ''}" onclick="setFiltroTamanhoParceiro(this,'todos')">Qualquer tamanho</button>` +
+      tamanhos.map(t => `<button class="filtro-btn${_parceiroEstado.tamanho === t ? ' a' : ''}" onclick="setFiltroTamanhoParceiro(this,'${t}')">${t}</button>`).join('');
+  }
+
+  function renderParceirosNaSecao() {
+    const grid = document.getElementById('parceirosGrid');
+    if (!grid) return;
+    const grupo = _parceiroEstado.grupo;
+    let lista = _listaParceiroPorGrupo(grupo);
+
+    renderFiltroTamanhoParceiro(grupo, lista);
+
+    if (grupo !== 'tipos' && _parceiroEstado.tamanho !== 'todos') {
+      lista = lista.filter(i => _tamanhoDoParceiro(i, grupo) === _parceiroEstado.tamanho);
+    }
+    if (_parceiroEstado.busca) {
+      const t = _parceiroEstado.busca;
+      lista = lista.filter(i => i.nome.toLowerCase().includes(t) || (i.descricao || '').toLowerCase().includes(t));
+    }
+
+    const countEl = document.getElementById('parceirosCount');
+    if (countEl) {
+      const rotulo = grupo === 'montarias' ? ' montarias' : grupo === 'bestiario' ? ' parceiros do bestiário' : ' tipos';
+      countEl.textContent = lista.length + rotulo;
+    }
+
+    const notaEl = document.getElementById('parceirosNota');
+    if (notaEl && window.PARCEIROS_REGRAS) {
+      notaEl.textContent = grupo === 'montarias' ? window.PARCEIROS_REGRAS.montaria
+        : grupo === 'bestiario' ? window.PARCEIROS_REGRAS.bestiario
+        : window.PARCEIROS_REGRAS.resumo;
+    }
+
+    grid.innerHTML = '';
+    if (!lista.length) {
+      grid.innerHTML = grupo === 'bestiario'
+        ? `<div class="cp-poderes-vazio" style="grid-column:1/-1">Nenhuma criatura do Bestiário está marcada como parceiro ainda.</div>`
+        : `<div class="cp-poderes-vazio" style="grid-column:1/-1">Nenhum parceiro encontrado.</div>`;
+      return;
+    }
+    lista.forEach(item => grid.appendChild(renderParceiroCard(item, grupo)));
+  }
+
+  window.setGrupoParceiro = (btn, grupo) => {
+    _ativarFiltroBtn('#parceirosFiltroGrupo', btn);
+    _parceiroEstado.grupo = grupo;
+    _parceiroEstado.tamanho = 'todos';
+    renderParceirosNaSecao();
+  };
+
+  window.setFiltroTamanhoParceiro = (btn, tamanho) => {
+    _ativarFiltroBtn('#parceirosFiltroTamanho', btn);
+    _parceiroEstado.tamanho = tamanho;
+    renderParceirosNaSecao();
+  };
+
+  // Navegação cruzada: chamado a partir do painel de detalhe de uma
+  // criatura do Bestiário (link "Também é um Parceiro") — troca de seção,
+  // ativa o grupo certo e já abre o detalhe, tudo num só clique.
+  window.irParaParceiro = (grupo, id) => {
+    mostrarSecao('parceiros');
+    const btn = document.querySelector(`#parceirosFiltroGrupo .filtro-btn[data-grupo="${grupo}"]`);
+    if (btn) window.setGrupoParceiro(btn, grupo);
+    abrirDetalheParceiro(grupo, id);
+  };
+
+  window.abrirDetalheParceiro = (grupo, id) => {
+    const item = _listaParceiroPorGrupo(grupo).find(x => x.id === id);
+    if (!item) return;
+    const tamanho = _tamanhoDoParceiro(item, grupo);
+    const niveis = grupo === 'bestiario' ? item.parceiro.niveis : item.niveis;
+
+    document.getElementById('parceiroHeroIcon').className = `ti ${item.icone || 'ti-paw'} dp-hero-icon`;
+    document.getElementById('parceiroTipo').innerHTML = grupo === 'montarias'
+      ? '<i class="ti ti-horse" aria-hidden="true"></i> Montaria Nomeada'
+      : grupo === 'bestiario'
+        ? '<i class="ti ti-paw" aria-hidden="true"></i> Parceiro do Bestiário'
+        : '<i class="ti ti-users" aria-hidden="true"></i> Tipo de Parceiro';
+    document.getElementById('parceiroNome').textContent = item.nome;
+    document.getElementById('parceiroSub').textContent = tamanho ? `Tamanho ${tamanho}` : '';
+
+    const fichaBtn = grupo === 'bestiario' ? `
+      <button class="btn-pdf" style="margin-top:10px" onclick="fecharDetalheParceiro(); abrirDetalheCriatura('${item.id}')">
+        <i class="ti ti-book" aria-hidden="true"></i> Ver Ficha Completa no Bestiário
+      </button>` : '';
+    const fontePagina = grupo === 'bestiario'
+      ? `Tormenta 20, p. ${item.pagina || '—'} (ficha completa no Bestiário)`
+      : 'Tormenta 20, Cap. 6, pp. 260-262';
+
+    document.getElementById('parceiroBody').innerHTML = `
+      <p class="dp-desc">${processarKeywords(item.descricao || '')}</p>
+      <div class="dp-secao">Bônus por Patamar</div>
+      ${renderNiveisParceiro(niveis)}
+      ${fichaBtn}
+      <div class="dp-fonte-pagina">${fontePagina}</div>
+    `;
+
+    document.getElementById('parceiroPainel').classList.add('aberto');
+    document.querySelectorAll('#secao-parceiros .cards-area').forEach(el => el.classList.add('encolhido'));
+  };
+
+  window.fecharDetalheParceiro = () => {
+    _fecharPainelDetalhe(document.getElementById('parceiroPainel'), '#secao-parceiros .cards-area');
+  };
+
+  _ligarBusca('buscaParceiros', v => { _parceiroEstado.busca = v.toLowerCase(); renderParceirosNaSecao(); });
+
+  // Mini-calculadora "Quantos Parceiros Posso Ter?" — usa
+  // PARCEIRO_LIMITE_POR_NIVEL (patamar do PERSONAGEM, não do parceiro).
+  window.calcularLimiteParceiros = () => {
+    const el = document.getElementById('parceiroCalcNivel');
+    const resEl = document.getElementById('parceiroCalcResultado');
+    if (!el || !resEl || !window.PARCEIRO_LIMITE_POR_NIVEL) return;
+    const nivel = Math.max(1, Math.min(20, parseInt(el.value, 10) || 1));
+    el.value = nivel;
+    const faixa = window.PARCEIRO_LIMITE_POR_NIVEL.find(f => nivel >= f.min && nivel <= f.max);
+    if (!faixa) return;
+    resEl.innerHTML = `Nível ${nivel} (patamar <strong>${faixa.patamar}</strong>): até <strong>${faixa.limite}</strong> parceiro${faixa.limite > 1 ? 's' : ''} simultâneo${faixa.limite > 1 ? 's' : ''}.`;
   };
 
   // ── CALCULADORA DE COMBATE ──────────────────────────────────────────
@@ -2755,8 +3134,7 @@ document.addEventListener('DOMContentLoaded', () => {
   let _buscaPerigos = '';
 
   window.setFiltroPerigo = (el, valor) => {
-    document.querySelectorAll('#perigosFiltroCategoria .filtro-btn').forEach(b => b.classList.remove('a'));
-    el.classList.add('a');
+    _ativarFiltroBtn('#perigosFiltroCategoria', el);
     _filtroPerigoCategoria = valor;
     renderPerigosNaSecao();
   };
@@ -2854,6 +3232,582 @@ document.addEventListener('DOMContentLoaded', () => {
       return;
     }
     lista.forEach(p => grid.appendChild(renderPerigoCard(p)));
+  }
+
+  // ── CONDIÇÕES (Apêndice, pp. 394-395) ───────────────────────
+  // Página própria pras 35 condições oficiais. Não têm painel de detalhe
+  // grande dedicado — reaproveita o miniPainel compartilhado (mesmo usado
+  // por Perícia/Poder Geral/Poder de Classe), então um clique num card
+  // aqui usa o mesmo abrirBlocoReferencia() que já cobre as menções em
+  // texto (KEYWORDS_T20.cond, ver keywords.js).
+  const CONDICAO_CATEGORIA_LABEL = {
+    medo: 'Medo', mental: 'Mental', movimento: 'Movimento', sentidos: 'Sentidos',
+    metabolismo: 'Metabolismo', veneno: 'Veneno', cansaco: 'Cansaço',
+    metamorfose: 'Metamorfose', geral: 'Geral',
+  };
+  const CONDICAO_CATEGORIA_ICONE = {
+    medo: 'ti-mood-crazy-happy', mental: 'ti-brain', movimento: 'ti-walk',
+    sentidos: 'ti-eye-off', metabolismo: 'ti-heartbeat', veneno: 'ti-flask',
+    cansaco: 'ti-battery-1', metamorfose: 'ti-transform', geral: 'ti-alert-octagon',
+  };
+
+  function textoBuscavelCondicao(c) {
+    if (c._buscaCache) return c._buscaCache;
+    const partes = [c.nome, CONDICAO_CATEGORIA_LABEL[c.categoria], c.descricao];
+    c._buscaCache = partes.filter(Boolean).join(' | ').toLowerCase();
+    return c._buscaCache;
+  }
+
+  let _filtroCondicaoCategoria = 'todos';
+  let _buscaCondicoes = '';
+
+  window.setFiltroCondicao = (el, valor) => {
+    _ativarFiltroBtn('#condicoesFiltro', el);
+    _filtroCondicaoCategoria = valor;
+    renderCondicoesNaSecao();
+  };
+
+  function renderCondicaoCard(c) {
+    const card = document.createElement('div');
+    card.className = 'eq-card';
+    card.dataset.id = c.id;
+    card.innerHTML = `
+      <div class="eq-card-top">
+        <span class="eq-categoria-tag"><i class="ti ${CONDICAO_CATEGORIA_ICONE[c.categoria] || 'ti-alert-octagon'}" aria-hidden="true"></i> ${CONDICAO_CATEGORIA_LABEL[c.categoria] || 'Geral'}</span>
+      </div>
+      <div class="eq-nome">${c.nome}</div>
+      <p class="dp-desc" style="font-size:12.5px;margin:4px 0 0;">${c.descricao}</p>
+      <div class="eq-footer">
+        <span class="rc-badge badge-fonte">Tormenta 20</span>
+      </div>`;
+    card.addEventListener('click', (e) => {
+      // stopPropagation é obrigatório aqui: o miniPainel tem um listener
+      // global no document que fecha ele quando o clique não aconteceu
+      // dentro dele (ver "Clicar FORA do mini-painel fecha ele" perto do
+      // fim do arquivo) — sem isso, o clique no card abre e o mesmo evento,
+      // ao borbulhar até o document, fecha de novo na mesma interação.
+      e.stopPropagation();
+      window.abrirBlocoReferencia('condicao', c.nome);
+    });
+    return card;
+  }
+
+  function renderCondicoesNaSecao() {
+    const grid = document.getElementById('condicoesGrid');
+    if (!grid) return;
+    let lista = window.CONDICOES || [];
+    if (_filtroCondicaoCategoria !== 'todos') lista = lista.filter(c => c.categoria === _filtroCondicaoCategoria);
+    if (_buscaCondicoes) lista = lista.filter(c => textoBuscavelCondicao(c).includes(_buscaCondicoes));
+    const countEl = document.getElementById('condicoesCount');
+    if (countEl) countEl.textContent = lista.length + (lista.length !== 1 ? ' condições' : ' condição');
+    grid.innerHTML = '';
+    if (!lista.length) {
+      grid.innerHTML = `<div class="cp-poderes-vazio" style="grid-column:1/-1">Nenhuma condição encontrada.</div>`;
+      return;
+    }
+    lista.forEach(c => grid.appendChild(renderCondicaoCard(c)));
+  }
+
+  // Corpo do mini-painel pra uma Condição — mesmo template compacto usado
+  // por renderPericiaMiniHtml, adaptado ao schema mais simples de Condição
+  // (sem "usos", só categoria + descrição).
+  function renderCondicaoMiniHtml(c) {
+    const kw = typeof processarKeywords === 'function' ? processarKeywords : (t) => t;
+    return `
+      <div class="dp-badges">
+        <span class="dp-badge">${CONDICAO_CATEGORIA_LABEL[c.categoria] || 'Geral'}</span>
+      </div>
+      <p class="dp-desc">${kw(c.descricao)}</p>
+    `;
+  }
+
+  // ── TOQUES FINAIS (Cap. 1, pp. 106-111) ─────────────────────
+  // Página de referência pura (sem busca/filtro — não é uma lista de
+  // itens, são regras e tabelas fixas), com duas ferramentas
+  // interativas: roletor de idade inicial e calculadora de recuperação
+  // de PV/PM. Pensada como base pra quando a ficha de personagem
+  // (ficha.html) existir de verdade — os mesmos dados (RECUPERACAO_
+  // DESCANSO, TAMANHOS, IDADE_INICIAL_GRUPOS, ENVELHECIMENTO,
+  // ALINHAMENTOS) servem tanto pra essa página de consulta quanto pra
+  // uma futura calculadora de ficha, sem duplicar nada.
+
+  // Rolagem de dados genérica — reaproveitável por qualquer ferramenta
+  // futura que precise de NdM (idade inicial é o primeiro caso; sorteio
+  // de perigo e calculadora de combate ainda usam Math.random() cru
+  // porque vieram antes dessa função existir).
+  function _rolarNdM(n, m) {
+    let total = 0;
+    const rolagens = [];
+    for (let i = 0; i < n; i++) {
+      const r = 1 + Math.floor(Math.random() * m);
+      rolagens.push(r);
+      total += r;
+    }
+    return { rolagens, total };
+  }
+
+  // Seleção única visual (card em vez de botão de filtro) — mesmo
+  // princípio do `_ativarFiltroBtn` (remove `.selecionado` de todo mundo
+  // no grupo, adiciona só no clicado), mas genérico o bastante pra
+  // qualquer card marcado com `.tf-selecionavel`, já que aqui o card tem
+  // conteúdo grande (título + descrição), não cabe na classe `.filtro-btn`
+  // (que é fixa em 30px de altura). Pensado pra crescer: outras opções
+  // "de configuração do mestre" que essa página ganhar no futuro (regras
+  // de suplementos, variantes de mesa) podem reaproveitar o mesmo padrão.
+  function _selecionarCardUnico(grupoSelector, cardEl) {
+    document.querySelectorAll(`${grupoSelector} .tf-selecionavel`).forEach(c => c.classList.remove('selecionado'));
+    cardEl?.classList.add('selecionado');
+  }
+
+  // Condição de descanso selecionada na Calculadora de Recuperação —
+  // 'normal' por padrão. Vive junto de Características Derivadas (union
+  // pedida pelo usuário: selecionar o card já recalcula, sem precisar de
+  // um <select> e um botão "Calcular" separados).
+  let _tfCondicaoSelecionada = 'normal';
+  // Alinhamento marcado no card (recurso visual, nada persistido ainda —
+  // quando a ficha de personagem existir, esse é o gancho natural).
+  let _tfAlinhamentoSelecionado = null;
+  // Classe marcada no Roletor de Idade Inicial — primeira classe do
+  // primeiro grupo por padrão (equivalente ao <select> antigo, que
+  // sempre vinha com a 1ª opção já selecionada).
+  let _tfClasseIdadeSelecionada = null;
+
+  window.selecionarCondicaoRecuperacao = function(el, condId) {
+    _tfCondicaoSelecionada = condId;
+    _selecionarCardUnico('#tfRecuperacaoGrid', el);
+    calcularRecuperacaoPvPm();
+  };
+
+  window.selecionarAlinhamento = function(el, alinId) {
+    _tfAlinhamentoSelecionado = alinId;
+    _selecionarCardUnico('#tfAlinhamentoGrid', el);
+  };
+
+  window.selecionarClasseIdade = function(el, classeId) {
+    _tfClasseIdadeSelecionada = classeId;
+    _selecionarCardUnico('#tfIdadeClasseGrupos', el);
+  };
+
+  function renderToquesFinais() {
+    // Recuperação de PV/PM por condição de descanso — cards selecionáveis
+    // (só um ativo por vez), a seleção já dispara o recálculo abaixo.
+    const recGrid = document.getElementById('tfRecuperacaoGrid');
+    if (recGrid && window.RECUPERACAO_DESCANSO) {
+      recGrid.innerHTML = window.RECUPERACAO_DESCANSO.map(r => `
+        <div class="tf-mini-card tf-selecionavel${r.id === _tfCondicaoSelecionada ? ' selecionado' : ''}"
+             onclick="selecionarCondicaoRecuperacao(this, '${r.id}')">
+          <div class="tf-mini-titulo">${r.nome}</div>
+          <div class="tf-mini-valor">${r.formula}</div>
+          <div class="tf-mini-desc">${r.descricao}</div>
+        </div>`).join('');
+    }
+
+    // Tabela de Tamanho
+    const tamNota = document.getElementById('tfTamanhoNota');
+    if (tamNota && window.TAMANHO_NOTA) tamNota.textContent = window.TAMANHO_NOTA;
+    const tamTabela = document.getElementById('tfTamanhoTabela');
+    if (tamTabela && window.TAMANHOS) {
+      tamTabela.innerHTML = `
+        <thead><tr><th>Categoria</th><th>Exemplos</th><th>Espaço/Alcance</th><th>Furtividade/Manobras</th></tr></thead>
+        <tbody>${window.TAMANHOS.map(t => `
+          <tr>
+            <td>${t.categoria}</td>
+            <td>${t.exemplos}</td>
+            <td>${t.espaco}</td>
+            <td>${t.modFurtividade >= 0 ? '+' : ''}${t.modFurtividade}/${t.modManobras >= 0 ? '+' : ''}${t.modManobras}</td>
+          </tr>`).join('')}</tbody>
+      `;
+    }
+
+    // Mini-cards de classe pro roletor de idade, um grupo por fórmula de
+    // dado (substituiu um <select> — ver comentário em
+    // window.selecionarClasseIdade). Primeira classe do primeiro grupo
+    // fica pré-selecionada, igual o <select> nativo sempre vinha com a
+    // 1ª opção marcada.
+    const gruposEl = document.getElementById('tfIdadeClasseGrupos');
+    if (gruposEl && window.IDADE_INICIAL_GRUPOS && window.CLASSES) {
+      if (!_tfClasseIdadeSelecionada) _tfClasseIdadeSelecionada = window.IDADE_INICIAL_GRUPOS[0]?.classes[0] || null;
+      gruposEl.innerHTML = window.IDADE_INICIAL_GRUPOS.map(g => `
+        <div class="tf-idade-grupo">
+          <div class="tf-idade-grupo-label"><strong>${g.dado}</strong> — ${g.faixa}</div>
+          <div class="tf-classe-grid">
+            ${g.classes.map(id => {
+              const c = window.CLASSES.find(x => x.id === id);
+              const ativo = id === _tfClasseIdadeSelecionada;
+              return `
+              <div class="tf-classe-card tf-selecionavel${ativo ? ' selecionado' : ''}" onclick="selecionarClasseIdade(this, '${id}')">
+                <i class="ti ${c && c.icone ? c.icone : 'ti-user'}" aria-hidden="true"></i>
+                <span>${c ? c.nome : id}</span>
+              </div>`;
+            }).join('')}
+          </div>
+        </div>`).join('');
+    }
+
+    // Envelhecimento — 3 cards (Maduro/Velho/Ancião). Ancião não é
+    // categoria oficial separada do livro (ver comentário em
+    // window.ENVELHECIMENTO, toques_finais.js) — sinalizada com um selo
+    // discreto "casa" pra não passar como regra do livro.
+    const envGrid = document.getElementById('tfEnvelhecimentoGrid');
+    if (envGrid && window.ENVELHECIMENTO) {
+      const fmtMod = (m) => `For ${m.for >= 0 ? '+' : ''}${m.for}, Des ${m.des >= 0 ? '+' : ''}${m.des}, Con ${m.con >= 0 ? '+' : ''}${m.con}, Int ${m.int >= 0 ? '+' : ''}${m.int}, Sab ${m.sab >= 0 ? '+' : ''}${m.sab}, Car ${m.car >= 0 ? '+' : ''}${m.car}`;
+      envGrid.innerHTML = window.ENVELHECIMENTO.map(e => `
+        <div class="tf-mini-card">
+          <div class="tf-mini-titulo">${e.categoria} (${e.idade})${e.oficial === false ? ' <span class="tf-casa-selo" title="Reorganização do site, não é uma categoria separada no livro">casa</span>' : ''}</div>
+          <div class="tf-mini-desc">${fmtMod(e.mod)}</div>
+          ${e.nota ? `<div class="tf-mini-desc" style="margin-top:4px;color:#666;font-style:italic;">${e.nota}</div>` : ''}
+        </div>`).join('');
+    }
+    const longEl = document.getElementById('tfLongevidadeFormula');
+    if (longEl && window.LONGEVIDADE_MAXIMA_FORMULA) longEl.textContent = window.LONGEVIDADE_MAXIMA_FORMULA;
+
+    // Grid de Alinhamentos — cards selecionáveis (só um ativo por vez),
+    // recurso puramente visual por enquanto (nada persiste, ver
+    // _tfAlinhamentoSelecionado acima).
+    const alinGrid = document.getElementById('tfAlinhamentoGrid');
+    if (alinGrid && window.ALINHAMENTOS) {
+      alinGrid.innerHTML = window.ALINHAMENTOS.map(a => {
+        const corClasse = a.etico === 'bondade' ? 'tf-bom' : (a.etico === 'maldade' ? 'tf-mau' : 'tf-neutro');
+        const ativo = a.id === _tfAlinhamentoSelecionado;
+        return `
+        <div class="tf-alinhamento-card tf-selecionavel ${corClasse}${ativo ? ' selecionado' : ''}"
+             onclick="selecionarAlinhamento(this, '${a.id}')">
+          <span class="tf-alin-sigla">${a.id}</span>
+          <div class="tf-alin-nome">${a.nome}</div>
+          <p class="tf-alin-desc">${a.descricao}</p>
+          <p class="tf-alin-exemplo">${a.exemploPao}</p>
+        </div>`;
+      }).join('');
+    }
+
+    // Resultado inicial da calculadora de recuperação, já com a condição
+    // padrão ('normal') selecionada acima.
+    calcularRecuperacaoPvPm();
+  }
+
+  // Roletor de Idade Inicial — rola a fórmula de dado do grupo da classe
+  // marcada no mini-card e mostra o resultado (idade final = total dos
+  // dados + 15, igual à regra do livro).
+  window.rolarIdadeInicial = function() {
+    const resultEl = document.getElementById('tfIdadeResultado');
+    if (!resultEl || !window.IDADE_INICIAL_GRUPOS) return;
+    const classeId = _tfClasseIdadeSelecionada;
+    if (!classeId) { resultEl.innerHTML = `<div class="tf-resultado-box">Escolha uma classe primeiro.</div>`; return; }
+    const grupo = window.IDADE_INICIAL_GRUPOS.find(g => g.classes.includes(classeId));
+    if (!grupo) return;
+    const m = grupo.dado.match(/^(\d+)d(\d+)\+(\d+)$/);
+    if (!m) return;
+    const [, nStr, ladoStr, bonusStr] = m;
+    const { rolagens, total } = _rolarNdM(Number(nStr), Number(ladoStr));
+    const idadeFinal = total + Number(bonusStr);
+    const classeInfo = (window.CLASSES || []).find(c => c.id === classeId);
+    resultEl.innerHTML = `
+      <div class="tf-resultado-box">
+        <strong>${classeInfo ? classeInfo.nome : classeId}</strong> — ${grupo.dado} → rolou [${rolagens.join(', ')}] + 15 =
+        <strong>${idadeFinal} anos</strong> <span style="color:#777">(faixa esperada: ${grupo.faixa})</span>
+      </div>`;
+  };
+
+  // Calculadora de Recuperação de PV/PM — soma a recuperação da condição
+  // de descanso selecionada (card logo abaixo) ao PV/PM atual, sem nunca
+  // ultrapassar o máximo. Reativa: roda tanto ao trocar o card de condição
+  // quanto ao digitar em qualquer um dos campos. Escreve direto nas
+  // caixas "Recuperado"/"Final" de PV e PM (`.tf-recup-valor`, mesma
+  // aparência de um <input>, só que são <div> — o rótulo já em cima
+  // ("PV final"/"PM final") diz o que é, então aqui só o número).
+  window.calcularRecuperacaoPvPm = function() {
+    const pvSomaEl = document.getElementById('tfPvSoma');
+    if (!pvSomaEl || !window.RECUPERACAO_DESCANSO) return;
+    const nivel = Number(document.getElementById('tfCalcNivel').value) || 0;
+    const pvMax = Number(document.getElementById('tfCalcPvMax').value) || 0;
+    const pvAtual = Number(document.getElementById('tfCalcPvAtual').value) || 0;
+    const pmMax = Number(document.getElementById('tfCalcPmMax').value) || 0;
+    const pmAtual = Number(document.getElementById('tfCalcPmAtual').value) || 0;
+    const cond = window.RECUPERACAO_DESCANSO.find(r => r.id === _tfCondicaoSelecionada);
+    if (!cond) return;
+    const recuperado = Math.floor(nivel * cond.multiplicador);
+    const pvNovo = Math.min(pvMax, pvAtual + recuperado);
+    const pmNovo = Math.min(pmMax, pmAtual + recuperado);
+
+    pvSomaEl.textContent = `+${recuperado}`;
+    const pvFinalEl = document.getElementById('tfPvFinal');
+    pvFinalEl.textContent = pvNovo;
+    pvFinalEl.title = `Máximo: ${pvMax} PV`;
+    document.getElementById('tfPmSoma').textContent = `+${recuperado}`;
+    const pmFinalEl = document.getElementById('tfPmFinal');
+    pmFinalEl.textContent = pmNovo;
+    pmFinalEl.title = `Máximo: ${pmMax} PM`;
+  };
+
+  // ── ATRIBUTOS BÁSICOS — Compra de Atributos (Tabela 1-1, p.17) +
+  // modificadores raciais (Tabela 1-2, p.18, via `atributosCalc` de cada
+  // raça em racas.js). Página nova (23/ago), separada de Toques Finais
+  // por ser "um recurso muito utilizado e bastante importante" (palavras
+  // do usuário) — por isso persiste em localStorage, ao contrário do
+  // resto de Toques Finais (que ainda é só em memória, ver Backlog 0).
+  const LS_ATRIBUTOS = 't20-atributos-basicos';
+
+  function carregarConfigAtributos() {
+    const base = { valores: {}, bonus: {}, racaId: '', varianteId: null, escolhaLivre: [], permitirExcecao: false };
+    try {
+      const salvo = JSON.parse(localStorage.getItem(LS_ATRIBUTOS) || 'null');
+      if (salvo && typeof salvo === 'object') return { ...base, ...salvo };
+    } catch (e) { /* ignora, usa o padrão */ }
+    return base;
+  }
+  function salvarConfigAtributos() {
+    try {
+      localStorage.setItem(LS_ATRIBUTOS, JSON.stringify({
+        valores: _atribValores, bonus: _atribBonus, racaId: _atribRacaId || '', varianteId: _atribVarianteId,
+        escolhaLivre: [..._atribEscolhaLivre], permitirExcecao: _atribPermitirExcecao,
+      }));
+    } catch (e) { /* ignora */ }
+  }
+
+  const _atribConfigSalva = carregarConfigAtributos();
+  let _atribValores = { for: 0, des: 0, con: 0, int: 0, sab: 0, car: 0, ..._atribConfigSalva.valores };
+  // "Bônus" — pontos avulsos que não vêm da compra por pontos nem da raça
+  // (poder/habilidade que dá +1 num atributo, aumento por nível, item
+  // mágico etc.) — pedido do usuário depois de ver a tabela: "incluir outra
+  // coluna para somar chamada bônus". Soma direto no Total, não conta no
+  // custo em pontos (ver `recalcularAtributos`).
+  let _atribBonus = { for: 0, des: 0, con: 0, int: 0, sab: 0, car: 0, ..._atribConfigSalva.bonus };
+  let _atribRacaId = _atribConfigSalva.racaId || '';
+  let _atribVarianteId = _atribConfigSalva.varianteId || null;
+  let _atribEscolhaLivre = new Set(_atribConfigSalva.escolhaLivre || []);
+  let _atribPermitirExcecao = !!_atribConfigSalva.permitirExcecao;
+
+  function _atribRacaAtual() {
+    if (!_atribRacaId || !window.RACAS) return null;
+    return window.RACAS.find(r => r.id === _atribRacaId) || null;
+  }
+
+  // Modificador racial de UM atributo — soma bônus fixo (ou de escolha
+  // livre, ou da variante escolhida) + penalidade, se houver.
+  function _atribModRaca(atribId) {
+    const raca = _atribRacaAtual();
+    const calc = raca && raca.atributosCalc;
+    if (!calc) return 0;
+    let mod = 0;
+    if (calc.variantes) {
+      const v = calc.variantes.find(x => x.id === _atribVarianteId);
+      if (v) {
+        mod += (v.fixos && v.fixos[atribId]) || 0;
+        mod += (v.penalidade && v.penalidade[atribId]) || 0;
+      }
+    } else if (calc.escolhaLivre) {
+      if (_atribEscolhaLivre.has(atribId)) mod += 1;
+      mod += (calc.penalidade && calc.penalidade[atribId]) || 0;
+    } else if (calc.fixos) {
+      mod += calc.fixos[atribId] || 0;
+      mod += (calc.penalidade && calc.penalidade[atribId]) || 0;
+    }
+    return mod;
+  }
+
+  // Custo em pontos pra um valor comprado — null quando o valor está fora
+  // da Tabela 1-1 (só possível com o checkbox "permitir exceção" ligado).
+  function _atribCustoPara(valor) {
+    if (!window.ATRIBUTOS_CUSTO) return null;
+    const linha = window.ATRIBUTOS_CUSTO.find(l => l.valor === valor);
+    return linha ? linha.custo : null;
+  }
+
+  // Linha de resumo abaixo do <select> de raça — reaproveita os campos de
+  // texto livre `atributos`/`penalidade` que já existem em cada raça (os
+  // mesmos usados na página Raças), só pra dar um resumo legível sem
+  // precisar ler a tabela inteira linha por linha (melhoria pedida pelo
+  // usuário: "consegue colocar alguma melhoria nessa página?").
+  function atualizarResumoRaca() {
+    const el = document.getElementById('atribRacaResumo');
+    if (!el) return;
+    const raca = _atribRacaAtual();
+    if (!raca) { el.style.display = 'none'; return; }
+    el.style.display = '';
+    el.innerHTML = `<strong>${raca.nome}:</strong> ${raca.atributos}${raca.penalidade ? ' · ' + raca.penalidade : ''}`;
+  }
+
+  window.selecionarRacaAtributos = function(racaId) {
+    _atribRacaId = racaId || '';
+    _atribVarianteId = null;
+    _atribEscolhaLivre.clear();
+    const raca = _atribRacaAtual();
+    const calc = raca && raca.atributosCalc;
+    if (calc && calc.variantes) _atribVarianteId = calc.variantes[0].id;
+    renderAtribEscolhas();
+    atualizarResumoRaca();
+    recalcularAtributos();
+  };
+
+  // Botão "Zerar" — volta atributos, raça e checkbox de exceção ao padrão
+  // (todos os valores em 0, sem raça, sem escolha livre/variante), sem
+  // precisar recarregar a página. Melhoria pedida junto com o conserto do
+  // alinhamento da tabela.
+  window.zerarAtributos = function() {
+    _atribValores = { for: 0, des: 0, con: 0, int: 0, sab: 0, car: 0 };
+    _atribBonus = { for: 0, des: 0, con: 0, int: 0, sab: 0, car: 0 };
+    _atribRacaId = '';
+    _atribVarianteId = null;
+    _atribEscolhaLivre.clear();
+    _atribPermitirExcecao = false;
+    renderAtributosBasicos();
+  };
+
+  window.selecionarVarianteAtributo = function(varianteId) {
+    _atribVarianteId = varianteId;
+    renderAtribEscolhas();
+    recalcularAtributos();
+  };
+
+  window.toggleEscolhaLivreAtributo = function(atribId) {
+    const raca = _atribRacaAtual();
+    const calc = raca && raca.atributosCalc;
+    if (!calc || !calc.escolhaLivre) return;
+    if (_atribEscolhaLivre.has(atribId)) {
+      _atribEscolhaLivre.delete(atribId);
+    } else if (_atribEscolhaLivre.size < calc.escolhaLivre) {
+      _atribEscolhaLivre.add(atribId);
+    }
+    renderAtribEscolhas();
+    recalcularAtributos();
+  };
+
+  // Renderiza os chips de escolha livre (Humano/Lefou/Osteon/Sereia) e/ou
+  // de variante (Suraggel) conforme a raça selecionada — os dois blocos
+  // são mutuamente exclusivos (nenhuma raça tem os dois ao mesmo tempo).
+  function renderAtribEscolhas() {
+    const raca = _atribRacaAtual();
+    const calc = raca && raca.atributosCalc;
+    const wrapLivre = document.getElementById('atribEscolhaLivreWrap');
+    const wrapVar = document.getElementById('atribVarianteWrap');
+    if (!wrapLivre || !wrapVar || !window.ATRIBUTOS_LISTA) return;
+
+    if (calc && calc.escolhaLivre) {
+      wrapLivre.style.display = '';
+      wrapVar.style.display = 'none';
+      document.getElementById('atribEscolhaLivreQtd').textContent = calc.escolhaLivre;
+      const excecao = calc.escolhaExceto || [];
+      document.getElementById('atribEscolhaLivreChips').innerHTML = window.ATRIBUTOS_LISTA.map(a => {
+        if (excecao.includes(a.id)) return '';
+        const ativo = _atribEscolhaLivre.has(a.id);
+        const cheio = !ativo && _atribEscolhaLivre.size >= calc.escolhaLivre;
+        return `<div class="tf-atrib-chip${ativo ? ' selecionado' : ''}${cheio ? ' desabilitado' : ''}"
+                     onclick="toggleEscolhaLivreAtributo('${a.id}')">${a.sigla}</div>`;
+      }).join('');
+    } else if (calc && calc.variantes) {
+      wrapLivre.style.display = 'none';
+      wrapVar.style.display = '';
+      document.getElementById('atribVarianteChips').innerHTML = calc.variantes.map(v => `
+        <div class="tf-atrib-chip${v.id === _atribVarianteId ? ' selecionado' : ''}"
+             onclick="selecionarVarianteAtributo('${v.id}')">${v.nome}</div>
+      `).join('');
+    } else {
+      wrapLivre.style.display = 'none';
+      wrapVar.style.display = 'none';
+    }
+  }
+
+  // Recalcula raça/total/custo de todos os atributos a partir dos <input>
+  // de valor, atualiza a linha de resumo (pontos gastos/restantes) e
+  // persiste tudo em localStorage.
+  window.recalcularAtributos = function() {
+    if (!window.ATRIBUTOS_LISTA) return;
+    _atribPermitirExcecao = !!document.getElementById('atribPermitirExcecao')?.checked;
+    const min = window.ATRIBUTOS_VALOR_MIN, max = window.ATRIBUTOS_VALOR_MAX;
+    let pontosGastos = 0;
+    let temValorIndefinido = false;
+
+    const totaisFinais = [];
+
+    window.ATRIBUTOS_LISTA.forEach(a => {
+      const input = document.getElementById('atribValor_' + a.id);
+      if (!input) return;
+      let valor = Math.round(Number(input.value)) || 0;
+      if (!_atribPermitirExcecao) valor = Math.min(max, Math.max(min, valor));
+      input.value = valor;
+      _atribValores[a.id] = valor;
+
+      const inputBonus = document.getElementById('atribBonus_' + a.id);
+      const bonus = inputBonus ? (Math.round(Number(inputBonus.value)) || 0) : 0;
+      _atribBonus[a.id] = bonus;
+
+      const foraPadrao = valor < min || valor > max;
+      input.classList.toggle('atrib-fora-padrao', foraPadrao);
+
+      const modRaca = _atribModRaca(a.id);
+      const total = valor + modRaca + bonus;
+      const custo = _atribCustoPara(valor);
+      if (custo === null) temValorIndefinido = true; else pontosGastos += custo;
+      totaisFinais.push({ sigla: a.sigla, total });
+
+      const racaEl = document.getElementById('atribRaca_' + a.id);
+      if (racaEl) {
+        racaEl.textContent = (modRaca > 0 ? '+' : '') + modRaca;
+        racaEl.classList.toggle('positivo', modRaca > 0);
+        racaEl.classList.toggle('negativo', modRaca < 0);
+      }
+      const totalEl = document.getElementById('atribTotal_' + a.id);
+      if (totalEl) {
+        totalEl.textContent = (total > 0 ? '+' : '') + total;
+        totalEl.title = `Valor ${valor >= 0 ? '+' : ''}${valor} · Raça ${modRaca >= 0 ? '+' : ''}${modRaca} · Bônus ${bonus >= 0 ? '+' : ''}${bonus}`;
+      }
+      const custoEl = document.getElementById('atribCusto_' + a.id);
+      if (custoEl) {
+        custoEl.textContent = custo === null ? '—' : custo;
+        custoEl.classList.toggle('atrib-custo-indefinido', custo === null);
+      }
+    });
+
+    const pontosRestantes = window.ATRIBUTOS_PONTOS_INICIAIS - pontosGastos;
+    const resumoEl = document.getElementById('atribPontosResumo');
+    if (resumoEl) {
+      resumoEl.innerHTML = `Pontos: <strong>${pontosRestantes}</strong> / ${window.ATRIBUTOS_PONTOS_INICIAIS}` +
+        (temValorIndefinido ? ' <span style="color:#666;font-style:italic;">(valores fora da tabela não têm custo oficial)</span>' : '');
+      resumoEl.classList.toggle('atrib-pontos-estourou', pontosRestantes < 0);
+    }
+
+    // Linha final compacta ("FOR +2 · DES +1 · ...") — melhoria pedida
+    // pelo usuário junto com o conserto do botão Zerar: um resumo pra
+    // copiar/consultar rápido sem precisar olhar linha por linha da
+    // tabela, pensando já na futura ficha de personagem (Backlog 0).
+    const resumoFinalEl = document.getElementById('atribResumoFinal');
+    if (resumoFinalEl) {
+      resumoFinalEl.textContent = totaisFinais.map(t => `${t.sigla} ${t.total >= 0 ? '+' : ''}${t.total}`).join(' · ');
+    }
+    salvarConfigAtributos();
+  };
+
+  // Monta a tabela (6 linhas fixas) e o <select> de raças uma única vez;
+  // os valores em si são recarregados do localStorage nesta função.
+  function renderAtributosBasicos() {
+    if (!window.ATRIBUTOS_LISTA) return;
+    const tbody = document.getElementById('atribTabelaBody');
+    if (tbody) {
+      tbody.innerHTML = window.ATRIBUTOS_LISTA.map(a => `
+        <tr>
+          <td>${a.nome}${a.descricao ? ` <i class="ti ti-info-circle atrib-info-icone" aria-hidden="true" title="${a.descricao}"></i>` : ''}</td>
+          <td><input type="number" id="atribValor_${a.id}" class="atrib-input-valor"
+                     value="${_atribValores[a.id] || 0}" oninput="recalcularAtributos()" /></td>
+          <td class="atrib-raca-valor" id="atribRaca_${a.id}">+0</td>
+          <td><input type="number" id="atribBonus_${a.id}" class="atrib-input-bonus"
+                     title="Pontos avulsos de habilidade, aumento por nível, item mágico etc. — não conta no custo em pontos"
+                     value="${_atribBonus[a.id] || 0}" oninput="recalcularAtributos()" /></td>
+          <td class="atrib-total-valor" id="atribTotal_${a.id}">0</td>
+          <td class="atrib-custo-valor" id="atribCusto_${a.id}">0</td>
+        </tr>`).join('');
+    }
+    const selectRaca = document.getElementById('atribRaca');
+    if (selectRaca && window.RACAS) {
+      selectRaca.innerHTML = '<option value="">Nenhuma (sem modificador)</option>' +
+        window.RACAS.map(r => `<option value="${r.id}">${r.nome}</option>`).join('');
+      selectRaca.value = _atribRacaId;
+    }
+    const checkExcecao = document.getElementById('atribPermitirExcecao');
+    if (checkExcecao) checkExcecao.checked = _atribPermitirExcecao;
+
+    renderAtribEscolhas();
+    atualizarResumoRaca();
+    recalcularAtributos();
   }
 
   // Página "Perigos" (item pai do menu, sem filhos selecionados) — visão
@@ -2985,8 +3939,7 @@ document.addEventListener('DOMContentLoaded', () => {
   };
 
   window.fecharDetalhePerigo = () => {
-    document.getElementById('perigoPainel').classList.remove('aberto');
-    document.querySelectorAll('#secao-perigos-simples .cards-area, #secao-perigos .cards-area').forEach(el => el.classList.remove('encolhido'));
+    _fecharPainelDetalhe(document.getElementById('perigoPainel'), '#secao-perigos-simples .cards-area, #secao-perigos .cards-area');
   };
 
   // ── Sortear Perigo (utilidade rápida pra mestre montar masmorra ou
@@ -3276,8 +4229,7 @@ document.addEventListener('DOMContentLoaded', () => {
   };
 
   window.fecharDetalhePerigoComplexo = () => {
-    document.getElementById('perigoComplexoPainel').classList.remove('aberto');
-    document.querySelectorAll('#secao-perigos-complexos .cards-area, #secao-perigos .cards-area').forEach(el => el.classList.remove('encolhido'));
+    _fecharPainelDetalhe(document.getElementById('perigoComplexoPainel'), '#secao-perigos-complexos .cards-area, #secao-perigos .cards-area');
   };
 
   // ── AMBIENTE (Clima, Terrenos, Masmorras, Ermos, Urbano, Viagens — Cap.
@@ -3372,8 +4324,7 @@ document.addEventListener('DOMContentLoaded', () => {
   };
 
   window.fecharDetalheAmbiente = () => {
-    document.getElementById('ambientePainel').classList.remove('aberto');
-    document.querySelectorAll(AMBIENTE_SECOES_TODAS.map(s => `#${s} .cards-area`).join(', ')).forEach(el => el.classList.remove('encolhido'));
+    _fecharPainelDetalhe(document.getElementById('ambientePainel'), AMBIENTE_SECOES_TODAS.map(s => `#${s} .cards-area`).join(', '));
   };
 
   // ── Clima ──
@@ -3382,8 +4333,7 @@ document.addEventListener('DOMContentLoaded', () => {
   let _buscaClima = '';
 
   window.setFiltroClima = (el, valor) => {
-    document.querySelectorAll('#climaFiltroCategoria .filtro-btn').forEach(b => b.classList.remove('a'));
-    el.classList.add('a');
+    _ativarFiltroBtn('#climaFiltroCategoria', el);
     _filtroClima = valor;
     renderClimaNaSecao();
   };
@@ -3407,8 +4357,7 @@ document.addEventListener('DOMContentLoaded', () => {
   let _buscaTerrenos = '';
 
   window.setFiltroTerreno = (el, valor) => {
-    document.querySelectorAll('#terrenosFiltroTipo .filtro-btn').forEach(b => b.classList.remove('a'));
-    el.classList.add('a');
+    _ativarFiltroBtn('#terrenosFiltroTipo', el);
     _filtroTerreno = valor;
     renderTerrenosNaSecao();
   };
@@ -3432,8 +4381,7 @@ document.addEventListener('DOMContentLoaded', () => {
   let _buscaMasmorras = '';
 
   window.setFiltroMasmorra = (el, valor) => {
-    document.querySelectorAll('#masmorrasFiltroTipo .filtro-btn').forEach(b => b.classList.remove('a'));
-    el.classList.add('a');
+    _ativarFiltroBtn('#masmorrasFiltroTipo', el);
     _filtroMasmorra = valor;
     renderMasmorrasNaSecao();
   };
@@ -4192,95 +5140,45 @@ document.addEventListener('DOMContentLoaded', () => {
   };
 
   window.fecharDetalheEquip = function() {
-    document.getElementById('equipPainel').classList.remove('aberto');
-    EQUIP_SECOES_TODAS.forEach(s => {
-      document.getElementById(s)?.querySelector('.cards-area')?.classList.remove('encolhido');
-    });
-    document.querySelectorAll('.eq-card').forEach(c => c.classList.remove('selecionado'));
+    _fecharPainelDetalhe(
+      document.getElementById('equipPainel'),
+      EQUIP_SECOES_TODAS.map(s => `#${s} .cards-area`).join(', '),
+      '.eq-card'
+    );
   };
 
   // Clique num nome de equipamento citado em qualquer descrição do site
   // (kw-item) leva pra seção certa, com a busca já preenchida, e abre o
   // painel de detalhe direto — mesmo padrão do irParaMagia/irParaPoderGeral.
+  // Só o campo `lista` é usado de verdade (por BLOCO_REF_TIPOS.item.buscar,
+  // em abrirBlocoReferencia — ver compendio.js mais abaixo). Os campos
+  // `secao`, `estado`, `render`, `buscaId` e `filtroGrupos` que existiam
+  // aqui eram sobra de um design mais antigo, de antes de
+  // abrirBlocoReferencia existir, quando uma referência a item navegava pra
+  // a seção (via irParaItem, removida em 23/ago — ver comentário logo
+  // abaixo) e por isso precisava saber pra qual seção ir, qual filtro
+  // ativar etc. Confirmado com grep (23/ago) que nada no site lê mais
+  // esses campos — removidos. Se um dia precisarmos native navegar pra a
+  // seção de novo, é só adicionar de volta aqui, não precisa reinventar.
   const ITEM_TIPO_CONFIG = {
-    'arma': { secao: 'armas', lista: () => window.ARMAS, estado: () => _armaEstado, render: renderArmasNaSecao, buscaId: 'buscaArmas', filtroGrupos: ['armasFiltroCategoria', 'armasFiltroTipo'] },
-    'armadura': { secao: 'armaduras', lista: () => window.ARMADURAS, estado: () => _armaduraEstado, render: renderArmadurasNaSecao, buscaId: 'buscaArmaduras', filtroGrupos: ['armadurasFiltroCategoria'] },
-    'item-geral': { secao: 'itens-gerais', lista: () => (window.ITENS_GERAIS || []).concat(window.MUNICOES || []), estado: () => _itemGeralEstado, render: renderItensGeraisNaSecao, buscaId: 'buscaItensGerais', filtroGrupos: ['itensGeraisFiltroCategoria', 'itensGeraisFiltroPreco'] },
-    'melhoria': {
-      secao: 'modificadores', lista: () => window.MELHORIAS, estado: () => _modificadorEstado,
-      render: () => {
-        _modificadorEstado.categoria = 'melhoria';
-        document.querySelectorAll('#modificadoresCategoriaFiltro .filtro-btn').forEach(b => b.classList.remove('a'));
-        document.querySelectorAll('#modificadoresCategoriaFiltro .filtro-btn')[0]?.classList.add('a');
-        renderTipoFiltroModificador();
-        renderModificadoresNaSecao();
-      },
-      buscaId: 'buscaModificadores', filtroGrupos: [],
-    },
-    'material': {
-      secao: 'modificadores', lista: () => window.MATERIAIS_ESPECIAIS, estado: () => _modificadorEstado,
-      render: () => {
-        _modificadorEstado.categoria = 'material';
-        document.querySelectorAll('#modificadoresCategoriaFiltro .filtro-btn').forEach(b => b.classList.remove('a'));
-        document.querySelectorAll('#modificadoresCategoriaFiltro .filtro-btn')[2]?.classList.add('a');
-        renderTipoFiltroModificador();
-        renderModificadoresNaSecao();
-      },
-      buscaId: 'buscaModificadores', filtroGrupos: [],
-    },
-    'encanto-arma': {
-      secao: 'modificadores', lista: () => window.ENCANTOS_ARMA, estado: () => _modificadorEstado,
-      render: () => {
-        _modificadorEstado.categoria = 'encantamento';
-        document.querySelectorAll('#modificadoresCategoriaFiltro .filtro-btn').forEach(b => b.classList.remove('a'));
-        document.querySelectorAll('#modificadoresCategoriaFiltro .filtro-btn')[1]?.classList.add('a');
-        renderTipoFiltroModificador();
-        renderModificadoresNaSecao();
-      },
-      buscaId: 'buscaModificadores', filtroGrupos: [],
-    },
-    'encanto-armadura': {
-      secao: 'modificadores', lista: () => window.ENCANTOS_ARMADURA, estado: () => _modificadorEstado,
-      render: () => {
-        _modificadorEstado.categoria = 'encantamento';
-        document.querySelectorAll('#modificadoresCategoriaFiltro .filtro-btn').forEach(b => b.classList.remove('a'));
-        document.querySelectorAll('#modificadoresCategoriaFiltro .filtro-btn')[1]?.classList.add('a');
-        renderTipoFiltroModificador();
-        renderModificadoresNaSecao();
-      },
-      buscaId: 'buscaModificadores', filtroGrupos: [],
-    },
-    'arma-especifica': { secao: 'armas-magicas', lista: () => window.ARMAS_ESPECIFICAS, estado: () => _armasMagicasEstado, render: renderArmasMagicasNaSecao, buscaId: 'buscaArmasMagicas', filtroGrupos: [] },
-    'armadura-especifica': { secao: 'armaduras-magicas', lista: () => window.ARMADURAS_ESCUDOS_ESPECIFICOS, estado: () => _armadurasMagicasEstado, render: renderArmadurasMagicasNaSecao, buscaId: 'buscaArmadurasMagicas', filtroGrupos: [] },
-    'acessorio': { secao: 'acessorios', lista: () => window.ACESSORIOS, estado: () => _acessorioEstado, render: renderAcessoriosNaSecao, buscaId: 'buscaAcessorios', filtroGrupos: ['acessoriosFiltro'] },
-    'artefato': { secao: 'artefatos', lista: () => window.ARTEFATOS, estado: null, render: renderArtefatosNaSecao, buscaId: null, filtroGrupos: [] },
+    'arma': { lista: () => window.ARMAS },
+    'armadura': { lista: () => window.ARMADURAS },
+    'item-geral': { lista: () => (window.ITENS_GERAIS || []).concat(window.MUNICOES || []) },
+    'melhoria': { lista: () => window.MELHORIAS },
+    'material': { lista: () => window.MATERIAIS_ESPECIAIS },
+    'encanto-arma': { lista: () => window.ENCANTOS_ARMA },
+    'encanto-armadura': { lista: () => window.ENCANTOS_ARMADURA },
+    'arma-especifica': { lista: () => window.ARMAS_ESPECIFICAS },
+    'armadura-especifica': { lista: () => window.ARMADURAS_ESCUDOS_ESPECIFICOS },
+    'acessorio': { lista: () => window.ACESSORIOS },
+    'artefato': { lista: () => window.ARTEFATOS },
   };
 
-  window.irParaItem = function(nome, tipo) {
-    const cfg = ITEM_TIPO_CONFIG[tipo];
-    if (!cfg) return;
-    const item = (cfg.lista() || []).find(x => x.nome === nome);
-    if (!item) return;
-
-    mostrarSecao(cfg.secao);
-
-    if (cfg.estado) {
-      const estado = cfg.estado();
-      Object.keys(estado).forEach(k => {
-        if (k === 'busca') estado[k] = nome.toLowerCase();
-        else if (k !== 'modo' && k !== 'categoria') estado[k] = 'todos';
-      });
-      cfg.filtroGrupos.forEach(gid => {
-        document.querySelectorAll(`#${gid} .filtro-btn`).forEach(b => b.classList.remove('a'));
-        document.querySelector(`#${gid} .filtro-btn`)?.classList.add('a');
-      });
-      const buscaInput = document.getElementById(cfg.buscaId);
-      if (buscaInput) buscaInput.value = nome;
-    }
-
-    cfg.render();
-    setTimeout(() => abrirDetalheEquip(tipo, item.id), 50);
-  };
+  // irParaItem() foi removida em 23/ago — navegava pra fora (mostrarSecao +
+  // filtro) quando um item era citado em texto; substituída por
+  // abrirBlocoReferencia('item', nome, tipo), que usa a mesma
+  // ITEM_TIPO_CONFIG acima só pra achar o item, sem navegar. Sem nenhum
+  // caller restante (confirmado com grep antes de remover).
 
   // ══════════════════ MAGIAS ══════════════════
 
@@ -4383,8 +5281,7 @@ document.addEventListener('DOMContentLoaded', () => {
   window.setFiltroMagia = (secaoTipo, eixo, btn, valor) => {
     const ids = MAGIA_SECAO_IDS[secaoTipo];
     const grupoId = eixo === 'tipo' ? ids.filtroTipo : (eixo === 'circulo' ? ids.filtroCirculo : ids.filtroEscola);
-    document.querySelectorAll(`#${grupoId} .filtro-btn`).forEach(b => b.classList.remove('a'));
-    btn.classList.add('a');
+    _ativarFiltroBtn(`#${grupoId}`, btn);
     _magiaEstado[secaoTipo][eixo] = valor;
     renderMagiasNaSecao(secaoTipo);
   };
@@ -4570,40 +5467,18 @@ document.addEventListener('DOMContentLoaded', () => {
   };
 
   window.fecharDetalheMagia = function() {
-    document.getElementById('magiaPainel').classList.remove('aberto');
-    MAGIA_SECOES_TODAS.forEach(s => {
-      document.getElementById(s)?.querySelector('.cards-area')?.classList.remove('encolhido');
-    });
-    document.querySelectorAll('.magia-card').forEach(c => c.classList.remove('selecionado'));
+    _fecharPainelDetalhe(
+      document.getElementById('magiaPainel'),
+      MAGIA_SECOES_TODAS.map(s => `#${s} .cards-area`).join(', '),
+      '.magia-card'
+    );
   };
 
-  // Clique num nome de magia citado em qualquer descrição do site (kw-magia)
-  // leva pra "Todas as Magias", com os filtros resetados e a busca já
-  // preenchida, e abre o painel de detalhe direto — sem precisar de um
-  // segundo clique no card.
-  window.irParaMagia = function(nome) {
-    const m = (window.MAGIAS || []).find(x => x.nome === nome);
-    if (!m) return;
-
-    mostrarSecao('magias-todas');
-
-    _magiaEstado.todas.tipo = 'todos';
-    _magiaEstado.todas.circulo = 'todos';
-    _magiaEstado.todas.escola = 'todos';
-    _magiaEstado.todas.busca = nome.toLowerCase();
-
-    document.querySelectorAll('#magiasTodasFiltroTipo .filtro-btn, #magiasTodasFiltroCirculo .filtro-btn, #magiasTodasFiltroEscola .filtro-btn')
-      .forEach(b => b.classList.remove('a'));
-    document.querySelector('#magiasTodasFiltroTipo .filtro-btn')?.classList.add('a');
-    document.querySelector('#magiasTodasFiltroCirculo .filtro-btn')?.classList.add('a');
-    document.querySelector('#magiasTodasFiltroEscola .filtro-btn')?.classList.add('a');
-
-    const buscaInput = document.getElementById('buscaMagiasTodas');
-    if (buscaInput) buscaInput.value = nome;
-
-    renderMagiasNaSecao('todas');
-    setTimeout(() => abrirDetalheMagia(m.id), 50);
-  };
+  // irParaMagia() foi removida em 23/ago — navegava pra "Todas as Magias"
+  // (mostrarSecao + filtro) quando uma magia era citada em texto; substituída
+  // por abrirBlocoReferencia('magia', nome), que abre o mesmo #magiaPainel
+  // empilhado por cima, sem trocar de seção. Sem nenhum caller restante
+  // (confirmado com grep antes de remover).
 
   // ── PODERES GERAIS (Combate/Destino/Magia/Concedidos/Tormenta) ─────
   // Reaproveita renderPoderHtml() e togglePoderPersonagem() sem mudar nada
@@ -4704,8 +5579,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   window.setFiltroPoderGeral = (btn, categoria, tipo) => {
-    document.querySelectorAll(`#poderes${categoria.charAt(0).toUpperCase()}${categoria.slice(1)}Filtros .filtro-btn`).forEach(b => b.classList.remove('a'));
-    btn.classList.add('a');
+    _ativarFiltroBtn(`#poderes${categoria.charAt(0).toUpperCase()}${categoria.slice(1)}Filtros`, btn);
     _pgEstado[categoria].tipo = tipo;
     renderPoderesGeraisNaSecao(categoria);
   };
@@ -4713,8 +5587,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // Filtro da página combinada — eixo (categoria|tipo) é independente do valor.
   window.setFiltroPoderTodos = (btn, eixo, valor) => {
     const grupoId = eixo === 'categoria' ? 'poderesTodosFiltrosCategoria' : 'poderesTodosFiltrosTipo';
-    document.querySelectorAll(`#${grupoId} .filtro-btn`).forEach(b => b.classList.remove('a'));
-    btn.classList.add('a');
+    _ativarFiltroBtn(`#${grupoId}`, btn);
     _pgEstado.todos[eixo] = valor;
     renderPoderesTodosNaSecao();
   };
@@ -4731,18 +5604,12 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('pgModoColunas')?.classList.toggle('a', modo === 'colunas');
   };
 
-  // Clique num chip de poder geral (ex: Poderes Concedidos no painel de um Deus)
-  // leva até a categoria certa já filtrada só por aquele nome.
-  window.irParaPoderGeral = function(nome, categoria) {
-    mostrarSecao('poderes-' + categoria);
-    setTimeout(() => {
-      const cap = categoria.charAt(0).toUpperCase() + categoria.slice(1);
-      const input = document.getElementById('buscaPoderes' + cap);
-      if (input) input.value = nome;
-      _pgEstado[categoria].busca = nome.toLowerCase();
-      renderPoderesGeraisNaSecao(categoria);
-    }, 50);
-  };
+  // irParaPoderGeral() foi removida em 23/ago — navegava pra categoria
+  // certa (mostrarSecao + filtro) quando um poder geral era citado em texto
+  // ou clicado num chip do painel de Deus; substituída por
+  // abrirBlocoReferencia('poderGeral', nome, categoria), que abre o
+  // mini-painel compartilhado em cima, sem trocar de seção. Sem nenhum
+  // caller restante (confirmado com grep antes de remover).
 
   window.filtrarPoderesPainel = (tipo, btn) => {
     _cpPoderFiltro = tipo;
@@ -4791,9 +5658,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   window.fecharDetalheClasse = () => {
     _cpNivelFiltro = 0;
-    classePainelEl?.classList.remove('aberto');
-    classesAreaEl?.classList.remove('encolhido');
-    document.querySelectorAll('.class-card').forEach(c => c.classList.remove('selecionado'));
+    _fecharPainelDetalhe(classePainelEl, '#classesArea', '.class-card');
   };
 
   window.irParaClasse = (id) => {
@@ -4816,8 +5681,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // Filtro e busca de classes
   let filtroClasseAtivo = 'todos';
   window.setFiltroClasse = (btn, val) => {
-    document.querySelectorAll('#classesFiltros .filtro-btn').forEach(b => b.classList.remove('a'));
-    btn.classList.add('a');
+    _ativarFiltroBtn('#classesFiltros', btn);
     filtroClasseAtivo = val;
     aplicarFiltroClasses();
   };
@@ -4917,13 +5781,16 @@ document.addEventListener('DOMContentLoaded', () => {
     document.querySelector(`.nav-raca-item[data-raca="${r.id}"]`)?.classList.add('ativo');
 
     painelEl.classList.add('aberto');
-    document.querySelector('.cards-area')?.classList.add('encolhido');
+    document.querySelector('#secao-racas .cards-area')?.classList.add('encolhido');
   };
 
   window.fecharDetalhe = () => {
-    painelEl.classList.remove('aberto');
-    document.querySelector('.cards-area')?.classList.remove('encolhido');
-    document.querySelectorAll('.race-card').forEach(c => c.classList.remove('selecionado'));
+    // Antes usava o seletor global '.cards-area' (sem escopo em
+    // #secao-racas) — só "funcionava" por coincidência de Raça ser a
+    // primeira seção no HTML, então document.querySelector('.cards-area')
+    // sem querer batia na área certa. Corrigido em 23/ago pra escopo
+    // explícito, igual todo outro painel já fazia (Classe, Origem, Deus...).
+    _fecharPainelDetalhe(painelEl, '#secao-racas .cards-area', '.race-card');
   };
 
   // ── PAINEL DE DETALHE DE ORIGEM ─────────────────────────────
@@ -5030,21 +5897,23 @@ document.addEventListener('DOMContentLoaded', () => {
   };
 
   window.fecharDetalheOrigem = function() {
-    origemPainelEl.classList.remove('aberto');
-    document.querySelector('#secao-origens .cards-area')?.classList.remove('encolhido');
-    document.querySelectorAll('.origem-card').forEach(c => c.classList.remove('selecionado'));
+    _fecharPainelDetalhe(origemPainelEl, '#secao-origens .cards-area', '.origem-card');
   };
 
   // ── PAINEL DE DETALHE DE DEUS ────────────────────────────────
   const deusPainelEl = document.getElementById('deusPainel');
 
   function chipsDevoto(nomes, tipo) {
+    // Mesmo bug que corrigimos em Poderes Concedidos: isso usava
+    // irParaRaca/irParaClasse (navega pra fora, fecha o painel do Deus) —
+    // trocado por abrirBlocoReferencia, que já tem 'raca'/'classe'
+    // registrados em BLOCO_REF_TIPOS, pra abrir empilhado por cima
+    // igual toda outra referência do site.
     return nomes.map(nome => {
       const lista = tipo === 'raca' ? (window.RACAS || []) : (window.CLASSES || []);
       const alvo = lista.find(x => x.nome === nome);
-      const fn = tipo === 'raca' ? 'irParaRaca' : 'irParaClasse';
       return alvo
-        ? `<span class="dd-devoto-link" onclick="${fn}('${alvo.id}')">${nome}</span>`
+        ? `<span class="dd-devoto-link" onclick="event.stopPropagation(); window.abrirBlocoReferencia && window.abrirBlocoReferencia('${tipo}', '${alvo.id}')">${nome}</span>`
         : `<span class="dd-devoto-link dd-devoto-sem-link">${nome}</span>`;
     }).join('');
   }
@@ -5121,9 +5990,7 @@ document.addEventListener('DOMContentLoaded', () => {
   };
 
   window.fecharDetalheDeus = function() {
-    deusPainelEl.classList.remove('aberto');
-    document.querySelector('#secao-deuses .cards-area')?.classList.remove('encolhido');
-    document.querySelectorAll('.deus-card').forEach(c => c.classList.remove('selecionado'));
+    _fecharPainelDetalhe(deusPainelEl, '#secao-deuses .cards-area', '.deus-card');
   };
 
   window.irParaDeus = (id) => {
@@ -5174,20 +6041,13 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   window.setFiltroRaca = (btn, tipo) => {
-    document.querySelectorAll('#racasFiltros .filtro-btn').forEach(b => b.classList.remove('a'));
-    btn.classList.add('a');
+    _ativarFiltroBtn('#racasFiltros', btn);
     filtroTipo = tipo;
     aplicarFiltros();
   };
 
   // Busca na toolbar inline
-  const buscaInline = document.getElementById('buscaRacas');
-  if (buscaInline) {
-    buscaInline.addEventListener('input', () => {
-      termoBusca = buscaInline.value.trim();
-      aplicarFiltros();
-    });
-  }
+  _ligarBusca('buscaRacas', v => { termoBusca = v; aplicarFiltros(); });
 
   // ── PERÍCIAS ────────────────────────────────────────────────
   function renderTabelaUso(tabela) {
@@ -5405,8 +6265,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   window.setFiltroPericia = (btn, atributo) => {
-    document.querySelectorAll('#periciasFiltros .filtro-btn').forEach(b => b.classList.remove('a'));
-    btn.classList.add('a');
+    _ativarFiltroBtn('#periciasFiltros', btn);
     filtroAtributoPericia = atributo;
     aplicarFiltrosPericias();
   };
@@ -5445,13 +6304,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }, 50);
   };
 
-  const buscaPericiasInline = document.getElementById('buscaPericias');
-  if (buscaPericiasInline) {
-    buscaPericiasInline.addEventListener('input', () => {
-      termoBuscaPericia = buscaPericiasInline.value.trim();
-      aplicarFiltrosPericias();
-    });
-  }
+  _ligarBusca('buscaPericias', v => { termoBuscaPericia = v; aplicarFiltrosPericias(); });
 
   // ── FILTROS E BUSCA DE ORIGENS ──────────────────────────────
   let filtroTemaOrigem = 'todos';
@@ -5482,19 +6335,12 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   window.setFiltroOrigem = (btn, tema) => {
-    document.querySelectorAll('#origensFiltros .filtro-btn').forEach(b => b.classList.remove('a'));
-    btn.classList.add('a');
+    _ativarFiltroBtn('#origensFiltros', btn);
     filtroTemaOrigem = tema;
     aplicarFiltrosOrigens();
   };
 
-  const buscaOrigensInline = document.getElementById('buscaOrigens');
-  if (buscaOrigensInline) {
-    buscaOrigensInline.addEventListener('input', () => {
-      termoBuscaOrigem = buscaOrigensInline.value.trim();
-      aplicarFiltrosOrigens();
-    });
-  }
+  _ligarBusca('buscaOrigens', v => { termoBuscaOrigem = v; aplicarFiltrosOrigens(); });
 
   // ── FILTROS E BUSCA DE DEUSES ────────────────────────────────
   let filtroEnergiaDeus = 'todos';
@@ -5525,180 +6371,55 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   window.setFiltroDeus = (btn, energia) => {
-    document.querySelectorAll('#deusesFiltros .filtro-btn').forEach(b => b.classList.remove('a'));
-    btn.classList.add('a');
+    _ativarFiltroBtn('#deusesFiltros', btn);
     filtroEnergiaDeus = energia;
     aplicarFiltrosDeuses();
   };
 
-  const buscaDeusesInline = document.getElementById('buscaDeuses');
-  if (buscaDeusesInline) {
-    buscaDeusesInline.addEventListener('input', () => {
-      termoBuscaDeus = buscaDeusesInline.value.trim();
-      aplicarFiltrosDeuses();
-    });
-  }
+  _ligarBusca('buscaDeuses', v => { termoBuscaDeus = v; aplicarFiltrosDeuses(); });
 
   // ── BUSCA DE PODERES GERAIS (por categoria) ─────────────────
   // ── BUSCA DE EQUIPAMENTOS ──────────────────────────────
-  const buscaArmasMagicasEl = document.getElementById('buscaArmasMagicas');
-  if (buscaArmasMagicasEl) buscaArmasMagicasEl.addEventListener('input', () => {
-    _armasMagicasEstado.busca = buscaArmasMagicasEl.value.trim().toLowerCase();
-    renderArmasMagicasNaSecao();
-  });
-  const buscaArmadurasMagicasEl = document.getElementById('buscaArmadurasMagicas');
-  if (buscaArmadurasMagicasEl) buscaArmadurasMagicasEl.addEventListener('input', () => {
-    _armadurasMagicasEstado.busca = buscaArmadurasMagicasEl.value.trim().toLowerCase();
-    renderArmadurasMagicasNaSecao();
-  });
-  const buscaMagiaGeradorEl = document.getElementById('buscaMagiaGerador');
-  if (buscaMagiaGeradorEl) buscaMagiaGeradorEl.addEventListener('input', () => {
-    buscarMagiaGerador(buscaMagiaGeradorEl.value.trim());
-  });
-  const buscaAcessoriosEl = document.getElementById('buscaAcessorios');
-  if (buscaAcessoriosEl) buscaAcessoriosEl.addEventListener('input', () => {
-    _acessorioEstado.busca = buscaAcessoriosEl.value.trim().toLowerCase();
-    renderAcessoriosNaSecao();
-  });
-  const buscaCriaturasEl = document.getElementById('buscaCriaturas');
-  if (buscaCriaturasEl) buscaCriaturasEl.addEventListener('input', () => {
-    _criaturaEstado.busca = buscaCriaturasEl.value.trim().toLowerCase();
-    renderCriaturasNaSecao();
-  });
-  const buscaPerigosEl = document.getElementById('buscaPerigos');
-  if (buscaPerigosEl) buscaPerigosEl.addEventListener('input', () => {
-    _buscaPerigos = buscaPerigosEl.value.trim().toLowerCase();
-    renderPerigosNaSecao();
-  });
-  const buscaPerigosComplexosEl = document.getElementById('buscaPerigosComplexos');
-  if (buscaPerigosComplexosEl) buscaPerigosComplexosEl.addEventListener('input', () => {
-    _buscaPerigosComplexos = buscaPerigosComplexosEl.value.trim().toLowerCase();
-    renderPerigosComplexosNaSecao();
-  });
-  const buscaPerigosVisaoEl = document.getElementById('buscaPerigosVisao');
-  if (buscaPerigosVisaoEl) buscaPerigosVisaoEl.addEventListener('input', () => {
-    _buscaPerigosVisao = buscaPerigosVisaoEl.value.trim().toLowerCase();
-    renderPerigosVisaoGeral();
-  });
-  const buscaClimaEl = document.getElementById('buscaClima');
-  if (buscaClimaEl) buscaClimaEl.addEventListener('input', () => {
-    _buscaClima = buscaClimaEl.value.trim().toLowerCase();
-    renderClimaNaSecao();
-  });
-  const buscaTerrenosEl = document.getElementById('buscaTerrenos');
-  if (buscaTerrenosEl) buscaTerrenosEl.addEventListener('input', () => {
-    _buscaTerrenos = buscaTerrenosEl.value.trim().toLowerCase();
-    renderTerrenosNaSecao();
-  });
-  const buscaMasmorrasEl = document.getElementById('buscaMasmorras');
-  if (buscaMasmorrasEl) buscaMasmorrasEl.addEventListener('input', () => {
-    _buscaMasmorras = buscaMasmorrasEl.value.trim().toLowerCase();
-    renderMasmorrasNaSecao();
-  });
-  const buscaErmosEl = document.getElementById('buscaErmos');
-  if (buscaErmosEl) buscaErmosEl.addEventListener('input', () => {
-    _buscaErmos = buscaErmosEl.value.trim().toLowerCase();
-    renderErmosNaSecao();
-  });
-  const buscaUrbanoEl = document.getElementById('buscaUrbano');
-  if (buscaUrbanoEl) buscaUrbanoEl.addEventListener('input', () => {
-    _buscaUrbano = buscaUrbanoEl.value.trim().toLowerCase();
-    renderUrbanoNaSecao();
-  });
-  const buscaAmbienteVisaoEl = document.getElementById('buscaAmbienteVisao');
-  if (buscaAmbienteVisaoEl) buscaAmbienteVisaoEl.addEventListener('input', () => {
-    _buscaAmbienteVisao = buscaAmbienteVisaoEl.value.trim().toLowerCase();
-    renderAmbienteVisaoBusca();
-  });
-  const buscaArmasEl = document.getElementById('buscaArmas');
-  if (buscaArmasEl) buscaArmasEl.addEventListener('input', () => {
-    _armaEstado.busca = buscaArmasEl.value.trim().toLowerCase();
-    renderArmasNaSecao();
-  });
-  const buscaArmadurasEl = document.getElementById('buscaArmaduras');
-  if (buscaArmadurasEl) buscaArmadurasEl.addEventListener('input', () => {
-    _armaduraEstado.busca = buscaArmadurasEl.value.trim().toLowerCase();
-    renderArmadurasNaSecao();
-  });
-  const buscaItensGeraisEl = document.getElementById('buscaItensGerais');
-  if (buscaItensGeraisEl) buscaItensGeraisEl.addEventListener('input', () => {
-    _itemGeralEstado.busca = buscaItensGeraisEl.value.trim().toLowerCase();
-    renderItensGeraisNaSecao();
-  });
-  const buscaModificadoresEl = document.getElementById('buscaModificadores');
-  if (buscaModificadoresEl) buscaModificadoresEl.addEventListener('input', () => {
-    _modificadorEstado.busca = buscaModificadoresEl.value.trim().toLowerCase();
-    renderModificadoresNaSecao();
-  });
+  _ligarBusca('buscaArmasMagicas', v => { _armasMagicasEstado.busca = v.toLowerCase(); renderArmasMagicasNaSecao(); });
+  _ligarBusca('buscaArmadurasMagicas', v => { _armadurasMagicasEstado.busca = v.toLowerCase(); renderArmadurasMagicasNaSecao(); });
+  _ligarBusca('buscaMagiaGerador', v => buscarMagiaGerador(v));
+  _ligarBusca('buscaAcessorios', v => { _acessorioEstado.busca = v.toLowerCase(); renderAcessoriosNaSecao(); });
+  _ligarBusca('buscaCriaturas', v => { _criaturaEstado.busca = v.toLowerCase(); renderCriaturasNaSecao(); });
+  _ligarBusca('buscaPerigos', v => { _buscaPerigos = v.toLowerCase(); renderPerigosNaSecao(); });
+  _ligarBusca('buscaCondicoes', v => { _buscaCondicoes = v.toLowerCase(); renderCondicoesNaSecao(); });
+  _ligarBusca('buscaPerigosComplexos', v => { _buscaPerigosComplexos = v.toLowerCase(); renderPerigosComplexosNaSecao(); });
+  _ligarBusca('buscaPerigosVisao', v => { _buscaPerigosVisao = v.toLowerCase(); renderPerigosVisaoGeral(); });
+  _ligarBusca('buscaClima', v => { _buscaClima = v.toLowerCase(); renderClimaNaSecao(); });
+  _ligarBusca('buscaTerrenos', v => { _buscaTerrenos = v.toLowerCase(); renderTerrenosNaSecao(); });
+  _ligarBusca('buscaMasmorras', v => { _buscaMasmorras = v.toLowerCase(); renderMasmorrasNaSecao(); });
+  _ligarBusca('buscaErmos', v => { _buscaErmos = v.toLowerCase(); renderErmosNaSecao(); });
+  _ligarBusca('buscaUrbano', v => { _buscaUrbano = v.toLowerCase(); renderUrbanoNaSecao(); });
+  _ligarBusca('buscaAmbienteVisao', v => { _buscaAmbienteVisao = v.toLowerCase(); renderAmbienteVisaoBusca(); });
+  _ligarBusca('buscaArmas', v => { _armaEstado.busca = v.toLowerCase(); renderArmasNaSecao(); });
+  _ligarBusca('buscaArmaduras', v => { _armaduraEstado.busca = v.toLowerCase(); renderArmadurasNaSecao(); });
+  _ligarBusca('buscaItensGerais', v => { _itemGeralEstado.busca = v.toLowerCase(); renderItensGeraisNaSecao(); });
+  _ligarBusca('buscaModificadores', v => { _modificadorEstado.busca = v.toLowerCase(); renderModificadoresNaSecao(); });
 
   // ── BUSCA DE MAGIAS (4 seções) ──────────────────────────────
   ['todas', 'arcana', 'divina', 'universal'].forEach(secaoTipo => {
-    const ids = MAGIA_SECAO_IDS[secaoTipo];
-    const input = document.getElementById(ids.busca);
-    if (input) {
-      input.addEventListener('input', () => {
-        _magiaEstado[secaoTipo].busca = input.value.trim().toLowerCase();
-        renderMagiasNaSecao(secaoTipo);
-      });
-    }
+    _ligarBusca(MAGIA_SECAO_IDS[secaoTipo].busca, v => { _magiaEstado[secaoTipo].busca = v.toLowerCase(); renderMagiasNaSecao(secaoTipo); });
   });
 
-  const buscaPoderesCombateInline = document.getElementById('buscaPoderesCombate');
-  if (buscaPoderesCombateInline) {
-    buscaPoderesCombateInline.addEventListener('input', () => {
-      _pgEstado.combate.busca = buscaPoderesCombateInline.value.trim().toLowerCase();
-      renderPoderesGeraisNaSecao('combate');
-    });
-  }
-
-  const buscaPoderesDestinoInline = document.getElementById('buscaPoderesDestino');
-  if (buscaPoderesDestinoInline) {
-    buscaPoderesDestinoInline.addEventListener('input', () => {
-      _pgEstado.destino.busca = buscaPoderesDestinoInline.value.trim().toLowerCase();
-      renderPoderesGeraisNaSecao('destino');
-    });
-  }
-
-  const buscaPoderesMagiaInline = document.getElementById('buscaPoderesMagia');
-  if (buscaPoderesMagiaInline) {
-    buscaPoderesMagiaInline.addEventListener('input', () => {
-      _pgEstado.magia.busca = buscaPoderesMagiaInline.value.trim().toLowerCase();
-      renderPoderesGeraisNaSecao('magia');
-    });
-  }
-
-  const buscaPoderesConcedidosInline = document.getElementById('buscaPoderesConcedidos');
-  if (buscaPoderesConcedidosInline) {
-    buscaPoderesConcedidosInline.addEventListener('input', () => {
-      _pgEstado.concedidos.busca = buscaPoderesConcedidosInline.value.trim().toLowerCase();
-      renderPoderesGeraisNaSecao('concedidos');
-    });
-  }
-
-  const buscaPoderesTormentaInline = document.getElementById('buscaPoderesTormenta');
-  if (buscaPoderesTormentaInline) {
-    buscaPoderesTormentaInline.addEventListener('input', () => {
-      _pgEstado.tormenta.busca = buscaPoderesTormentaInline.value.trim().toLowerCase();
-      renderPoderesGeraisNaSecao('tormenta');
-    });
-  }
-
-  const buscaPoderesTodosInline = document.getElementById('buscaPoderesTodos');
-  if (buscaPoderesTodosInline) {
-    buscaPoderesTodosInline.addEventListener('input', () => {
-      _pgEstado.todos.busca = buscaPoderesTodosInline.value.trim().toLowerCase();
-      renderPoderesTodosNaSecao();
-    });
-  }
+  _ligarBusca('buscaPoderesCombate', v => { _pgEstado.combate.busca = v.toLowerCase(); renderPoderesGeraisNaSecao('combate'); });
+  _ligarBusca('buscaPoderesDestino', v => { _pgEstado.destino.busca = v.toLowerCase(); renderPoderesGeraisNaSecao('destino'); });
+  _ligarBusca('buscaPoderesMagia', v => { _pgEstado.magia.busca = v.toLowerCase(); renderPoderesGeraisNaSecao('magia'); });
+  _ligarBusca('buscaPoderesConcedidos', v => { _pgEstado.concedidos.busca = v.toLowerCase(); renderPoderesGeraisNaSecao('concedidos'); });
+  _ligarBusca('buscaPoderesTormenta', v => { _pgEstado.tormenta.busca = v.toLowerCase(); renderPoderesGeraisNaSecao('tormenta'); });
+  _ligarBusca('buscaPoderesTodos', v => { _pgEstado.todos.busca = v.toLowerCase(); renderPoderesTodosNaSecao(); });
 
   // Busca global no topbar
   const buscaGlobal = document.getElementById('buscaGlobal');
+  _ligarBusca('buscaGlobal', v => {
+    termoBusca = v;
+    if (termoBusca) mostrarSecao('racas');
+    aplicarFiltros();
+  });
   if (buscaGlobal) {
-    buscaGlobal.addEventListener('input', () => {
-      termoBusca = buscaGlobal.value.trim();
-      if (termoBusca) mostrarSecao('racas');
-      aplicarFiltros();
-    });
     document.addEventListener('keydown', e => {
       if ((e.ctrlKey||e.metaKey) && e.key==='k') { e.preventDefault(); buscaGlobal.focus(); }
       if (e.key==='Escape') { fecharDetalhe(); toggleSidebarMobile(false); buscaGlobal.blur(); }
@@ -5731,6 +6452,10 @@ document.addEventListener('DOMContentLoaded', () => {
   if (window.ORIGENS) renderOrigens(window.ORIGENS);
   if (window.DEUSES) renderDeuses(window.DEUSES);
   if (window.CRIATURAS) { renderCriaturasNaSecao(); carregarCombateSalvo(); atualizarPainelHerois(); }
+  if (window.CONDICOES) renderCondicoesNaSecao();
+  if (window.ALINHAMENTOS) renderToquesFinais();
+  if (window.ATRIBUTOS_CUSTO) renderAtributosBasicos();
+  if (window.TIPOS_PARCEIRO) { renderParceirosNaSecao(); calcularLimiteParceiros(); }
   if (window.PERIGOS_SIMPLES) { preencherFiltroCondicoesPerigo(); renderPerigosNaSecao(); }
   if (window.PERIGOS_COMPLEXOS) renderPerigosComplexosNaSecao();
   if (window.PERIGOS_SIMPLES || window.PERIGOS_COMPLEXOS) { preencherFiltroCondicoesPerigoVisao(); renderPerigosVisaoGeral(); }
@@ -5932,6 +6657,11 @@ document.addEventListener('DOMContentLoaded', () => {
       buscar: nome => (window.PERICIAS || []).find(x => x.nome === nome),
       abrir: obj => window.abrirMiniPainel('Perícia', renderPericiaMiniHtml(obj), obj.nome),
     },
+    condicao: {
+      painelId: 'miniPainel',
+      buscar: nome => (window.CONDICOES || []).find(x => x.nome === nome),
+      abrir: obj => window.abrirMiniPainel('Condição', renderCondicaoMiniHtml(obj), obj.nome),
+    },
   };
 
   // Todo painel de detalhe conhecido no site — usado só pra achar/rotular
@@ -6097,18 +6827,35 @@ document.addEventListener('DOMContentLoaded', () => {
   // Volta a pilha até restar `nivelAlvo` painéis (1-based). Os painéis
   // acima nunca foram fechados de verdade — só empilhados visualmente por
   // trás — então "voltar" é apenas revelar de novo, sem reabrir nada.
+  // BUG corrigido em 23/ago (relatado pelo usuário: "às vezes, quando fecho
+  // um painel, a grade não volta pro layout dinâmico — e não sei o
+  // gatilho"). A causa: voltarReferencia() é chamada por Esc, pelos itens
+  // da trilha, pelo badge de profundidade E por clicar fora do
+  // mini-painel — mas ela mesma tirava só a classe '.aberto' do painel na
+  // mão, sem passar pelo fechar NATIVO de cada painel (fecharDetalheX(),
+  // que é quem tira '.encolhido' da área de cards e '.selecionado' do
+  // card — ver _fecharPainelDetalhe() lá em cima). Resultado: fechar pelo
+  // X do painel funcionava certo, mas fechar por Esc/trilha/badge deixava
+  // a grade da seção de baixo travada "encolhida" — parecia aleatório
+  // porque dependia de QUAL caminho a pessoa usava pra fechar, não de
+  // quando. Corrigido delegando pro fechar nativo de cada painel (mesmo
+  // _PAINEL_FECHAR_FN que fecharTodosPaineisDetalhe usa, mais abaixo) —
+  // agora TODO caminho de fechar (X, Esc, trilha, badge, clique fora do
+  // mini-painel, troca de seção) passa pelo mesmo ritual único.
   window.voltarReferencia = function(nivelAlvo) {
     while (_pilhaRef.length > nivelAlvo) {
-      const removido = _pilhaRef.pop();
-      const el = document.getElementById(removido.painelId);
-      if (el) {
-        el.classList.remove('aberto', 'ref-empilhado');
-        el.style.zIndex = '';
-        el.style.removeProperty('--ref-prof');
-        // Painel saiu de vez da pilha (não só recuou) — tira a etiqueta
-        // vertical dele também, senão ela fica órfã e reaparece torta da
-        // próxima vez que esse mesmo painel for aberto do zero.
-        el.querySelector(':scope > .ref-prof-label')?.remove();
+      const tamanhoAntes = _pilhaRef.length;
+      const topo = _pilhaRef[_pilhaRef.length - 1];
+      const fecharFn = _PAINEL_FECHAR_FN[topo.painelId];
+      if (fecharFn && typeof window[fecharFn] === 'function') {
+        window[fecharFn](); // já tira da pilha sozinho, via monkey-patch mais abaixo
+      }
+      // Segurança: painel sem fechar nativo mapeado (não deveria acontecer,
+      // _TODOS_PAINEIS_REF e _PAINEL_FECHAR_FN sempre andam juntos) — tira
+      // na mão só pra não travar o loop.
+      if (_pilhaRef.length >= tamanhoAntes) {
+        _pilhaRef.pop();
+        document.getElementById(topo.painelId)?.classList.remove('aberto', 'ref-empilhado');
       }
     }
     _aplicarEmpilhamentoVisual();
@@ -6116,9 +6863,10 @@ document.addEventListener('DOMContentLoaded', () => {
     _renderBadgeProfundidade();
   };
 
-  window.fecharPilhaReferencias = function() {
-    window.voltarReferencia(0);
-  };
+  // fecharPilhaReferencias() foi removida em 23/ago — nunca teve nenhum
+  // caller (nem literal, nem via string dinâmica); equivalente a
+  // voltarReferencia(0), que continua disponível pra quem precisar fechar a
+  // pilha inteira de uma vez.
 
   // Esc fecha só o painel do topo da pilha de referências (um nível por
   // vez), em vez de fechar tudo de uma vez.
@@ -6169,19 +6917,45 @@ document.addEventListener('DOMContentLoaded', () => {
     miniPainel: 'fecharMiniPainel',
   };
 
+  // Fecha TODO painel de detalhe conhecido (usado por mostrarSecao() ao
+  // trocar de seção pela sidebar). Bug real corrigido em 23/ago:
+  // mostrarSecao() só fechava Raça/Classe (hardcoded, de antes da pilha de
+  // referências existir) — como agora qualquer painel pode ficar reparentado
+  // em .main (fora da sua seção "dona"), trocar de seção sem fechar os
+  // outros 8 deixava painel de uma seção flutuando por cima de outra
+  // completamente diferente. Reaproveita _PAINEL_FECHAR_FN — chamar cada
+  // fechar nativo já limpa a pilha sozinho via o monkey-patch abaixo.
+  window.fecharTodosPaineisDetalhe = function() {
+    Object.values(_PAINEL_FECHAR_FN).forEach(nomeFn => {
+      if (typeof window[nomeFn] === 'function') window[nomeFn]();
+    });
+  };
+
   function _removerDaPilhaRef(painelId) {
     const idx = _pilhaRef.findIndex(item => item.painelId === painelId);
     if (idx === -1) return;
     // Tira esse painel e qualquer coisa empilhada ACIMA dele (não deveria
     // existir nada acima já que só o topo tem o X clicável, mas cobre o
     // caso mesmo assim). O painel que disparou o fechar (painelId) já tem
-    // sua própria classe 'aberto' removida pela função original — aqui só
-    // limpamos o estado de empilhamento de quem sobrar visível.
+    // sua própria classe 'aberto' (e 'encolhido'/'selecionado', pelo ritual
+    // de _fecharPainelDetalhe) removida pela função nativa original — aqui
+    // só limpamos o que sobra do estado de EMPILHAMENTO (visual de pilha,
+    // não o painel em si).
     const removidos = _pilhaRef.splice(idx);
-    // Mesma limpeza de etiqueta órfã do voltarReferencia() — esses
-    // painéis saíram de vez da pilha, não só recuaram.
+    // Mesma limpeza que voltarReferencia() fazia na mão antes de 23/ago —
+    // centralizada aqui porque agora voltarReferencia() também passa por
+    // este caminho (ver comentário lá). Sem isso, um painel fechado por
+    // Esc/trilha ficava com '.ref-empilhado' + zIndex + '--ref-prof'
+    // grudados (invisível enquanto fechado, mas reaparecia torto —
+    // recuado e com pointer-events:none — se reaberto do zero depois).
     removidos.forEach(item => {
-      document.getElementById(item.painelId)?.querySelector(':scope > .ref-prof-label')?.remove();
+      const el = document.getElementById(item.painelId);
+      if (el) {
+        el.classList.remove('ref-empilhado');
+        el.style.zIndex = '';
+        el.style.removeProperty('--ref-prof');
+        el.querySelector(':scope > .ref-prof-label')?.remove();
+      }
     });
     _aplicarEmpilhamentoVisual();
     _renderTrilhaReferencia();

@@ -84,7 +84,7 @@ const CLASSES = [
             nome: 'Bruxo',
             icone: 'ti-wand',
             chave: 'Inteligência',
-            descricao: 'Lança magias através de um foco (varinha, cajado, chapéu...). Para lançar sem o foco, faz um teste de Misticismo (CD 20 + custo em PM). O foco tem RD 10 e PV iguais à metade dos seus — se destruído, você fica atordoado por uma rodada.',
+            descricao: 'Conjura magias através de um foco (varinha, cajado, chapéu...). Para lançar sem o foco, faz um teste de Misticismo (CD 20 + custo em PM). O foco tem RD 10 e PV iguais à metade dos seus — se destruído, você fica atordoado por uma rodada.',
           },
           {
             id: 'feiticeiro',

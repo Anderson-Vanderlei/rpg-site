@@ -405,7 +405,7 @@ function processarKeywords(texto) {
   // 162 nomes aqui: lê direto do arquivo de dados, uma vez só, e cacheia.
   if (!_PODER_GERAL_LIST && typeof window !== 'undefined' && window.PODERES_GERAIS) {
     _PODER_GERAL_LIST = window.PODERES_GERAIS
-      .filter(p => p.nome)
+      .filter(p => p.nome && !p.semAutoLink)
       .map(p => ({
         nome: p.nome,
         categoria: p.categoria,
@@ -448,7 +448,7 @@ function processarKeywords(texto) {
   // sem duplicar os nomes aqui.
   if (!_MAGIA_LIST && typeof window !== 'undefined' && window.MAGIAS) {
     _MAGIA_LIST = window.MAGIAS
-      .filter(m => m.nome)
+      .filter(m => m.nome && !m.semAutoLink)
       .map(m => ({
         nome: m.nome,
         regex: new RegExp(
@@ -499,7 +499,7 @@ function processarKeywords(texto) {
       [window.ARTEFATOS, 'artefato'],
     ];
     _ITEM_LIST = fontes
-      .flatMap(([lista, tipo]) => (lista || []).filter(x => x.nome).map(x => ({ nome: x.nome, tipo })))
+      .flatMap(([lista, tipo]) => (lista || []).filter(x => x.nome && !x.semAutoLink).map(x => ({ nome: x.nome, tipo })))
       .map(({ nome, tipo }) => ({
         nome, tipo,
         regex: new RegExp(
@@ -530,7 +530,7 @@ function processarKeywords(texto) {
   // usado pra Poder Geral x Item.
   if (!_RACA_LIST && typeof window !== 'undefined' && window.RACAS) {
     _RACA_LIST = window.RACAS
-      .filter(r => r.nome)
+      .filter(r => r.nome && !r.semAutoLink)
       .map(r => ({
         nome: r.nome, id: r.id,
         regex: new RegExp(
@@ -557,7 +557,7 @@ function processarKeywords(texto) {
   // Passo 7: nomes de Classes — mesma técnica.
   if (!_CLASSE_LIST && typeof window !== 'undefined' && window.CLASSES) {
     _CLASSE_LIST = window.CLASSES
-      .filter(c => c.nome)
+      .filter(c => c.nome && !c.semAutoLink)
       .map(c => ({
         nome: c.nome, id: c.id,
         regex: new RegExp(
@@ -584,7 +584,7 @@ function processarKeywords(texto) {
   // Passo 8: nomes de Origens — mesma técnica.
   if (!_ORIGEM_LIST && typeof window !== 'undefined' && window.ORIGENS) {
     _ORIGEM_LIST = window.ORIGENS
-      .filter(o => o.nome)
+      .filter(o => o.nome && !o.semAutoLink)
       .map(o => ({
         nome: o.nome, id: o.id,
         regex: new RegExp(
@@ -612,7 +612,7 @@ function processarKeywords(texto) {
   // Allihanna, Valkaria...) têm baixíssimo risco de colisão com texto comum.
   if (!_DEUS_LIST && typeof window !== 'undefined' && window.DEUSES) {
     _DEUS_LIST = window.DEUSES
-      .filter(d => d.nome)
+      .filter(d => d.nome && !d.semAutoLink)
       .map(d => ({
         nome: d.nome, id: d.id,
         regex: new RegExp(
@@ -641,7 +641,7 @@ function processarKeywords(texto) {
   // risco aceito, igual ao resto do sistema (ajusta se aparecer problema).
   if (!_CRIATURA_LIST && typeof window !== 'undefined' && window.CRIATURAS) {
     _CRIATURA_LIST = window.CRIATURAS
-      .filter(c => c.nome)
+      .filter(c => c.nome && !c.semAutoLink)
       .map(c => ({
         nome: c.nome, id: c.id,
         regex: new RegExp(
@@ -668,7 +668,7 @@ function processarKeywords(texto) {
   // Passo 11: nomes de Perigos Simples — mesma técnica.
   if (!_PERIGO_LIST && typeof window !== 'undefined' && window.PERIGOS_SIMPLES) {
     _PERIGO_LIST = window.PERIGOS_SIMPLES
-      .filter(p => p.nome)
+      .filter(p => p.nome && !p.semAutoLink)
       .map(p => ({
         nome: p.nome, id: p.id,
         regex: new RegExp(
@@ -695,7 +695,7 @@ function processarKeywords(texto) {
   // Passo 12: nomes de Perigos Complexos — mesma técnica.
   if (!_PERIGO_COMPLEXO_LIST && typeof window !== 'undefined' && window.PERIGOS_COMPLEXOS) {
     _PERIGO_COMPLEXO_LIST = window.PERIGOS_COMPLEXOS
-      .filter(p => p.nome)
+      .filter(p => p.nome && !p.semAutoLink)
       .map(p => ({
         nome: p.nome, id: p.id,
         regex: new RegExp(
@@ -735,7 +735,7 @@ function processarKeywords(texto) {
       [window.AMBIENTE_URBANO_ELEMENTO, 'urbano-elemento'],
     ];
     _AMBIENTE_LIST = colecoesAmbiente
-      .flatMap(([lista, colecao]) => (lista || []).filter(x => x.nome).map(x => ({ nome: x.nome, id: x.id, colecao })))
+      .flatMap(([lista, colecao]) => (lista || []).filter(x => x.nome && !x.semAutoLink).map(x => ({ nome: x.nome, id: x.id, colecao })))
       .map(({ nome, id, colecao }) => ({
         nome, id, colecao,
         regex: new RegExp(
@@ -774,7 +774,7 @@ function processarKeywords(texto) {
     const _porNomeClasse = new Map();
     for (const [classeId, poderes] of Object.entries(window.PODERES_CLASSES)) {
       for (const p of (poderes || [])) {
-        if (!p.nome) continue;
+        if (!p.nome || p.semAutoLink) continue;
         if (!_porNomeClasse.has(p.nome)) _porNomeClasse.set(p.nome, []);
         _porNomeClasse.get(p.nome).push(classeId);
       }

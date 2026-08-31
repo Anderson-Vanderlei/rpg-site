@@ -84,6 +84,7 @@ html, body {
 .breadcrumb .bc-sep   { font-size:9px; color:#333; }
 
 .topbar-search {
+  position:relative;
   display:flex; align-items:center; gap:8px;
   background:#0d0909; border:.5px solid #2a2a2a;
   border-radius:3px; padding:0 10px; height:28px;
@@ -94,6 +95,35 @@ html, body {
 .topbar-search i  { font-size:12px; color:#555; }
 .topbar-search input { background:none; border:none; outline:none; color:#e8e8e8; font-family:'Crimson Text',serif; font-size:13px; width:100%; }
 .topbar-search input::placeholder { color:#444; font-style:italic; }
+
+/* ── BUSCA GLOBAL — dropdown de resultados (30/ago) ─────────────────
+   Antes a busca do topbar só filtrava a página de Raças; agora indexa
+   o site inteiro (ver _construirIndiceBuscaGlobal em compendio.js) e
+   mostra os resultados aqui, abrindo o painel certo direto ao clicar
+   ou dar Enter — sem precisar navegar até a seção manualmente. */
+.busca-global-resultados {
+  display:none;
+  position:absolute; top:calc(100% + 6px); right:0;
+  width:340px; max-height:min(60vh, 420px); overflow-y:auto;
+  background:rgba(10,7,7,.98); border:1px solid rgba(139,0,0,.4);
+  border-radius:6px; box-shadow:0 12px 40px rgba(0,0,0,.6);
+  z-index:300; backdrop-filter:blur(14px);
+}
+.busca-global-resultados.aberto { display:block; }
+.bgr-item {
+  display:flex; align-items:center; justify-content:space-between; gap:10px;
+  padding:8px 12px; cursor:pointer; border-bottom:1px solid #1a1010;
+  font-family:'Crimson Text',serif;
+}
+.bgr-item:last-child { border-bottom:none; }
+.bgr-item.bgr-ativo, .bgr-item:hover { background:rgba(139,0,0,.18); }
+.bgr-nome { font-size:13.5px; color:#e8e8e8; }
+.bgr-rotulo {
+  font-family:'Cinzel', serif; font-size:8px; letter-spacing:.08em;
+  text-transform:uppercase; color:#8B0000; white-space:nowrap;
+  order:2;
+}
+.bgr-vazio { padding:12px; font-size:12.5px; color:#666; font-style:italic; text-align:center; }
 
 /* ── SIDEBAR NAV ─────────────────────────────────────────── */
 .sidebar {
@@ -362,14 +392,11 @@ html, body {
   top: 8px; left: 8px;
   display: flex; gap: 4px; flex-wrap: wrap;
 }
-.rc-badge {
-  font-family:'Cinzel',serif; font-size:7px;
-  padding:2px 6px; border-radius:2px;
-  letter-spacing:.06em;
-}
-.badge-comum   { background:rgba(201,168,76,.12); color:#c9a84c; border:.5px solid rgba(201,168,76,.3); }
-.badge-rara    { background:rgba(136,136,255,.12); color:#8888ff; border:.5px solid rgba(136,136,255,.3); }
-.badge-fonte   { background:rgba(139,0,0,.12); color:#cc4444; border:.5px solid rgba(139,0,0,.3); }
+.badge-comum   { background:rgba(201,168,76,.12); color:#c9a84c; border-color:rgba(201,168,76,.3); }
+.badge-rara    { background:rgba(136,136,255,.12); color:#8888ff; border-color:rgba(136,136,255,.3); }
+.badge-fonte   { background:rgba(139,0,0,.12); color:#cc4444; border-color:rgba(139,0,0,.3); }
+.badge-tema    { background:rgba(201,168,76,.08); color:#c9a84c; border-color:rgba(201,168,76,.25); }
+.badge-pagina  { background:rgba(255,255,255,.04); color:#555; border-color:#2a2a2a; }
 
 /* Corpo do card */
 .rc-body { padding:.9rem; flex:1; display:flex; flex-direction:column; }
@@ -377,10 +404,6 @@ html, body {
 .rc-subtitulo { font-size:11px; color:#555; font-style:italic; margin-bottom:.6rem; }
 
 .rc-tags { display:flex; gap:4px; flex-wrap:wrap; margin-bottom:.75rem; }
-.rc-tag {
-  font-family:'Cinzel',serif; font-size:7px;
-  padding:1px 6px; border-radius:2px; letter-spacing:.06em; border:.5px solid;
-}
 .tag-humanoide { background:rgba(201,168,76,.07); color:#c9a84c77; border-color:rgba(201,168,76,.2); }
 .tag-espirito  { background:rgba(68,170,102,.07);  color:#44aa6677; border-color:rgba(68,170,102,.2); }
 .tag-monstro   { background:rgba(204,102,68,.07);  color:#cc664477; border-color:rgba(204,102,68,.2); }
@@ -430,10 +453,7 @@ html, body {
 
 .oc-top { display:flex; justify-content:space-between; align-items:flex-start; padding:.7rem .7rem 0; }
 .oc-temas { display:flex; gap:4px; flex-wrap:wrap; justify-content:flex-end; }
-.oc-tema-tag {
-  font-family:'Cinzel',serif; font-size:7px; padding:1px 6px; border-radius:2px;
-  letter-spacing:.06em; background:rgba(201,168,76,.08); color:#c9a84c99; border:.5px solid rgba(201,168,76,.22);
-}
+.oc-tema-tag { background:rgba(201,168,76,.08); color:#c9a84c99; border-color:rgba(201,168,76,.22); }
 
 .oc-icon-wrap { height:64px; display:flex; align-items:center; justify-content:center; position:relative; }
 .oc-icon { font-size:34px; color:#3a2a2a; transition:transform .4s, color .3s; }
@@ -447,14 +467,37 @@ html, body {
 .oc-campo-l { font-family:'Cinzel',serif; font-size:7px; color:#8B0000; letter-spacing:.12em; text-transform:uppercase; margin-bottom:1px; }
 .oc-campo-v { font-size:11px; color:#777; line-height:1.4; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
 
-.oc-pericias { font-size:11px; margin-bottom:.7rem; display:flex; gap:6px; flex-wrap:wrap; min-height:20px; }
-
-.oc-poder-unico {
-  display:flex; align-items:center; gap:6px;
-  background:rgba(201,168,76,.06); border:.5px solid rgba(201,168,76,.2); border-radius:3px;
-  padding:6px 8px; font-size:10px; color:#c9a84c; margin-top:auto;
+/* Perícias e Poderes Gerais oferecidos — chips clicáveis, pra dar pra ver
+   de relance o que a origem oferece sem abrir o painel. Geometria/tipografia
+   vêm do padrão de TAGS PADRÃO (§16 do CLAUDE.md) — só cor/comportamento
+   aqui, igual toda outra tag do site. */
+.oc-beneficios { display:flex; flex-direction:column; gap:.5rem; margin-bottom:.7rem; }
+.oc-beneficio-grupo { min-height: 30px; }
+.oc-chips { display:flex; flex-wrap:wrap; gap:5px; min-height:16px; align-items:center; }
+.oc-chip { cursor:pointer; background:rgba(255,255,255,.03); transition:background .15s, border-color .15s; }
+.oc-chip-pericia { border-color:#6090d055; color:#6090d0; }
+.oc-chip-pericia:hover { background:rgba(96,144,208,.1); border-color:#6090d099; }
+.oc-chip-poder { border-color:#9080d855; color:#9080d8; }
+.oc-chip-poder:hover { background:rgba(144,128,216,.1); border-color:#9080d899; }
+.oc-chip-livre {
+  border-style:dashed; border-color:rgba(201,168,76,.4); color:#c9a84c99; cursor:default;
+  background:rgba(201,168,76,.04); font-style:italic;
 }
-.oc-poder-unico i { font-size:12px; flex-shrink:0; }
+/* Poder único da origem — mostrado junto dos demais chips de Poderes Gerais
+   (não é mais um bloco separado no card), com a mesma cor dourada que o
+   antigo bloco .oc-poder-unico usava, pra continuar identificável como algo
+   especial dentro da lista. */
+.oc-chip-unico { border-color:rgba(201,168,76,.5); color:#c9a84c; background:rgba(201,168,76,.05); }
+.oc-chip-unico:hover { background:rgba(201,168,76,.12); border-color:rgba(201,168,76,.8); }
+.oc-chip-vazio { color:#3a3a3a; font-size:9px; padding:2px 4px; }
+
+/* Amnésico — regra própria, substitui os 2 grupos de chip acima */
+.oc-beneficio-especial {
+  display:flex; align-items:center; gap:6px; min-height:38px;
+  background:rgba(160,128,216,.05); border:.5px solid rgba(160,128,216,.22); border-radius:3px;
+  padding:6px 8px; font-size:10px; color:#a080d8; font-style:italic; margin-bottom:.7rem;
+}
+.oc-beneficio-especial i { font-size:12px; flex-shrink:0; font-style:normal; }
 
 .oc-footer { margin-top:.75rem; display:flex; gap:6px; }
 
@@ -798,8 +841,7 @@ html, body {
 .eq-card.selecionado { border-color: rgba(201,168,76,.5); box-shadow: 0 0 0 1px rgba(201,168,76,.15); }
 .eq-card-top { display:flex; justify-content:space-between; align-items:center; margin-bottom:6px; gap:6px; }
 .eq-categoria-tag {
-  font-family:'Cinzel',serif; font-size:7px; padding:1px 6px; border-radius:2px; letter-spacing:.06em;
-  background:rgba(201,168,76,.1); color:#c9a84c; border:.5px solid rgba(201,168,76,.3); flex-shrink:0;
+  background:rgba(201,168,76,.1); color:#c9a84c; border-color:rgba(201,168,76,.3); flex-shrink:0;
 }
 
 /* Variantes de cor por categoria de Modificador — cada uma com sua
@@ -858,7 +900,7 @@ html, body {
 .eq-stat-mini { display:flex; align-items:center; gap:3px; }
 .eq-stat-mini i { font-size:11px; color:#666; }
 .eq-habilidades-mini { display:flex; gap:4px; flex-wrap:wrap; margin-top:4px; }
-.eq-hab-tag { font-size:8px; color:#8a7440; background:rgba(201,168,76,.06); border-radius:2px; padding:1px 5px; }
+.eq-hab-tag { color:#8a7440; background:rgba(201,168,76,.06); border-color:rgba(201,168,76,.22); }
 .eq-tags-fixas { display:flex; flex-wrap:wrap; gap:6px; justify-content:flex-start; }
 
 /* ── Toques Finais (Cap. 1, pp. 106-111): cards informativos. A maioria
@@ -1024,6 +1066,140 @@ html, body {
 .tf-idade-rolar-btn i { font-size: 20px; }
 .tf-idade-rolar-btn:hover { background: rgba(201,168,76,.15); border-color: #c9a84c; transform: translateY(-2px); }
 
+/* ── Regras Gerais (30/ago, reestruturado em árvore 31/ago) — Testes,
+   Habilidades & Efeitos e Combate (Cap. 5, pp. 220-239), adicionados à
+   antiga página "Toques Finais". `.rg-abas` é a barra de sub-navegação
+   interna (reaproveita `.filtro-btn`, já usado em toda a busca/filtro do
+   site); cada aba é um `.rg-aba-conteudo` mostrado/escondido por
+   `setAbaRegrasGerais()`.
+
+   Dentro de cada aba, 3 níveis (ver `_renderNoRegra` em compendio.js,
+   espelha a árvore Categoria > Subcategoria > Item dos data files):
+   - `.rg-categoria` — caixa dobrável de nível 0 (ex.: "Ações"). Fechada
+     por padrão (`.rg-categoria-corpo` some), exceto a 1ª de cada aba;
+     `.rg-categoria-header` tem o clique que alterna `.aberta`.
+   - `.rg-subcategoria` — agrupador de nível 1 (ex.: "Ação de
+     Movimento"), sempre visível — só um título + régua, sem dobra
+     própria, pra não exigir 2 cliques até o conteúdo.
+   - `.rg-item` — folha nomeada (ex.: "Levantar-se", "Agarrar
+     Aprimorado"), nome em destaque + descrição corrida, sempre visível.
+   Pensadas só como referência de leitura por enquanto, sem
+   interatividade própria (diferente das ferramentas de Criação de
+   Personagem, que já existiam nesta página). */
+.rg-abas { display:flex; gap:8px; flex-wrap:wrap; padding:0 24px 14px; }
+.rg-aba-conteudo { }
+
+.rg-categoria {
+  max-width:900px; width:100%; margin:0 auto 12px;
+  background:rgba(255,255,255,.015); border:.5px solid #1a1a1a; border-radius:8px;
+  overflow:hidden;
+}
+.rg-categoria-header {
+  display:flex; align-items:center; gap:8px; cursor:pointer; user-select:none;
+  padding:14px 18px; font-family:'Cinzel',serif; font-size:13px; color:#c9a84c; letter-spacing:.02em;
+  transition:background .15s;
+}
+.rg-categoria-header:hover { background:rgba(201,168,76,.04); }
+.rg-categoria-header i:first-child { font-size:15px; }
+.rg-categoria-seta { margin-left:auto; font-size:12px; color:#666; transition:transform .2s; }
+.rg-categoria.aberta .rg-categoria-seta { transform:rotate(180deg); }
+.rg-categoria-corpo { display:none; padding:0 18px 16px; }
+.rg-categoria.aberta .rg-categoria-corpo { display:block; }
+
+.rg-subcategoria { margin:14px 0; padding-top:10px; border-top:.5px solid #1a1a1a; }
+.rg-subcategoria:first-child { margin-top:0; padding-top:0; border-top:none; }
+.rg-subcategoria-titulo {
+  font-family:'Cinzel',serif; font-size:11px; color:#999; text-transform:uppercase;
+  letter-spacing:.06em; margin-bottom:8px;
+}
+
+.rg-item { margin:0 0 12px; padding-left:2px; }
+.rg-item:last-child { margin-bottom:0; }
+.rg-item-nome { font-family:'Cinzel',serif; font-size:12px; color:#e8c878; margin-bottom:4px; }
+
+.rg-categoria p, .rg-subcategoria p, .rg-item p { font-size:12px; color:#aaa; line-height:1.7; margin:0 0 10px; }
+.rg-categoria p:last-child, .rg-subcategoria p:last-child, .rg-item p:last-child { margin-bottom:0; }
+.rg-categoria strong, .rg-subcategoria strong, .rg-item strong { color:#ccc; }
+.rg-categoria ul, .rg-subcategoria ul, .rg-item ul { margin:0 0 10px; padding-left:18px; }
+.rg-categoria ul:last-child, .rg-subcategoria ul:last-child, .rg-item ul:last-child { margin-bottom:0; }
+.rg-categoria li, .rg-subcategoria li, .rg-item li { font-size:12px; color:#aaa; line-height:1.7; margin-bottom:6px; }
+.rg-formula {
+  font-family:'Cinzel',serif; font-size:11px; color:#e8c878; text-align:center;
+  background:rgba(201,168,76,.06); border:.5px solid rgba(201,168,76,.25); border-radius:6px;
+  padding:10px 14px; margin:0 0 12px; white-space:pre-line; line-height:1.8;
+}
+.rg-destaque {
+  font-size:11.5px; color:#999; font-style:italic; line-height:1.7;
+  background:rgba(255,255,255,.02); border-left:2px solid rgba(201,168,76,.35);
+  padding:8px 12px; margin:0 0 10px; border-radius:0 4px 4px 0;
+}
+.rg-tabela-titulo { font-family:'Cinzel',serif; font-size:11px; color:#c9a84c; margin:10px 0 8px; text-align:center; }
+.rg-tabela-nota { font-size:10px; color:#666; font-style:italic; margin-top:8px; line-height:1.6; }
+.rg-tabela-grupo-rotulo { font-family:'Cinzel',serif; font-size:10px; color:#999; text-transform:uppercase; letter-spacing:.05em; margin:12px 0 4px; }
+.rg-tabela-grupo-rotulo:first-child { margin-top:0; }
+.rg-categoria .eq-tabela tr, .rg-subcategoria .eq-tabela tr, .rg-item .eq-tabela tr { cursor:default; }
+.rg-categoria .eq-tabela tr:hover td, .rg-subcategoria .eq-tabela tr:hover td, .rg-item .eq-tabela tr:hover td { background:none; color:#aaa; }
+.rg-categoria .eq-tabela td:first-child, .rg-subcategoria .eq-tabela td:first-child, .rg-item .eq-tabela td:first-child { color:#ccc; white-space:normal; }
+.rg-categoria .eq-tabela td, .rg-subcategoria .eq-tabela td, .rg-item .eq-tabela td { white-space:normal; }
+
+/* ── Gerador de Tesouro (30/ago) — 5ª aba de Regras Gerais, Cap. 8:
+   Recompensas. Ferramenta de rolagem (não texto fixo do livro): cada
+   clique em "Rolar Tesouro" prepende um `.tg-resultado-card` em
+   `#tgHistorico`. Reaproveita `.calc-combate`/`.tf-idade-rolar-btn` pra
+   moldura e botão; classes `.tg-*` cobrem só o resultado da rolagem. */
+.tg-controles {
+  display:flex; align-items:flex-end; gap:14px; flex-wrap:wrap; margin-bottom:14px;
+}
+.tg-controles select#tgNdSelect {
+  background:#111; border:.5px solid #2a2a2a; border-radius:5px; color:#ccc;
+  font-size:12px; padding:7px 10px; min-width:90px;
+}
+.tg-limpar-btn {
+  display:flex; flex-direction:column; align-items:center; gap:4px;
+  background:rgba(255,255,255,.03); border:.5px solid #2a2a2a; border-radius:8px;
+  padding:10px 20px; cursor:pointer; color:#888;
+  font-family:'Cinzel',serif; font-size:9px; letter-spacing:.08em; text-transform:uppercase;
+  transition: all .2s;
+}
+.tg-limpar-btn i { font-size:18px; }
+.tg-limpar-btn:hover { background:rgba(255,255,255,.06); border-color:#444; color:#ccc; }
+
+.tg-historico { display:flex; flex-direction:column; gap:10px; }
+.tg-resultado-card {
+  background:rgba(255,255,255,.02); border:.5px solid rgba(201,168,76,.25); border-radius:6px;
+  padding:12px 14px; animation: tg-surge .35s ease-out;
+}
+@keyframes tg-surge { from { opacity:0; transform:translateY(-6px); } to { opacity:1; transform:translateY(0); } }
+.tg-resultado-header {
+  font-family:'Cinzel',serif; font-size:11px; color:#c9a84c; letter-spacing:.04em;
+  display:flex; align-items:center; gap:6px; margin-bottom:8px; padding-bottom:6px;
+  border-bottom:.5px solid rgba(201,168,76,.2);
+}
+.tg-resultado-bloco { margin-bottom:8px; }
+.tg-resultado-bloco:last-child { margin-bottom:0; }
+.tg-resultado-label {
+  display:block; font-size:8px; color:#666; letter-spacing:.1em; text-transform:uppercase; margin-bottom:4px;
+}
+.tg-nenhum { font-size:11.5px; color:#666; font-style:italic; }
+.tg-tag {
+  display:inline-block; font-size:8px; color:#999; letter-spacing:.06em; text-transform:uppercase;
+  background:rgba(255,255,255,.04); border-radius:3px; padding:2px 6px; margin-right:6px; vertical-align:middle;
+}
+.tg-riqueza { margin-bottom:6px; font-size:12px; color:#ccc; }
+.tg-riqueza:last-child { margin-bottom:0; }
+.tg-riqueza strong { color:#7ec8a0; }
+.tg-exemplo { font-size:11px; color:#888; font-style:italic; margin:2px 0 0; line-height:1.6; }
+.tg-diverso, .tg-equipamento { font-size:12px; color:#ccc; }
+.tg-item-superior, .tg-item-magico { font-size:12px; color:#ccc; }
+.tg-item-superior strong, .tg-item-magico strong { color:#c9a84c; display:block; margin:2px 0 4px; }
+.tg-item-magico p { font-size:11.5px; color:#aaa; line-height:1.7; margin:0; }
+.tg-preco { font-size:10px; color:#7ec8a0; }
+.tg-lista-encantos { margin:4px 0 0; padding-left:16px; }
+.tg-lista-encantos li { font-size:11.5px; color:#aaa; line-height:1.7; margin-bottom:4px; }
+.tg-lista-encantos li strong { color:#ccc; }
+.tg-nota { font-size:10px; color:#666; font-style:italic; margin:6px 0 0; }
+.tg-tabela-ref td, .tg-tabela-ref th { text-align:center; }
+
 .eq-stats-grid {
   display:grid; grid-template-columns:1fr 1fr; gap:8px 16px;
   background:rgba(255,255,255,.02); border:.5px solid #1a1a1a; border-radius:5px;
@@ -1091,7 +1267,9 @@ html, body {
 
 /* Badges raridade/fonte */
 .dp-badges { display:flex; gap:4px; flex-wrap:wrap; margin-bottom:.9rem; }
-.dp-badge { font-family:'Cinzel',serif; font-size:7px; padding:2px 7px; border-radius:2px; letter-spacing:.08em; }
+/* .dp-badge só define geometria pelo padrão de TAGS PADRÃO acima —
+   cor vem sempre de uma classe combinada (.badge-comum/.badge-rara/
+   .badge-fonte etc.), igual .rc-badge. */
 
 /* Atributos grid */
 .dp-atribs { display:grid; grid-template-columns:1fr 1fr; gap:5px; margin-bottom:.9rem; }
@@ -1143,7 +1321,7 @@ html, body {
 
 /* Classes recomendadas */
 .dp-classes { display:flex; gap:5px; flex-wrap:wrap; }
-.dp-classe-tag { font-family:'Cinzel',serif; font-size:7px; padding:2px 8px; border-radius:2px; background:rgba(136,136,255,.07); color:#8888ff88; border:.5px solid rgba(136,136,255,.2); letter-spacing:.06em; }
+.dp-classe-tag { background:rgba(136,136,255,.07); color:#8888ff88; border-color:rgba(136,136,255,.2); }
 
 /* ── Painel de detalhe de Origem ── */
 /* Card de poder dentro do painel de Origem — reaproveita o MESMO card de
@@ -1191,8 +1369,11 @@ html, body {
 }
 .dd-devoto-nota i { font-size:13px; flex-shrink:0; color:#c9a84c; }
 
-/* Botões painel */
-.dp-btns { margin-top:1rem; display:flex; flex-direction:column; gap:6px; }
+/* Botões painel — .dp-btns (wrapper) removido (30/ago): só era usado pelos
+   botões "Ver no Livro"/"Adicionar à Ficha" de Raça e Classe, removidos por
+   pedido do usuário (não tinham ação, não serão correlacionados ao site).
+   .btn-pdf/.btn-ghost continuam — ainda usados em Parceiro→Bestiário e
+   Raça→Bestiário com onclick de verdade. */
 .btn-pdf { width:100%; background:#8B0000; color:#e8e8e8; border:none; padding:9px; border-radius:3px; font-family:'Cinzel',serif; font-size:9px; letter-spacing:.15em; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:7px; transition:background .2s; }
 .btn-pdf:hover { background:#a50000; }
 .btn-ghost { width:100%; background:transparent; color:#555; border:.5px solid #2a2a2a; padding:8px; border-radius:3px; font-family:'Cinzel',serif; font-size:8px; letter-spacing:.1em; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:7px; transition:all .2s; }
@@ -1314,21 +1495,39 @@ html, body {
 
 .cc-profs     { display: flex; gap: 4px; flex-wrap: wrap; margin-bottom: .45rem; }
 
-/* Base compartilhada de todas as tags-pill (tipo, PM, nível, bônus, fonte, proficiência) */
-.tag-ativo, .tag-passivo, .tag-custo-pm, .tag-bonus, .cc-prof-tag, .cp-tag-fonte, .cp-tag-categoria, .cp-poder-nivel {
+/* ============================================================
+   TAGS PADRÃO — base compartilhada de TODA tag/badge colorida do
+   site (raridade, fonte, tipo, tema, categoria, nível, energia,
+   proficiência, ND/CD etc.). Define só geometria/tipografia; cada
+   classe individual (abaixo, no resto do arquivo) fica só com a
+   PRÓPRIA cor (background/color/border-color). Ver §16 do
+   CLAUDE.md pra lista completa e como somar uma tag nova.
+   Não confundir com badges de CONTAGEM (`.ref-prof-badge`,
+   `.cp-selecionados-badge`), que são círculo/pílula de propósito —
+   mostram um número, não uma categoria, e continuam soltos.
+============================================================ */
+.rc-badge, .rc-tag, .oc-tema-tag, .oc-chip,
+.eq-categoria-tag, .eq-hab-tag,
+.dp-badge, .dp-classe-tag,
+.tag-ativo, .tag-passivo, .tag-custo-pm, .tag-bonus, .tag-especial,
+.cc-prof-tag, .cp-tag-fonte, .cp-tag-categoria, .cp-poder-nivel,
+.cp-var-nivel-badge, .per-tag, .cr-tag, .e-divina, .calc-grupo-tag, .cp-prereq-node,
+.badge-dur {
   font-family: 'Cinzel', serif;
   font-size: 7px;
-  padding: 1px 6px;
+  padding: 2px 7px;
   border-radius: 2px;
   border: .5px solid;
-  letter-spacing: .04em;
+  letter-spacing: .05em;
   white-space: nowrap;
-}
-.tag-ativo, .tag-passivo, .tag-custo-pm, .tag-bonus {
   display: inline-flex;
   align-items: center;
   gap: 3px;
 }
+/* Modificador de tamanho — pra tag que precisa de mais destaque (ex.: ND/CD
+   no card de Criatura/Perigo, já usada assim antes: class="... cr-nd-tag").
+   Some junto da tag base, nunca sozinha. */
+.tag-lg { font-size: 9px; padding: 3px 9px; }
 
 .cc-prof-tag  { background: rgba(255,255,255,.02); color: #55555588; border-color: rgba(255,255,255,.08); }
 
@@ -1464,11 +1663,27 @@ html, body {
 .tag-passivo { background: rgba(20,80,30,.2);  color: #50a868; border-color: rgba(20,80,30,.5); }
 .tag-custo-pm { background: rgba(68,170,238,.15); color: #44aaee; border-color: rgba(68,170,238,.3); font-weight: 500; }
 .cp-poder-desc { font-size: 12px; color: #666; line-height: 1.6; }
-.cp-prereq { display: flex; align-items: center; gap: 3px; font-size: 10px; color: #333; margin-top: 5px; flex-wrap: wrap; }
-.cp-prereq-node { background: #111; border: .5px solid #1e1e1e; border-radius: 2px; padding: 1px 5px; color: #555; font-size: 10px; }
+/* .cp-prereq/.cp-prereq-node: definição real fica mais abaixo (perto de
+   .cp-poder-nivel), essa aqui era um rascunho antigo já sobrescrito pela
+   segunda declaração — removido por ser CSS morto (achado ao caçar
+   duplicação nesta limpeza de tags). */
 
 .tag-bonus { background: rgba(201,168,76,.15); color: #c9a84c; border-color: rgba(201,168,76,.4); }
 .tag-bonus i { font-size: 9px; }
+
+/* Badge de duração (Poderes) — achada sem NENHUMA cor definida (30/ago,
+   feedback do usuário pedindo pra caçar tags fora do padrão): `.badge-dur`
+   e as 6 variantes abaixo (vindas de detectarDuracao() em keywords.js)
+   nunca tiveram CSS, então o span caía pro estilo padrão do navegador
+   (sem cor, sem borda, sem fundo) em pelo menos 25 poderes gerais.
+   Geometria já vem do padrão de TAGS PADRÃO acima; aqui só cor, numa
+   escala de curto (cinza apagado) a permanente (verde sólido). */
+.bd-rodada { background: rgba(255,255,255,.03); color: #4a4a4a; border-color: rgba(255,255,255,.1); }
+.bd-turno  { background: rgba(120,150,180,.08); color: #6a8aa8; border-color: rgba(120,150,180,.25); }
+.bd-cena   { background: rgba(120,150,180,.12); color: #7ea0c0; border-color: rgba(120,150,180,.32); }
+.bd-dia    { background: rgba(120,150,180,.16); color: #8fb4d8; border-color: rgba(120,150,180,.4); }
+.bd-sust   { background: rgba(224,144,80,.14);  color: #e09050; border-color: rgba(224,144,80,.35); }
+.bd-perm   { background: rgba(80,168,104,.14);  color: #5cb85c; border-color: rgba(80,168,104,.35); }
 
 .cp-poder-footer { display: flex; align-items: center; margin-top: 9px; }
 .cp-poder-footer .cp-poder-add-btn { margin-top: 0; }
@@ -1567,7 +1782,6 @@ html, body {
 .cc-campo-l   { font-size: 8px; }
 .cc-campo-v   { font-size: 13px; }
 .cc-desc      { font-size: 13px; }
-.cc-prof-tag  { font-size: 8px; }
 
 /* Highlights PV/PM dentro dos cards */
 .cc-campo-v .pv-val {
@@ -1680,7 +1894,7 @@ html, body {
 .cp-categoria-body.collapsed { display: none; }
 
 /* ── Badge de nível mínimo nos poderes ── */
-.cp-poder-nivel { color: #444; border-color: #1e1e1e; padding: 1px 5px; letter-spacing: .03em; flex-shrink: 0; }
+.cp-poder-nivel { color: #444; border-color: #1e1e1e; flex-shrink: 0; }
 
 /* ── Cadeia de pré-requisitos — refinada ── */
 .cp-prereq {
@@ -1700,14 +1914,9 @@ html, body {
 }
 .cp-prereq-node {
   background: #111;
-  border: .5px solid #1e1e1e;
-  border-radius: 2px;
-  padding: 2px 7px;
-  font-family: 'Cinzel', serif;
-  font-size: 8px;
+  border-color: #1e1e1e;
   color: #555;
   cursor: pointer;
-  letter-spacing: .03em;
   transition: color .15s, border-color .15s;
 }
 .cp-prereq-node:hover { color: #c9a84c; border-color: rgba(201,168,76,.25); }
@@ -1736,12 +1945,13 @@ html, body {
 
 /* Grid de cards: ND em destaque maior, tags de tipo/tamanho, PV em
    vermelho e Defesa em amarelo — pedido explícito do usuário pra dar
-   mais hierarquia visual aos números mais importantes do card. */
-.cr-nd-tag { font-size: 10px; padding: 2px 8px; }
+   mais hierarquia visual aos números mais importantes do card.
+   `.cr-nd-tag` é a mesma ideia do modificador `.tag-lg` (ver TAGS PADRÃO
+   acima) — mantido com nome próprio só porque já é usado em 4 lugares. */
+.cr-nd-tag { font-size: 9px; padding: 3px 9px; }
 .cr-tags-tipo { display:flex; flex-wrap:wrap; gap:5px; margin-bottom:6px; }
 .cr-tag {
-  font-family:'Cinzel',serif; font-size:8px; padding:1px 6px; border-radius:2px; letter-spacing:.04em;
-  background:rgba(255,255,255,.03); color:#888; border:.5px solid #222;
+  background:rgba(255,255,255,.03); color:#888; border-color:#222;
 }
 .cr-stat-pv { color:#cc4444; }
 .cr-stat-pv i { color:#cc4444; }
@@ -1855,11 +2065,10 @@ html, body {
 }
 .calc-grupo-card.calc-grupo-solo { border-color:rgba(139,26,26,.4); box-shadow:inset 3px 0 0 0 #8b1a1a; }
 .calc-grupo-tag {
-  display:inline-flex; align-items:center; gap:4px; flex-shrink:0;
-  font-family:'Cinzel',serif; font-size:8px; letter-spacing:.08em; text-transform:uppercase;
-  padding:3px 7px; border-radius:3px; background:rgba(120,120,120,.12); color:#999;
+  flex-shrink:0; text-transform:uppercase;
+  background:rgba(120,120,120,.12); color:#999; border-color:rgba(120,120,120,.3);
 }
-.calc-grupo-tag-vazio { padding:3px 0; }
+.calc-grupo-tag-vazio { padding:2px 0; border:none; background:none; }
 .calc-grupo-tag-solo { background:rgba(139,26,26,.18); color:#d38a8a; }
 .calc-grupo-tag-lacaio { background:rgba(68,120,170,.15); color:#8ab4d3; }
 .calc-grupo-tag-especial { background:rgba(201,168,76,.15); color:#d8bd77; }
@@ -2114,12 +2323,7 @@ html, body {
 .tag-especial {
   background: rgba(123,76,204,.12);
   color: #9070c8;
-  border: .5px solid rgba(123,76,204,.3);
-  font-family: 'Cinzel', serif;
-  font-size: 7px;
-  padding: 1px 6px;
-  border-radius: 2px;
-  letter-spacing: .04em;
+  border-color: rgba(123,76,204,.3);
 }
 
 /* ── Variação inline — dentro da habilidade fixa ── */
@@ -2268,18 +2472,7 @@ html, body {
 }
 
 /* ── Badges de energia divina (Clérigo / Paladino / Deuses) ── */
-.e-divina {
-  font-family: 'Cinzel', serif;
-  font-size: 8px;
-  letter-spacing: .03em;
-  padding: 2px 7px;
-  border-radius: 2px;
-  border: .5px solid;
-  display: inline-flex;
-  align-items: center;
-  gap: 3px;
-  flex-shrink: 0;
-}
+.e-divina { flex-shrink: 0; }
 .e-positiva {
   background: rgba(201,168,76,.1);
   color: #c9943a;
@@ -2310,17 +2503,7 @@ html, body {
 }
 .cp-var-nivel:last-child { margin-bottom: 0; }
 
-.cp-var-nivel-badge {
-  font-family: 'Cinzel', serif;
-  font-size: 7px;
-  padding: 1px 6px;
-  border-radius: 2px;
-  border: .5px solid;
-  flex-shrink: 0;
-  margin-top: 2px;
-  letter-spacing: .04em;
-  white-space: nowrap;
-}
+.cp-var-nivel-badge { flex-shrink: 0; margin-top: 2px; }
 .cp-var-nivel-base {
   background: rgba(80,80,80,.1);
   color: #666;
@@ -2392,10 +2575,7 @@ html, body {
 .per-linha.aberto .per-nome { color: #e0c060; }
 .per-resumo { font-size: 9.5px; color: #555; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 1px; }
 
-.per-tag {
-  font-family: 'Cinzel', serif; font-size: 7px; padding: 1px 6px; border-radius: 2px;
-  border: .5px solid; letter-spacing: .04em; white-space: nowrap; flex-shrink: 0;
-}
+.per-tag { flex-shrink: 0; }
 .per-tag-treinada { background: rgba(139,0,0,.12); color: #cc6666; border-color: rgba(139,0,0,.3); }
 .per-tag-armadura { background: rgba(80,80,80,.12); color: #999; border-color: rgba(80,80,80,.3); }
 
@@ -2526,6 +2706,19 @@ html, body {
   cursor:pointer; transition:all .2s;
 }
 .filtro-select:hover { color:#ccc; border-color:#2a2a2a; }
+
+/* "Todos os Poderes Gerais" tem 6 filtros de categoria + 4 de tipo — a
+   página com mais filtros do site (backlog anotado, pedido do usuário
+   30/ago). Em tela cheia continuam como .filtro-btn (linguagem visual
+   padrão); abaixo de 768px (mesmo ponto de corte onde o menu lateral já
+   vira hambúrguer) trocam pra dois <select class="filtro-select">
+   (mesmo componente já usado no filtro de Condição de Perigos) — menos
+   "achatado"/apertado que 10 botões quebrando linha numa tela estreita. */
+.pg-filtro-mobile { display:none; }
+@media (max-width: 768px) {
+  .pg-filtros-desktop { display:none !important; }
+  .pg-filtro-mobile { display:block; flex:1; min-width:140px; }
+}
 
 /* Marcador "usado na mesa" — vive dentro da própria linha do topo do card
    (ao lado da tag de categoria), não mais sobreposto/absoluto por cima

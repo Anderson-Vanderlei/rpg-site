@@ -46,7 +46,8 @@
 
   <div class="topbar-search">
     <i class="ti ti-search" aria-hidden="true"></i>
-    <input type="text" id="buscaGlobal" placeholder="Buscar no compêndio… (Ctrl+K)" />
+    <input type="text" id="buscaGlobal" placeholder="Buscar no compêndio… (Ctrl+K)" autocomplete="off" />
+    <div class="busca-global-resultados" id="buscaGlobalResultados"></div>
   </div>
 </header>
 
@@ -127,11 +128,11 @@
         <!-- Lista de deuses gerada pelo JS -->
         <div class="nav-sub-sub" id="navListaDeuses" style="display:none"></div>
 
-        <!-- Toques Finais -->
+        <!-- Regras Gerais (antes "Toques Finais") -->
         <div class="nav-sub-item" data-secao="toques"
              onclick="toggleSubItem(this,'toques')">
-          <i class="ti ti-wand" aria-hidden="true"></i>
-          <span class="sub-label">Toques Finais</span>
+          <i class="ti ti-book-2" aria-hidden="true"></i>
+          <span class="sub-label">Regras Gerais</span>
         </div>
 
       </div>
@@ -364,11 +365,6 @@
           <i class="ti ti-heart" aria-hidden="true"></i>
           <span class="sub-label">Parceiros</span>
         </div>
-        <div class="nav-sub-item" data-secao="montarias"
-             onclick="toggleSubItem(this,'montarias')">
-          <i class="ti ti-horse" aria-hidden="true"></i>
-          <span class="sub-label">Montarias</span>
-        </div>
       </div>
     </div>
 
@@ -441,17 +437,6 @@
 
           <div class="dp-secao">Classes Recomendadas</div>
           <div class="dp-classes" id="dpClasses"></div>
-
-          <div class="dp-btns">
-            <button class="btn-pdf" id="dpBtnPdf">
-              <i class="ti ti-book" aria-hidden="true"></i>
-              Ver no Livro
-            </button>
-            <button class="btn-ghost">
-              <i class="ti ti-notes" aria-hidden="true"></i>
-              Adicionar à Ficha
-            </button>
-          </div>
         </div>
       </div>
 
@@ -656,6 +641,16 @@
           <button class="filtro-btn" data-energia="negativa" onclick="setFiltroDeus(this,'negativa')">Negativa</button>
           <button class="filtro-btn" data-energia="dual" onclick="setFiltroDeus(this,'dual')">Qualquer</button>
         </div>
+        <!-- Filtro de Devoto (30/ago, pedido do usuário): raça e/ou classe,
+             mostrando só deuses que aceitam devotos daquela seleção. Select
+             em vez de botões — 17 raças + 14 classes viraria poluição visual
+             de filtro-btn (mesma preocupação já anotada no CLAUDE.md). -->
+        <select id="deusesFiltroRaca" class="filtro-select" onchange="setFiltroDevotoDeus('raca', this.value)" title="Filtrar por raça devota">
+          <option value="todos">Qualquer raça</option>
+        </select>
+        <select id="deusesFiltroClasse" class="filtro-select" onchange="setFiltroDevotoDeus('classe', this.value)" title="Filtrar por classe devota">
+          <option value="todos">Qualquer classe</option>
+        </select>
         <span class="filtro-count" id="deusesCount">20 divindades</span>
       </div>
 
@@ -686,11 +681,23 @@
     <div id="secao-toques" class="secao-conteudo" style="display:none;flex-direction:column;flex:1;overflow:auto;">
       <div class="section-hero">
         <div class="section-hero-bg"></div>
-        <h1>Toques Finais</h1>
-        <p>Características derivadas, idade, envelhecimento e alinhamento — os últimos passos da criação de personagem (Capítulo 1, pp. 106-111).</p>
+        <h1>Regras Gerais</h1>
+        <p>Criação de personagem, testes, habilidades &amp; efeitos, combate, magias, tempo entre aventuras, ambientes de aventura, como o mestre constrói combates e um gerador de tesouro — as regras-base que sustentam todo o resto do jogo (Capítulos 1, 4, 5, 6, 7 e 8).</p>
       </div>
 
-      <div class="cards-area">
+      <div class="rg-abas" id="rgAbas">
+        <button class="filtro-btn a" data-aba="criacao" onclick="setAbaRegrasGerais(this,'criacao')"><i class="ti ti-wand" aria-hidden="true"></i> Criação de Personagem</button>
+        <button class="filtro-btn" data-aba="testes" onclick="setAbaRegrasGerais(this,'testes')"><i class="ti ti-dice" aria-hidden="true"></i> Testes</button>
+        <button class="filtro-btn" data-aba="habilidades" onclick="setAbaRegrasGerais(this,'habilidades')"><i class="ti ti-sparkles" aria-hidden="true"></i> Habilidades &amp; Efeitos</button>
+        <button class="filtro-btn" data-aba="combate" onclick="setAbaRegrasGerais(this,'combate')"><i class="ti ti-sword" aria-hidden="true"></i> Combate</button>
+        <button class="filtro-btn" data-aba="magias" onclick="setAbaRegrasGerais(this,'magias')"><i class="ti ti-wand" aria-hidden="true"></i> Magias</button>
+        <button class="filtro-btn" data-aba="tempo" onclick="setAbaRegrasGerais(this,'tempo')"><i class="ti ti-hourglass" aria-hidden="true"></i> Tempo entre Aventuras</button>
+        <button class="filtro-btn" data-aba="ambientes" onclick="setAbaRegrasGerais(this,'ambientes')"><i class="ti ti-map-2" aria-hidden="true"></i> Ambientes de Aventura</button>
+        <button class="filtro-btn" data-aba="construcao" onclick="setAbaRegrasGerais(this,'construcao')"><i class="ti ti-swords" aria-hidden="true"></i> Construindo Combates</button>
+        <button class="filtro-btn" data-aba="tesouro" onclick="setAbaRegrasGerais(this,'tesouro')"><i class="ti ti-coin" aria-hidden="true"></i> Gerador de Tesouro</button>
+      </div>
+
+      <div class="cards-area rg-aba-conteudo" id="rgAbaCriacao">
         <div class="calc-combate calc-combate-full">
           <div class="calc-combate-header"><span><i class="ti ti-heartbeat" aria-hidden="true"></i> Recuperação de PM e PV</span></div>
           <p class="calc-combate-nota">
@@ -779,7 +786,71 @@
           </p>
           <div id="tfAlinhamentoGrid" class="tf-alinhamento-grid"></div>
         </div>
-      </div>
+      </div><!-- /rgAbaCriacao -->
+
+      <div class="cards-area rg-aba-conteudo" id="rgAbaTestes" style="display:none;">
+        <div id="rgTestesLista"></div>
+      </div><!-- /rgAbaTestes -->
+
+      <div class="cards-area rg-aba-conteudo" id="rgAbaHabilidades" style="display:none;">
+        <div id="rgHabilidadesLista"></div>
+      </div><!-- /rgAbaHabilidades -->
+
+      <div class="cards-area rg-aba-conteudo" id="rgAbaCombate" style="display:none;">
+        <div id="rgCombateLista"></div>
+      </div><!-- /rgAbaCombate -->
+
+      <div class="cards-area rg-aba-conteudo" id="rgAbaMagias" style="display:none;">
+        <div id="rgMagiasLista"></div>
+      </div><!-- /rgAbaMagias -->
+
+      <div class="cards-area rg-aba-conteudo" id="rgAbaTempo" style="display:none;">
+        <div id="rgTempoLista"></div>
+      </div><!-- /rgAbaTempo -->
+
+      <div class="cards-area rg-aba-conteudo" id="rgAbaAmbientes" style="display:none;">
+        <div id="rgAmbientesLista"></div>
+      </div><!-- /rgAbaAmbientes -->
+
+      <div class="cards-area rg-aba-conteudo" id="rgAbaConstrucao" style="display:none;">
+        <div id="rgConstrucaoLista"></div>
+      </div><!-- /rgAbaConstrucao -->
+
+      <div class="cards-area rg-aba-conteudo" id="rgAbaTesouro" style="display:none;">
+        <div class="calc-combate calc-combate-full">
+          <div class="calc-combate-header"><span><i class="ti ti-coin" aria-hidden="true"></i> Gerador de Tesouro</span></div>
+          <p class="calc-combate-nota">
+            <span class="tf-config-selo" title="Calculadora interativa do site — não é texto do livro, é uma ferramenta de dado">configuração</span>
+            Rola o tesouro completo de um combate a partir do Nível de Desafio (Tabela 8-1, Cap. 8: Recompensas) — dinheiro, riquezas, itens diversos/equipamento, itens superiores e, quando o resultado exigir, item mágico completo (arma, armadura/escudo, acessório ou poção) com a descrição inteira do livro.
+          </p>
+          <div class="tg-controles">
+            <label class="calc-combate-campo">Nível de Desafio (ND)
+              <select id="tgNdSelect"></select>
+            </label>
+            <button class="tf-idade-rolar-btn" onclick="rolarTesouroPorND()" title="Rolar tesouro para este ND">
+              <i class="ti ti-dice" aria-hidden="true"></i>
+              <span>Rolar Tesouro</span>
+            </button>
+            <button class="tg-limpar-btn" onclick="limparHistoricoTesouro()" title="Limpar histórico de rolagens">
+              <i class="ti ti-trash" aria-hidden="true"></i>
+              <span>Limpar Histórico</span>
+            </button>
+          </div>
+          <div id="tgHistorico" class="tg-historico"></div>
+        </div>
+
+        <div class="calc-combate calc-combate-full">
+          <div class="calc-combate-header"><span><i class="ti ti-chart-bar" aria-hidden="true"></i> Tesouro Médio por Cena (Tabela 8-6)</span></div>
+          <p class="calc-combate-nota">Referência de mestre — não entra na rolagem. Compare o total acumulado pelo grupo contra esses valores esperados por nível (ver "Controlando a Riqueza", p.332).</p>
+          <div class="eq-tabela-scroll" id="tgTesouroMedioCena"></div>
+        </div>
+
+        <div class="calc-combate calc-combate-full">
+          <div class="calc-combate-header"><span><i class="ti ti-scale" aria-hidden="true"></i> Preço de Encantos (Tabela 8-7)</span></div>
+          <p class="calc-combate-nota">Referência de custo pra fabricar itens encantados sob encomenda (Itens Permanentes, p.334) — também não entra na rolagem, é só contexto de preço.</p>
+          <div class="eq-tabela-scroll" id="tgPrecoEncantos"></div>
+        </div>
+      </div><!-- /rgAbaTesouro -->
     </div><!-- /secao-toques -->
 
     <div id="secao-pericias" class="secao-conteudo" style="display:none;flex-direction:column;flex:1;overflow:hidden;">
@@ -830,14 +901,22 @@
             <i class="ti ti-search" aria-hidden="true"></i>
             <input type="text" id="buscaPoderesTodos" placeholder="Buscar poder…" />
           </div>
-          <div id="poderesTodosFiltrosCategoria" style="display:flex;gap:8px;flex-wrap:wrap;">
-            <button class="filtro-btn a" onclick="setFiltroPoderTodos(this,'categoria','todos')">Todas as categorias</button>
-            <button class="filtro-btn" onclick="setFiltroPoderTodos(this,'categoria','combate')">Combate</button>
-            <button class="filtro-btn" onclick="setFiltroPoderTodos(this,'categoria','destino')">Destino</button>
-            <button class="filtro-btn" onclick="setFiltroPoderTodos(this,'categoria','magia')">Magia</button>
-            <button class="filtro-btn" onclick="setFiltroPoderTodos(this,'categoria','concedidos')">Concedidos</button>
-            <button class="filtro-btn" onclick="setFiltroPoderTodos(this,'categoria','tormenta')">Tormenta</button>
+          <div id="poderesTodosFiltrosCategoria" class="pg-filtros-desktop" style="display:flex;gap:8px;flex-wrap:wrap;">
+            <button class="filtro-btn a" data-valor="todos" onclick="setFiltroPoderTodos(this,'categoria','todos')">Todas as categorias</button>
+            <button class="filtro-btn" data-valor="combate" onclick="setFiltroPoderTodos(this,'categoria','combate')">Combate</button>
+            <button class="filtro-btn" data-valor="destino" onclick="setFiltroPoderTodos(this,'categoria','destino')">Destino</button>
+            <button class="filtro-btn" data-valor="magia" onclick="setFiltroPoderTodos(this,'categoria','magia')">Magia</button>
+            <button class="filtro-btn" data-valor="concedidos" onclick="setFiltroPoderTodos(this,'categoria','concedidos')">Concedidos</button>
+            <button class="filtro-btn" data-valor="tormenta" onclick="setFiltroPoderTodos(this,'categoria','tormenta')">Tormenta</button>
           </div>
+          <select id="poderesTodosCategoriaMobile" class="filtro-select pg-filtro-mobile" onchange="setFiltroPoderTodosMobile('categoria', this.value)">
+            <option value="todos">Todas as categorias</option>
+            <option value="combate">Combate</option>
+            <option value="destino">Destino</option>
+            <option value="magia">Magia</option>
+            <option value="concedidos">Concedidos</option>
+            <option value="tormenta">Tormenta</option>
+          </select>
           <span class="filtro-count" id="poderesTodosCount" style="margin-left:auto;">162 poderes</span>
           <div class="pg-modo-toggle">
             <button class="pg-modo-btn" id="pgModoLista" onclick="setModoPoderesTodos('lista')" title="Lista única">
@@ -848,11 +927,19 @@
             </button>
           </div>
         </div>
-        <div id="poderesTodosFiltrosTipo" style="display:flex;gap:8px;flex-wrap:wrap;">
-          <button class="filtro-btn a" onclick="setFiltroPoderTodos(this,'tipo','todos')">Todos</button>
-          <button class="filtro-btn" onclick="setFiltroPoderTodos(this,'tipo','ativo')">Ativo</button>
-          <button class="filtro-btn" onclick="setFiltroPoderTodos(this,'tipo','passivo')">Passivo</button>
-          <button class="filtro-btn" onclick="setFiltroPoderTodos(this,'tipo','bonus')">Bônus</button>
+        <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
+          <div id="poderesTodosFiltrosTipo" class="pg-filtros-desktop" style="display:flex;gap:8px;flex-wrap:wrap;">
+            <button class="filtro-btn a" data-valor="todos" onclick="setFiltroPoderTodos(this,'tipo','todos')">Todos</button>
+            <button class="filtro-btn" data-valor="ativo" onclick="setFiltroPoderTodos(this,'tipo','ativo')">Ativo</button>
+            <button class="filtro-btn" data-valor="passivo" onclick="setFiltroPoderTodos(this,'tipo','passivo')">Passivo</button>
+            <button class="filtro-btn" data-valor="bonus" onclick="setFiltroPoderTodos(this,'tipo','bonus')">Bônus</button>
+          </div>
+          <select id="poderesTodosTipoMobile" class="filtro-select pg-filtro-mobile" onchange="setFiltroPoderTodosMobile('tipo', this.value)">
+            <option value="todos">Todos os tipos</option>
+            <option value="ativo">Ativo</option>
+            <option value="passivo">Passivo</option>
+            <option value="bonus">Bônus</option>
+          </select>
         </div>
       </div>
 
@@ -2110,9 +2197,6 @@
       </div>
 
     </div><!-- /secao-parceiros -->
-    <div id="secao-montarias"       class="secao-conteudo placeholder-area" style="display:none">
-      <i class="ti ti-horse" aria-hidden="true"></i><h2>Montarias</h2><p>Em breve</p>
-    </div>
 
   </div><!-- /main -->
 
@@ -2129,7 +2213,16 @@
 <script src="../js/data/origens.js"></script>
 <script src="../js/data/deuses.js"></script>
 <script src="../js/data/toques_finais.js"></script>
+<script src="../js/data/regras_testes.js"></script>
+<script src="../js/data/regras_habilidades_efeitos.js"></script>
+<script src="../js/data/regras_combate.js"></script>
+<script src="../js/data/regras_magias.js"></script>
+<script src="../js/data/regras_tempo_aventuras.js"></script>
+<script src="../js/data/regras_construindo_combates.js"></script>
+<script src="../js/data/regras_ambientes.js"></script>
+<script src="../js/data/tesouro.js"></script>
 <script src="../js/data/poderes_gerais.js"></script>
+<script src="../js/data/prerequisito_validacao.js"></script>
 <script src="../js/data/magias.js"></script>
 <script src="../js/data/armas.js"></script>
 <script src="../js/data/armaduras.js"></script>

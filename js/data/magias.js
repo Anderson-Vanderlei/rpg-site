@@ -1518,7 +1518,7 @@ const MAGIAS = [
   {
     id: 'transformacao-de-guerra', nome: 'Transformação de Guerra', tipo: 'arcana', escola: 'transmutacao', circulo: 3,
     execucao: 'padrão', alcance: 'pessoal', alvoArea: 'você', duracao: 'sustentada', resistencia: null,
-    descricao: 'Você se torna uma máquina de combate, ficando mais forte, rápido e resistente. Você recebe +6 na Defesa, testes de ataque e rolagens de dano corpo a corpo, e 30 PV temporários. Durante a Transformação de Guerra você não pode lançar magias, mas se torna proficiente em todas as armas.',
+    descricao: 'Você se torna uma máquina de combate, ficando mais forte, rápido e resistente. Você recebe +6 na Defesa, testes de ataque e rolagens de dano corpo a corpo, e 30 PV temporários. Durante o efeito você não pode lançar magias, mas se torna proficiente em todas as armas.',
     aprimoramentos: [
       { custoPM: 2, tipo: 'aumenta', efeito: 'aumenta os bônus na Defesa, testes de ataque e rolagens de dano corpo a corpo em +1, e os PV temporários em +10.' },
       { custoPM: 2, tipo: 'muda', efeito: 'adiciona componente material (barra de adamante no valor de T$ 100). Sua forma de combate ganha um aspecto metálico e sem expressões. Além do normal, você recebe redução de dano 10 e imunidade a atordoamento e efeitos de cansaço, encantamento, metabolismo, trevas e veneno, e não precisa respirar.' },

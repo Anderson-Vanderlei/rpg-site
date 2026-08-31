@@ -352,6 +352,53 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // ── 4B. RENDERIZAR CARDS DE ORIGENS ─────────────────────────
 
+  // Rótulo curto pro chip de "escolha livre" de poder por categoria
+  // (capanga/gladiador/guarda/soldado = Combate; assistente-de-laboratório = Tormenta).
+  // Não confundir com o caso "regra-especial" do Amnésico, tratado à parte.
+  const LABEL_ESCOLHA_LIVRE_PODER = {
+    combate: 'Combate', tormenta: 'Tormenta', magia: 'Magia', destino: 'Destino',
+  };
+
+  // Os chips de Perícias/Poderes Gerais chamam abrirBlocoReferencia() DIRETO
+  // (em vez de passar pelo processarKeywords()) de propósito: nome de poder
+  // geral que começa com o nome de uma perícia (ex.: "Vontade de Ferro" vs.
+  // a perícia "Vontade") colide na detecção por regex do Passo 2/3 de
+  // processarKeywords() — a perícia vira placeholder antes do poder geral
+  // conseguir casar a frase inteira, quebrando o texto. Aqui já sabemos o
+  // nome exato e (pro poder geral) a categoria, então não precisa de regex.
+  let _poderGeralCatCache = null;
+  function _categoriaPoderGeral(nome) {
+    if (!_poderGeralCatCache) {
+      _poderGeralCatCache = {};
+      (window.PODERES_GERAIS || []).forEach(p => { _poderGeralCatCache[p.nome] = p.categoria; });
+    }
+    return _poderGeralCatCache[nome] || '';
+  }
+
+  function _ocChipsPericias(o) {
+    if (!o.periciasOferecidas.length) return '<span class="oc-chip-vazio">—</span>';
+    return o.periciasOferecidas.map(p => {
+      const esc = p.replace(/'/g, "\\'");
+      return `<span class="oc-chip oc-chip-pericia" onclick="event.stopPropagation(); window.abrirBlocoReferencia && window.abrirBlocoReferencia('pericia', '${esc}')">${p}</span>`;
+    }).join('');
+  }
+
+  function _ocChipsPoderes(o) {
+    const chips = o.poderesGeraisOferecidos.map(p => {
+      const esc = p.replace(/'/g, "\\'");
+      const cat = _categoriaPoderGeral(p);
+      return `<span class="oc-chip oc-chip-poder" onclick="event.stopPropagation(); window.abrirBlocoReferencia && window.abrirBlocoReferencia('poderGeral', '${esc}', '${cat}')">${p}</span>`;
+    });
+    if (o.escolhaLivre && o.escolhaLivre.tipo !== 'regra-especial') {
+      const label = LABEL_ESCOLHA_LIVRE_PODER[o.escolhaLivre.tipo] || o.escolhaLivre.tipo;
+      chips.push(`<span class="oc-chip oc-chip-livre">Poder de ${label} à escolha</span>`);
+    }
+    if (o.poderUnico) {
+      chips.push(`<span class="oc-chip oc-chip-unico" title="Poder único desta origem">${o.poderUnico.nome}</span>`);
+    }
+    return chips.length ? chips.join('') : '<span class="oc-chip-vazio">—</span>';
+  }
+
   function renderOrigens(lista) {
     const grid = document.getElementById('origensGrid');
     if (!grid) return;
@@ -376,7 +423,7 @@ document.addEventListener('DOMContentLoaded', () => {
       card.dataset.id = o.id;
       card.innerHTML = `
         <div class="oc-top">
-          <span class="badge-fonte">${o.fonte}</span>
+          <span class="dp-badge badge-fonte">${o.fonte}</span>
           <div class="oc-temas">
             ${o.temas.slice(0, 2).map(t => `<span class="oc-tema-tag">${t}</span>`).join('')}
           </div>
@@ -387,14 +434,26 @@ document.addEventListener('DOMContentLoaded', () => {
         <div class="oc-body">
           <div class="oc-nome">${o.nome}</div>
           <div class="oc-hook">${kw(o.descricao)}</div>
+
+          ${o.escolhaLivre && o.escolhaLivre.tipo === 'regra-especial' ? `
+          <div class="oc-beneficio-especial">
+            <i class="ti ti-wand" aria-hidden="true"></i>
+            <span>Regra própria: perícia e poder geral escolhidos pelo mestre</span>
+          </div>` : `
+          <div class="oc-beneficios">
+            <div class="oc-beneficio-grupo">
+              <div class="oc-campo-l">Perícias</div>
+              <div class="oc-chips">${_ocChipsPericias(o)}</div>
+            </div>
+            <div class="oc-beneficio-grupo">
+              <div class="oc-campo-l">Poderes Gerais</div>
+              <div class="oc-chips">${_ocChipsPoderes(o)}</div>
+            </div>
+          </div>`}
+
           <div class="oc-campo">
             <div class="oc-campo-l">Itens</div>
             <div class="oc-campo-v">${o.itens.join(', ')}</div>
-          </div>
-          ${o.periciasOferecidas.length ? `<div class="oc-pericias">${kw(o.periciasOferecidas.join(', '))}</div>` : ''}
-          <div class="oc-poder-unico">
-            <i class="ti ti-award" aria-hidden="true"></i>
-            <span>Poder único: ${o.poderUnico.nome}</span>
           </div>
           <div class="oc-footer">
             <button class="btn-ver" onclick="abrirDetalheOrigem(window.ORIGENS.find(x=>x.id==='${o.id}'))">
@@ -850,18 +909,10 @@ document.addEventListener('DOMContentLoaded', () => {
         </div>`;
     }
 
-    // Botões
-    html += `
-      <div class="dp-btns" style="margin-top:1rem">
-        <button class="btn-pdf">
-          <i class="ti ti-book" aria-hidden="true"></i>
-          Ver no Livro — p.${c.pagina||'?'}
-        </button>
-        <button class="btn-ghost">
-          <i class="ti ti-notes" aria-hidden="true"></i>
-          Adicionar à Ficha
-        </button>
-      </div>`;
+    // Botões "Ver no Livro"/"Adicionar à Ficha" removidos (30/ago, pedido do
+    // usuário) — não tinham ação nenhuma (ver CLAUDE.md, backlog item 9) e não
+    // serão correlacionados ao site. A página da classe já aparece na badge
+    // "T20 p.X" do próprio card (linha ~704), não perde informação.
 
     document.getElementById('cpBody').innerHTML = html;
     if (_cpTodosPoderes.length > 0) renderPoderesNoPainel();
@@ -891,6 +942,22 @@ document.addEventListener('DOMContentLoaded', () => {
       const limpo = seg.trim().toLowerCase().replace(/\s*\([^)]*\)\s*/g, '').trim();
       return nomes.includes(limpo);
     });
+  }
+
+  // Cadeia de pré-requisitos, em chip clicável (`.cp-prereq-node`) — mesmo
+  // componente usado em Poderes, agora reaproveitado em qualquer lugar do
+  // site que precise mostrar "isto exige aquilo" (Melhorias/Encantamentos
+  // de Equipamento incluídos). `rotulo` é o texto antes da cadeia (ex.:
+  // "Pré-req:" ou "Requer:"); `texto` pode ter vários requisitos
+  // separados por vírgula, viram nós ligados por uma seta.
+  function renderPrereqChips(texto, rotulo) {
+    if (!texto) return '';
+    return `<div class="cp-prereq">
+        <span class="cp-prereq-label">${rotulo || 'Pré-req:'}</span>
+        ${texto.split(',').map(r =>
+          `<span class="cp-prereq-node">${r.trim()}</span>`
+        ).join('<span class="cp-prereq-arrow">→</span>')}
+       </div>`;
   }
 
   function renderPoderHtml(p) {
@@ -942,13 +1009,7 @@ document.addEventListener('DOMContentLoaded', () => {
       ? `<span class="cp-tag-categoria cp-tag-categoria-${p.categoria}">${LABEL_CATEGORIA_PODER[p.categoria] || p.categoria}</span>`
       : '';
 
-    const prereqHtml = p.prerequisito
-      ? `<div class="cp-prereq">
-          <span class="cp-prereq-label">Pré-req:</span>
-          ${p.prerequisito.split(',').map(r =>
-            `<span class="cp-prereq-node">${r.trim()}</span>`
-          ).join('<span class="cp-prereq-arrow">→</span>')}
-         </div>` : '';
+    const prereqHtml = renderPrereqChips(p.prerequisito);
 
     const opcoesHtml = (p.opcoes && p.opcoes.length > 0)
       ? p.opcoesModo === 'variacao'
@@ -2202,7 +2263,7 @@ document.addEventListener('DOMContentLoaded', () => {
     card.innerHTML = `
       <div class="eq-nome">${a.nome}</div>
       <div class="eq-desc">${truncarTexto(a.descricao, 130)}</div>
-      <div class="eq-footer"><span class="rc-badge badge-fonte">Tormenta 20</span></div>`;
+      <div class="eq-footer"><span class="rc-badge tag-especial" title="Item lendário — sem preço, CD ou calculadora, regra do próprio livro">Lendário</span><span class="rc-badge badge-fonte">Tormenta 20</span></div>`;
     card.addEventListener('click', () => abrirDetalheEquip('artefato', a.id));
     return card;
   }
@@ -3483,6 +3544,481 @@ document.addEventListener('DOMContentLoaded', () => {
     // Resultado inicial da calculadora de recuperação, já com a condição
     // padrão ('normal') selecionada acima.
     calcularRecuperacaoPvPm();
+  }
+
+  // ── REGRAS GERAIS — Testes, Habilidades & Efeitos, Combate (30/ago,
+  // reestruturado em árvore 31/ago a pedido do usuário) ───────────────
+  // Três novas abas dentro da página que era só "Toques Finais" (Cap. 5,
+  // pp. 220-239). São páginas de referência pura (texto + tabelas do
+  // livro), sem filtro/busca. Os 3 data files (regras_testes.js,
+  // regras_habilidades_efeitos.js, regras_combate.js) guardam uma ÁRVORE
+  // (Categoria > Subcategoria > Item > Descrição, profundidade livre —
+  // ver cabeçalho de qualquer um dos 3 arquivos) em vez de uma lista
+  // achatada de blocos de texto corrido: cada mecânica nomeada (ex.:
+  // "Levantar-se" dentro de "Ação de Movimento", ou "Agarrar Aprimorado"
+  // dentro de "Habilidades Gerais") agora é sua própria entrada com `id`
+  // estável — pensado como âncora futura pra keywords.js (auto-link,
+  // com o mesmo cuidado de colisão semântica documentado em CLAUDE.md
+  // §9.1) e pra ficha interativa (ex.: um botão de ação na ficha que só
+  // precisa ler a descrição daqui, sem duplicar o texto).
+  // Um único par de funções recursivas (`_renderNoRegra` + o helper de
+  // conteúdo `_renderNoConteudoRegra`) dá conta dos 3 arquivos e de
+  // qualquer profundidade de aninhamento, já que só a "forma" do nó
+  // muda (nível 0 = categoria dobrável; nível 1 = subcategoria; nível 2+
+  // = item-folha), não o conteúdo em si.
+
+  // Aba ativa da página Regras Gerais — 'criacao' é a antiga Toques
+  // Finais (ferramentas interativas), as outras 3 são texto de
+  // referência. Trocar de aba só alterna `display`, sem re-renderizar
+  // (o conteúdo das 4 abas é montado uma vez, no carregamento da página).
+  window.setAbaRegrasGerais = function(el, aba) {
+    document.querySelectorAll('#rgAbas .filtro-btn').forEach(b => b.classList.remove('a'));
+    el?.classList.add('a');
+    ['criacao', 'testes', 'habilidades', 'combate', 'magias', 'tempo', 'ambientes', 'construcao', 'tesouro'].forEach(a => {
+      const painel = document.getElementById('rgAba' + a.charAt(0).toUpperCase() + a.slice(1));
+      if (painel) painel.style.display = (a === aba) ? '' : 'none';
+    });
+  };
+
+  // Categorias (nível 0) são dobráveis — clicar no cabeçalho alterna
+  // `.aberta`. Subcategorias e itens ficam sempre visíveis (a árvore já
+  // é a organização; esconder mais um nível só atrapalharia consulta
+  // rápida durante a mesa).
+  window.toggleRgCategoria = function(headerEl) {
+    headerEl?.closest('.rg-categoria')?.classList.toggle('aberta');
+  };
+
+  // Renderiza tabela de referência (simples, com `grupos` tipo Tabela
+  // 5-4, ou com uma `tabela2` ao lado tipo Tabela 5-3) — reaproveita a
+  // classe `.eq-tabela` já usada nas tabelas de Equipamento.
+  function _renderBlocoRegraTabela(t) {
+    if (!t) return '';
+    const linhasHtml = (linhas) => linhas.map(l => `<tr>${l.map(c => `<td>${c}</td>`).join('')}</tr>`).join('');
+    let html = `<div class="rg-tabela-titulo">${t.titulo || ''}</div>`;
+    html += `<div class="eq-tabela-scroll"><table class="eq-tabela">
+      <thead><tr>${(t.colunas || []).map(c => `<th>${c}</th>`).join('')}</tr></thead>
+      <tbody>`;
+    if (t.grupos) {
+      t.grupos.forEach(g => {
+        html += `<tr><td colspan="${(t.colunas || []).length}" class="rg-tabela-grupo-rotulo">${g.rotulo}</td></tr>`;
+        html += linhasHtml(g.linhas);
+      });
+    } else {
+      html += linhasHtml(t.linhas || []);
+    }
+    html += `</tbody></table></div>`;
+    if (t.nota) html += `<p class="rg-tabela-nota">${t.nota}</p>`;
+    if (t.tabela2) {
+      html += `<div class="eq-tabela-scroll" style="margin-top:10px;"><table class="eq-tabela">
+        <thead><tr>${(t.tabela2.colunas || []).map(c => `<th>${c}</th>`).join('')}</tr></thead>
+        <tbody>${linhasHtml(t.tabela2.linhas || [])}</tbody>
+      </table></div>`;
+    }
+    return html;
+  }
+
+  // Conteúdo "solto" de um nó, antes de seus filhos — categorias/
+  // subcategorias usam `paragrafos` (intro), itens-folha usam
+  // `descricao` (mesma coisa, nome diferente só por clareza no data
+  // file). Aceita os dois pra qualquer nó, sem exigir um ou outro.
+  function _renderNoConteudoRegra(no) {
+    const paragrafos = no.paragrafos || no.descricao || [];
+    return `
+      ${no.formula ? `<div class="rg-formula">${no.formula}</div>` : ''}
+      ${paragrafos.map(p => `<p>${p}</p>`).join('')}
+      ${no.lista ? `<ul>${no.lista.map(i => `<li>${i}</li>`).join('')}</ul>` : ''}
+      ${(no.paragrafosPos || []).map(p => `<p>${p}</p>`).join('')}
+      ${no.destaque ? `<p class="rg-destaque">${no.destaque}</p>` : ''}
+      ${no.tabela ? _renderBlocoRegraTabela(no.tabela) : ''}
+    `;
+  }
+
+  // Renderizador recursivo — `nivel` decide a "forma" do nó:
+  // 0 = categoria (dobrável, ícone + seta), 1 = subcategoria (título
+  // simples, sempre aberta), 2+ = item-folha (nome + descrição). Um nó
+  // pode ter conteúdo próprio E filhos ao mesmo tempo (ex.: "Testes sem
+  // Rolagens" tem um parágrafo de intro antes de Escolher 0/10/20).
+  function _renderNoRegra(no, nivel, abrirInicial) {
+    const nome = no.titulo || no.nome || '';
+    const temFilhos = Array.isArray(no.itens) && no.itens.length > 0;
+    const conteudoHtml = _renderNoConteudoRegra(no);
+    const filhosHtml = temFilhos ? no.itens.map(f => _renderNoRegra(f, nivel + 1)).join('') : '';
+
+    if (nivel === 0) {
+      return `
+        <div class="rg-categoria${abrirInicial ? ' aberta' : ''}" id="rg-${no.id}">
+          <div class="rg-categoria-header" onclick="toggleRgCategoria(this)">
+            <i class="ti ${no.icone || 'ti-file-text'}" aria-hidden="true"></i>
+            <span>${nome}</span>
+            <i class="ti ti-chevron-down rg-categoria-seta" aria-hidden="true"></i>
+          </div>
+          <div class="rg-categoria-corpo">
+            ${conteudoHtml}
+            ${filhosHtml}
+          </div>
+        </div>`;
+    }
+    if (temFilhos) {
+      return `
+        <div class="rg-subcategoria" id="rg-${no.id}">
+          <div class="rg-subcategoria-titulo">${nome}</div>
+          ${conteudoHtml}
+          ${filhosHtml}
+        </div>`;
+    }
+    return `
+      <div class="rg-item" id="rg-${no.id}">
+        <div class="rg-item-nome">${nome}</div>
+        ${conteudoHtml}
+      </div>`;
+  }
+
+  // A primeira categoria de cada página já vem aberta (facilita ver que
+  // a página tem conteúdo assim que a aba é trocada); as demais ficam
+  // fechadas, pra não virar uma parede de texto só de entrar na aba.
+  function _renderArvoreRegra(containerId, arvore) {
+    const el = document.getElementById(containerId);
+    if (!el || !arvore) return;
+    el.innerHTML = arvore.map((cat, i) => _renderNoRegra(cat, 0, i === 0)).join('');
+  }
+
+  function renderRegrasTestes() { _renderArvoreRegra('rgTestesLista', window.REGRAS_TESTES_ARVORE); }
+  function renderRegrasHabilidades() { _renderArvoreRegra('rgHabilidadesLista', window.REGRAS_HABILIDADES_ARVORE); }
+  function renderRegrasCombate() { _renderArvoreRegra('rgCombateLista', window.REGRAS_COMBATE_ARVORE); }
+  function renderRegrasMagias() { _renderArvoreRegra('rgMagiasLista', window.REGRAS_MAGIAS_ARVORE); }
+  function renderRegrasTempo() { _renderArvoreRegra('rgTempoLista', window.REGRAS_TEMPO_ARVORE); }
+  function renderRegrasAmbientes() { _renderArvoreRegra('rgAmbientesLista', window.REGRAS_AMBIENTES_ARVORE); }
+  function renderRegrasConstrucao() { _renderArvoreRegra('rgConstrucaoLista', window.REGRAS_CONSTRUCAO_ARVORE); }
+
+  // ============================================================
+  // GERADOR DE TESOURO — 5ª aba de Regras Gerais (#rgAbaTesouro).
+  // Motor de rolagem pra Cap. 8: Recompensas (Tesouros, pp.327-345).
+  // Cascata: ND → Tabela 8-1 (dinheiro + itens) → conforme o
+  // resultado, Riquezas (8-2) / Itens Diversos (8-3) / Equipamento
+  // (8-4) / Itens Superiores (8-5) / encantos e itens específicos de
+  // armas (8-8/8-9), armaduras-escudos (8-10/8-11), acessórios
+  // (8-13/14/15) ou poções (8-12). Dados em js/data/tesouro_*.js.
+  //
+  // Cada rolagem prepende um card em #tgHistorico (ferramenta de
+  // configuração/dado — não é texto fixo do livro, por isso NÃO
+  // reaproveita `_renderArvoreRegra`/`.rg-categoria`, tem CSS própria
+  // `.tg-*`). A nota "²D" do livro (rolar 2d6 e escolher entre dois
+  // tipos) é simplificada aqui como sorteio automático entre as duas
+  // opções — ver `_tgRolarTipoEquipamento`/`_tgRolarTipoMagico`.
+  // ============================================================
+
+  function _tgRolarD100(bonusPct) {
+    let r = 1 + Math.floor(Math.random() * 100);
+    if (bonusPct) r = Math.min(100, r + 20);
+    return r;
+  }
+
+  function _tgRolarFormula(qtd) {
+    if (!qtd) return 0;
+    if (!qtd.lados) return qtd.n;
+    const { total } = _rolarNdM(qtd.n, qtd.lados);
+    return total + (qtd.bonus || 0);
+  }
+
+  function _tgBuscarFaixa(tabela, valor) {
+    return (tabela || []).find(row => valor >= row.min && valor <= row.max);
+  }
+
+  function _tgFormatarMoeda(v) {
+    return v.toLocaleString('pt-BR');
+  }
+
+  function _tgRolarDinheiroDado(row) {
+    return _tgRolarFormula(row.dado) * (row.mult || 1);
+  }
+
+  function _tgTipoPorD6Equipamento(v) { return v <= 3 ? 'arma' : (v <= 5 ? 'armadura' : 'esoterico'); }
+  function _tgTipoPorD6Magico(v) { return v <= 2 ? 'arma' : (v === 3 ? 'armadura' : 'acessorio'); }
+
+  // Nota "²D": role 2d6 e escolha entre os dois tipos indicados.
+  // Simplificado aqui como sorteio automático entre as duas opções —
+  // a nota de rolagem mostra os dois valores e qual foi escolhido.
+  function _tgRolarTipoComEscolha(mapaFn, escolha2D) {
+    if (!escolha2D) {
+      const v = 1 + Math.floor(Math.random() * 6);
+      return { tipo: mapaFn(v), nota: null };
+    }
+    const a = 1 + Math.floor(Math.random() * 6);
+    const b = 1 + Math.floor(Math.random() * 6);
+    const tipoA = mapaFn(a), tipoB = mapaFn(b);
+    const escolhido = Math.random() < 0.5 ? tipoA : tipoB;
+    const opcoes = tipoA === tipoB ? tipoA : `${tipoA} ou ${tipoB}`;
+    return { tipo: escolhido, nota: `Nota "²D": rolou 2d6 (${a} e ${b}) → ${opcoes}. Sorteado: ${escolhido}.` };
+  }
+  function _tgRolarTipoEquipamento(escolha2D) { return _tgRolarTipoComEscolha(_tgTipoPorD6Equipamento, escolha2D); }
+  function _tgRolarTipoMagico(escolha2D) { return _tgRolarTipoComEscolha(_tgTipoPorD6Magico, escolha2D); }
+
+  function _tgRolarEquipamentoBase(tipo) {
+    const tabela = (window.EQUIPAMENTO_TIPOS || {})[tipo];
+    const row = _tgBuscarFaixa(tabela, _tgRolarD100());
+    return row ? row.nome : '???';
+  }
+
+  function _tgRolarDiverso() {
+    const row = _tgBuscarFaixa(window.TABELA_ITENS_DIVERSOS, _tgRolarD100());
+    return row ? row.nome : '???';
+  }
+
+  function _tgRolarEquipamento(escolha2D) {
+    const { tipo, nota } = _tgRolarTipoEquipamento(escolha2D);
+    return { tipo, nome: _tgRolarEquipamentoBase(tipo), nota };
+  }
+
+  function _tgRolarMaterialEspecial() {
+    const idx = _rolarNdM(1, 6).total - 1;
+    return (window.MATERIAIS_ESPECIAIS || [])[idx] || null;
+  }
+
+  function _tgRolarItemSuperior(numMelhorias, escolha2D) {
+    const { tipo, nota } = _tgRolarTipoEquipamento(escolha2D);
+    const nomeBase = _tgRolarEquipamentoBase(tipo);
+    const tabelaMelhorias = (window.TABELA_ITENS_SUPERIORES || {})[tipo] || [];
+    const melhorias = [];
+    let restantes = numMelhorias, guard = 0;
+    while (restantes > 0 && guard < 30) {
+      guard++;
+      const row = _tgBuscarFaixa(tabelaMelhorias, _tgRolarD100());
+      if (!row) break;
+      if (row.duplaMelhoria) {
+        if (restantes >= 2) {
+          melhorias.push({ nome: row.nome, material: row.material ? _tgRolarMaterialEspecial() : null });
+          restantes -= 2;
+        }
+        continue; // menos de 2 restantes: role de novo (não conta)
+      }
+      melhorias.push({ nome: row.nome, material: row.material ? _tgRolarMaterialEspecial() : null });
+      restantes -= 1;
+    }
+    return { tipo, nomeBase, melhorias, nota };
+  }
+
+  function _tgRolarArmaMagica(numEncantos) {
+    const nomeBase = _tgRolarEquipamentoBase('arma');
+    const encantos = [];
+    let restantes = numEncantos, guard = 0;
+    while (restantes > 0 && guard < 30) {
+      guard++;
+      const row = _tgBuscarFaixa(window.TABELA_ARMAS_MAGICAS_ENCANTOS, _tgRolarD100());
+      if (!row) break;
+      if (row.especifica) {
+        const esp = _tgBuscarFaixa(window.TABELA_ARMAS_ESPECIFICAS, _tgRolarD100());
+        return { nomeBase, especifica: esp, encantos: [] };
+      }
+      if (row.duplaMelhoria) {
+        if (restantes >= 2) { encantos.push(row); restantes -= 2; }
+        continue;
+      }
+      encantos.push(row);
+      restantes -= 1;
+    }
+    return { nomeBase, especifica: null, encantos };
+  }
+
+  function _tgRolarArmaduraMagica(numEncantos) {
+    const nomeBase = _tgRolarEquipamentoBase('armadura');
+    const ehEscudo = /escudo/i.test(nomeBase);
+    const encantos = [];
+    let restantes = numEncantos, guard = 0;
+    while (restantes > 0 && guard < 30) {
+      guard++;
+      const row = _tgBuscarFaixa(window.TABELA_ARMADURAS_MAGICAS_ENCANTOS, _tgRolarD100());
+      if (!row) break;
+      if (row.especifica) {
+        const esp = _tgBuscarFaixa(window.TABELA_ARMADURAS_ESPECIFICAS, _tgRolarD100());
+        return { nomeBase, especifica: esp, encantos: [] };
+      }
+      if (row.apenasEscudo && !ehEscudo) continue; // role de novo
+      if (row.duplaMelhoria) {
+        if (restantes >= 2) { encantos.push(row); restantes -= 2; }
+        continue;
+      }
+      encantos.push(row);
+      restantes -= 1;
+    }
+    return { nomeBase, especifica: null, encantos };
+  }
+
+  function _tgRolarAcessorio(porte) {
+    const tabela = porte === 'menor' ? window.TABELA_ACESSORIOS_MENORES
+      : (porte === 'medio' ? window.TABELA_ACESSORIOS_MEDIOS : window.TABELA_ACESSORIOS_MAIORES);
+    const row = _tgBuscarFaixa(tabela, _tgRolarD100());
+    return row ? { nome: row.nome, preco: row.preco, descricao: (window.ACESSORIOS_DESCRICOES || {})[row.nome] || '' } : null;
+  }
+
+  function _tgRolarPocoes(qtdFormula, bonusPct) {
+    const qtd = _tgRolarFormula(qtdFormula) || 1;
+    const resultado = [];
+    for (let i = 0; i < qtd; i++) {
+      const row = _tgBuscarFaixa(window.TABELA_POCOES, _tgRolarD100(bonusPct));
+      if (row) resultado.push(row);
+    }
+    return resultado;
+  }
+
+  function _tgRolarRiquezas(tier, qtdFormula, bonusPct) {
+    const qtd = _tgRolarFormula(qtdFormula) || 1;
+    const tabela = (window.TABELA_RIQUEZAS || {})[tier] || [];
+    const resultado = [];
+    for (let i = 0; i < qtd; i++) {
+      const row = _tgBuscarFaixa(tabela, _tgRolarD100(bonusPct));
+      if (!row) continue;
+      resultado.push({ valor: _tgRolarFormula(row.dado) * (row.mult || 1), moeda: row.moeda, exemplos: row.exemplos });
+    }
+    return resultado;
+  }
+
+  function _tgRolarItemMagico(porte, escolha2D) {
+    const { tipo, nota } = _tgRolarTipoMagico(escolha2D);
+    const numEncantos = porte === 'menor' ? 1 : (porte === 'medio' ? 2 : 3);
+    if (tipo === 'arma') return { categoria: 'arma', nota, ..._tgRolarArmaMagica(numEncantos) };
+    if (tipo === 'armadura') return { categoria: 'armadura', nota, ..._tgRolarArmaduraMagica(numEncantos) };
+    return { categoria: 'acessorio', nota, item: _tgRolarAcessorio(porte) };
+  }
+
+  function _tgResolverDinheiro(row) {
+    if (!row || row.tipo === 'nenhum') return { tipo: 'nenhum' };
+    if (row.tipo === 'dado') return { tipo: 'dado', valor: _tgRolarDinheiroDado(row), moeda: row.moeda };
+    if (row.tipo === 'riqueza') return { tipo: 'riqueza', tier: row.tier, riquezas: _tgRolarRiquezas(row.tier, row.qtd, row.bonusPct) };
+    return { tipo: 'nenhum' };
+  }
+
+  function _tgResolverItem(row) {
+    if (!row) return { tipo: 'nenhum' };
+    switch (row.tipo) {
+      case 'diverso': return { tipo: 'diverso', nome: _tgRolarDiverso() };
+      case 'equipamento': return { tipo: 'equipamento', ..._tgRolarEquipamento(row.escolha2D) };
+      case 'pocao': return { tipo: 'pocao', pocoes: _tgRolarPocoes(row.qtd, row.bonusPct) };
+      case 'superior': return { tipo: 'superior', ..._tgRolarItemSuperior(row.melhorias, row.escolha2D) };
+      case 'magico': return { tipo: 'magico', porte: row.porte, ..._tgRolarItemMagico(row.porte, row.escolha2D) };
+      default: return { tipo: 'nenhum' };
+    }
+  }
+
+  function _tgHtmlEncantos(lista) {
+    if (!lista || !lista.length) return '';
+    return `<ul class="tg-lista-encantos">${lista.map(e =>
+      `<li><strong>${e.nome}</strong>${e.material ? ` (${e.material})` : ''}${e.descricao ? ` — ${e.descricao}` : ''}</li>`
+    ).join('')}</ul>`;
+  }
+
+  function _tgHtmlArmaOuArmadura(r) {
+    if (r.especifica) {
+      const esp = r.especifica;
+      return `<div class="tg-item-magico"><strong>${esp.nome}</strong> <span class="tg-preco">${esp.preco}</span><p>${esp.descricao}</p></div>`;
+    }
+    const nomeCompleto = r.nomeBase + (r.encantos.length ? ' ' + r.encantos.map(e => e.nome.toLowerCase()).join(', ') : '');
+    return `<div class="tg-item-magico"><strong>${nomeCompleto}</strong>${_tgHtmlEncantos(r.encantos)}</div>`;
+  }
+
+  function _tgHtmlItemMagico(r) {
+    let corpo = '';
+    if (r.categoria === 'arma' || r.categoria === 'armadura') {
+      corpo = _tgHtmlArmaOuArmadura(r);
+    } else if (r.categoria === 'acessorio' && r.item) {
+      corpo = `<div class="tg-item-magico"><strong>${r.item.nome}</strong> <span class="tg-preco">${r.item.preco}</span><p>${r.item.descricao}</p></div>`;
+    }
+    const notaHtml = r.nota ? `<p class="tg-nota">${r.nota}</p>` : '';
+    return `<div class="tg-tag">Item mágico ${r.porte}</div>${corpo}${notaHtml}`;
+  }
+
+  function _tgHtmlSuperior(r) {
+    const melhoriasHtml = r.melhorias.map(m => `<li><strong>${m.nome}</strong>${m.material ? ` (${m.material})` : ''}</li>`).join('');
+    const notaHtml = r.nota ? `<p class="tg-nota">${r.nota}</p>` : '';
+    return `<div class="tg-item-superior"><span class="tg-tag">Equipamento superior (${r.tipo})</span><strong>${r.nomeBase}</strong><ul>${melhoriasHtml}</ul></div>${notaHtml}`;
+  }
+
+  function _tgHtmlEquipamento(r) {
+    const notaHtml = r.nota ? `<p class="tg-nota">${r.nota}</p>` : '';
+    return `<div class="tg-equipamento"><span class="tg-tag">Equipamento (${r.tipo})</span><strong>${r.nome}</strong></div>${notaHtml}`;
+  }
+
+  function _tgHtmlPocoes(pocoes) {
+    if (!pocoes.length) return '<span class="tg-nenhum">Nenhuma poção.</span>';
+    return `<ul class="tg-lista-encantos">${pocoes.map(p => `<li><strong>${p.nome}</strong> — ${p.preco}</li>`).join('')}</ul>`;
+  }
+
+  function _tgHtmlItens(resultado) {
+    switch (resultado.tipo) {
+      case 'nenhum': return '<span class="tg-nenhum">Nenhum item.</span>';
+      case 'diverso': return `<div class="tg-diverso"><span class="tg-tag">Item diverso</span><strong>${resultado.nome}</strong></div>`;
+      case 'equipamento': return _tgHtmlEquipamento(resultado);
+      case 'pocao': return _tgHtmlPocoes(resultado.pocoes);
+      case 'superior': return _tgHtmlSuperior(resultado);
+      case 'magico': return _tgHtmlItemMagico(resultado);
+      default: return '';
+    }
+  }
+
+  function _tgHtmlDinheiro(resultado) {
+    if (resultado.tipo === 'nenhum') return '<span class="tg-nenhum">Nenhum dinheiro.</span>';
+    if (resultado.tipo === 'dado') return `<strong>${_tgFormatarMoeda(resultado.valor)} ${resultado.moeda}</strong>`;
+    if (resultado.tipo === 'riqueza') {
+      if (!resultado.riquezas.length) return '<span class="tg-nenhum">Nenhuma riqueza.</span>';
+      return resultado.riquezas.map(r => `
+        <div class="tg-riqueza">
+          <strong>Riqueza ${resultado.tier}</strong> — ${_tgFormatarMoeda(r.valor)} ${r.moeda}
+          <p class="tg-exemplo">${r.exemplos}</p>
+        </div>`).join('');
+    }
+    return '';
+  }
+
+  function _tgRenderizarResultado(nd, resDinheiro, resItens) {
+    const hist = document.getElementById('tgHistorico');
+    if (!hist) return;
+    const card = document.createElement('div');
+    card.className = 'tg-resultado-card';
+    card.innerHTML = `
+      <div class="tg-resultado-header"><i class="ti ti-coin" aria-hidden="true"></i> Tesouro — ND ${nd}</div>
+      <div class="tg-resultado-bloco"><span class="tg-resultado-label">Dinheiro</span>${_tgHtmlDinheiro(resDinheiro)}</div>
+      <div class="tg-resultado-bloco"><span class="tg-resultado-label">Itens</span>${_tgHtmlItens(resItens)}</div>
+    `;
+    hist.insertBefore(card, hist.firstChild);
+    while (hist.children.length > 30) hist.removeChild(hist.lastChild);
+  }
+
+  window.rolarTesouroPorND = function() {
+    const sel = document.getElementById('tgNdSelect');
+    const nd = sel ? sel.value : '1';
+    const entrada = (window.TESOURO_ND_TABELA || []).find(e => e.nd === nd);
+    if (!entrada) return;
+    const rowDinheiro = _tgBuscarFaixa(entrada.dinheiro, _tgRolarD100());
+    const rowItens = _tgBuscarFaixa(entrada.itens, _tgRolarD100());
+    _tgRenderizarResultado(nd, _tgResolverDinheiro(rowDinheiro), _tgResolverItem(rowItens));
+  };
+
+  window.limparHistoricoTesouro = function() {
+    const hist = document.getElementById('tgHistorico');
+    if (hist) hist.innerHTML = '';
+  };
+
+  function _tgPopularSelectNd() {
+    const sel = document.getElementById('tgNdSelect');
+    if (!sel || !window.TESOURO_ND_TABELA) return;
+    sel.innerHTML = window.TESOURO_ND_TABELA.map(e => `<option value="${e.nd}">ND ${e.nd}</option>`).join('');
+  }
+
+  function _tgRenderReferencia() {
+    const elMedio = document.getElementById('tgTesouroMedioCena');
+    if (elMedio && window.TESOURO_MEDIO_CENA) {
+      const arr = window.TESOURO_MEDIO_CENA;
+      const linhas = [];
+      for (let i = 0; i < 10; i++) {
+        linhas.push(`<tr><td>${arr[i].nivel}º</td><td>${arr[i].tesouro}</td><td>${arr[i + 10].nivel}º</td><td>${arr[i + 10].tesouro}</td></tr>`);
+      }
+      elMedio.innerHTML = `<table class="eq-tabela tg-tabela-ref"><thead><tr><th>Nível</th><th>Tesouro</th><th>Nível</th><th>Tesouro</th></tr></thead><tbody>${linhas.join('')}</tbody></table>`;
+    }
+    const elEncantos = document.getElementById('tgPrecoEncantos');
+    if (elEncantos && window.TABELA_PRECO_ENCANTOS) {
+      elEncantos.innerHTML = `<table class="eq-tabela tg-tabela-ref"><thead><tr><th>Encantos</th><th>Aumento no Preço</th><th>Aumento na CD</th></tr></thead><tbody>${
+        window.TABELA_PRECO_ENCANTOS.map(r => `<tr><td>${r.encantos}</td><td>${r.aumentoPreco}</td><td>${r.aumentoCD}</td></tr>`).join('')
+      }</tbody></table>`;
+    }
   }
 
   // Roletor de Idade Inicial — rola a fórmula de dado do grupo da classe
@@ -4838,7 +5374,7 @@ document.addEventListener('DOMContentLoaded', () => {
       body.innerHTML = `
         <div class="dp-linha"></div>
         <div class="dp-badges">
-          <span class="dp-badge" style="background:rgba(139,0,0,.1);color:#cc4444;border:.5px solid rgba(139,0,0,.3)">Tormenta 20</span>
+          <span class="dp-badge badge-fonte">Tormenta 20</span>
           <span class="eq-categoria-tag">${CATEGORIA_ARMA_INFO[item.categoria].label}</span>
           ${item.habilidades.map(h => `<span class="eq-hab-tag">${HABILIDADE_ARMA_LABEL[h] || h}</span>`).join('')}
         </div>
@@ -4869,7 +5405,7 @@ document.addEventListener('DOMContentLoaded', () => {
       body.innerHTML = `
         <div class="dp-linha"></div>
         <div class="dp-badges">
-          <span class="dp-badge" style="background:rgba(139,0,0,.1);color:#cc4444;border:.5px solid rgba(139,0,0,.3)">Tormenta 20</span>
+          <span class="dp-badge badge-fonte">Tormenta 20</span>
           <span class="eq-categoria-tag">${CATEGORIA_ARMADURA_INFO[item.categoria].label}</span>
         </div>
         <div class="eq-stats-grid">
@@ -4888,7 +5424,7 @@ document.addEventListener('DOMContentLoaded', () => {
       body.innerHTML = `
         <div class="dp-linha"></div>
         <div class="dp-badges">
-          <span class="dp-badge" style="background:rgba(139,0,0,.1);color:#cc4444;border:.5px solid rgba(139,0,0,.3)">Tormenta 20</span>
+          <span class="dp-badge badge-fonte">Tormenta 20</span>
           <span class="eq-categoria-tag">${CATEGORIA_ITEM_GERAL_INFO[item.categoria] || item.categoria}</span>
         </div>
         <div class="eq-stats-grid">
@@ -4904,10 +5440,10 @@ document.addEventListener('DOMContentLoaded', () => {
       body.innerHTML = `
         <div class="dp-linha"></div>
         <div class="dp-badges">
-          <span class="dp-badge" style="background:rgba(139,0,0,.1);color:#cc4444;border:.5px solid rgba(139,0,0,.3)">Tormenta 20</span>
+          <span class="dp-badge badge-fonte">Tormenta 20</span>
           ${item.categorias.map(c => `<span class="eq-categoria-tag">${c === 'qualquer' ? 'Qualquer categoria' : (CATEGORIA_ARMA_INFO[c]?.label || CATEGORIA_ARMADURA_INFO[c]?.label || c)}</span>`).join('')}
         </div>
-        ${item.preRequisito ? `<div class="eq-melhoria-prereq" style="margin-bottom:10px;">Pré-requisito: ${item.preRequisito}</div>` : ''}
+        ${item.preRequisito ? renderPrereqChips(item.preRequisito, 'Pré-requisito:') : ''}
         <p class="dp-desc">${kw(item.descricao)}</p>
       `;
       return;
@@ -4931,13 +5467,13 @@ document.addEventListener('DOMContentLoaded', () => {
       body.innerHTML = `
         <div class="dp-linha"></div>
         <div class="dp-badges">
-          <span class="dp-badge" style="background:rgba(139,0,0,.1);color:#cc4444;border:.5px solid rgba(139,0,0,.3)">Tormenta 20</span>
+          <span class="dp-badge badge-fonte">Tormenta 20</span>
           <span class="eq-categoria-tag">${item.custoEncantos === 2 ? 'Conta como 2 encantos' : '1 encanto'}</span>
         </div>
         <div class="eq-stats-grid" style="grid-template-columns:1fr;">
           <div><div class="eq-stat-l">Efeito resumido</div><div class="eq-stat-v">${item.efeito}</div></div>
         </div>
-        ${item.preRequisito ? `<div class="eq-melhoria-prereq" style="margin-bottom:10px;">Pré-requisito: ${item.preRequisito}</div>` : ''}
+        ${item.preRequisito ? renderPrereqChips(item.preRequisito, 'Pré-requisito:') : ''}
         <p class="dp-desc">${kw(item.descricao)}</p>
       `;
       return;
@@ -4964,7 +5500,7 @@ document.addEventListener('DOMContentLoaded', () => {
       body.innerHTML = `
         <div class="dp-linha"></div>
         <div class="dp-badges">
-          <span class="dp-badge" style="background:rgba(139,0,0,.1);color:#cc4444;border:.5px solid rgba(139,0,0,.3)">Tormenta 20</span>
+          <span class="dp-badge badge-fonte">Tormenta 20</span>
           <span class="eq-categoria-tag">Base: ${base ? base.nome : '—'}</span>
         </div>
         <div class="eq-stats-grid">
@@ -4986,14 +5522,14 @@ document.addEventListener('DOMContentLoaded', () => {
       body.innerHTML = `
         <div class="dp-linha"></div>
         <div class="dp-badges">
-          <span class="dp-badge" style="background:rgba(139,0,0,.1);color:#cc4444;border:.5px solid rgba(139,0,0,.3)">Tormenta 20</span>
+          <span class="dp-badge badge-fonte">Tormenta 20</span>
           <span class="eq-categoria-tag">${item.custoEncantos === 2 ? 'Conta como 2 encantos' : '1 encanto'}</span>
           ${item.aplicavel.length === 1 ? `<span class="eq-categoria-tag">Só ${item.aplicavel[0] === 'escudo' ? 'escudos' : 'armaduras'}</span>` : ''}
         </div>
         <div class="eq-stats-grid" style="grid-template-columns:1fr;">
           <div><div class="eq-stat-l">Efeito resumido</div><div class="eq-stat-v">${item.efeito}</div></div>
         </div>
-        ${item.preRequisito ? `<div class="eq-melhoria-prereq" style="margin-bottom:10px;">Pré-requisito: ${item.preRequisito}</div>` : ''}
+        ${item.preRequisito ? renderPrereqChips(item.preRequisito, 'Pré-requisito:') : ''}
         <p class="dp-desc">${kw(item.descricao)}</p>
       `;
       return;
@@ -5005,7 +5541,7 @@ document.addEventListener('DOMContentLoaded', () => {
       body.innerHTML = `
         <div class="dp-linha"></div>
         <div class="dp-badges">
-          <span class="dp-badge" style="background:rgba(139,0,0,.1);color:#cc4444;border:.5px solid rgba(139,0,0,.3)">Tormenta 20</span>
+          <span class="dp-badge badge-fonte">Tormenta 20</span>
           <span class="eq-categoria-tag">${item.tipo === 'escudo' ? 'Escudo' : 'Armadura'}</span>
           <span class="eq-categoria-tag">Base: ${base ? base.nome : '—'}</span>
         </div>
@@ -5027,7 +5563,7 @@ document.addEventListener('DOMContentLoaded', () => {
       body.innerHTML = `
         <div class="dp-linha"></div>
         <div class="dp-badges">
-          <span class="dp-badge" style="background:rgba(139,0,0,.1);color:#cc4444;border:.5px solid rgba(139,0,0,.3)">Tormenta 20</span>
+          <span class="dp-badge badge-fonte">Tormenta 20</span>
           <span class="eq-categoria-tag"><i class="ti ${FORMATO_ICONE[item.formato] || 'ti-flask'}" aria-hidden="true"></i> ${item.formato}</span>
           ${m ? `<span class="eq-categoria-tag">${m.circulo}º círculo</span>` : ''}
         </div>
@@ -5044,7 +5580,7 @@ document.addEventListener('DOMContentLoaded', () => {
       body.innerHTML = `
         <div class="dp-linha"></div>
         <div class="dp-badges">
-          <span class="dp-badge" style="background:rgba(139,0,0,.1);color:#cc4444;border:.5px solid rgba(139,0,0,.3)">Tormenta 20</span>
+          <span class="dp-badge badge-fonte">Tormenta 20</span>
           <span class="eq-categoria-tag">${CATEGORIA_ACESSORIO_INFO[item.categoria]}</span>
         </div>
         <div class="eq-stats-grid" style="grid-template-columns:1fr;">
@@ -5060,8 +5596,9 @@ document.addEventListener('DOMContentLoaded', () => {
       body.innerHTML = `
         <div class="dp-linha"></div>
         <div class="dp-badges">
-          <span class="dp-badge" style="background:rgba(139,0,0,.1);color:#cc4444;border:.5px solid rgba(139,0,0,.3)">Tormenta 20</span>
+          <span class="dp-badge badge-fonte">Tormenta 20</span>
           <span class="eq-categoria-tag">Artefato</span>
+          <span class="dp-badge tag-especial" title="Item lendário — sem preço, CD ou calculadora, regra do próprio livro">Lendário</span>
         </div>
         ${paragrafos}
         ${item.tabela ? renderTabelaUso(item.tabela) : ''}
@@ -5074,7 +5611,7 @@ document.addEventListener('DOMContentLoaded', () => {
       body.innerHTML = `
         <div class="dp-linha"></div>
         <div class="dp-badges">
-          <span class="dp-badge" style="background:rgba(94,200,216,.1);color:#5ec8d8;border:.5px solid rgba(94,200,216,.3)">Simulação da sessão</span>
+          <span class="dp-badge mod-tag-material">Simulação da sessão</span>
           <span class="eq-categoria-tag"><i class="ti ${item.formato === 'pergaminho' ? 'ti-scroll' : 'ti-flask'}" aria-hidden="true"></i> ${item.formato === 'pergaminho' ? 'Pergaminho' : 'Poção'}</span>
           <span class="eq-categoria-tag">${item.circulo}º círculo</span>
         </div>
@@ -5388,7 +5925,7 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('mgBody').innerHTML = `
       <div class="dp-linha"></div>
       <div class="dp-badges">
-        <span class="dp-badge" style="background:rgba(139,0,0,.1);color:#cc4444;border:.5px solid rgba(139,0,0,.3)">Tormenta 20</span>
+        <span class="dp-badge badge-fonte">Tormenta 20</span>
         <span class="dp-badge" style="color:${esc.cor};border-color:${esc.cor}55;background:${esc.cor}18">${esc.label}</span>
         <span class="mgc-tipo mgc-tipo-${m.tipo}">${tipoInfo.label}</span>
       </div>
@@ -5589,6 +6126,22 @@ document.addEventListener('DOMContentLoaded', () => {
     const grupoId = eixo === 'categoria' ? 'poderesTodosFiltrosCategoria' : 'poderesTodosFiltrosTipo';
     _ativarFiltroBtn(`#${grupoId}`, btn);
     _pgEstado.todos[eixo] = valor;
+    // Mantém o <select> mobile (ver .pg-filtro-mobile) sincronizado, caso a
+    // pessoa clique nos botões desktop e depois estreite a janela.
+    const selMobile = document.getElementById(eixo === 'categoria' ? 'poderesTodosCategoriaMobile' : 'poderesTodosTipoMobile');
+    if (selMobile) selMobile.value = valor;
+    renderPoderesTodosNaSecao();
+  };
+
+  // Mesmo filtro acima, chamado pelo <select> mobile (sem elemento de botão
+  // pra passar pra _ativarFiltroBtn) — acha o botão desktop correspondente
+  // por data-valor e reaproveita o mesmo ritual, pra ficar tudo sincronizado
+  // se a pessoa girar o celular ou voltar pro desktop depois.
+  window.setFiltroPoderTodosMobile = (eixo, valor) => {
+    const grupoId = eixo === 'categoria' ? 'poderesTodosFiltrosCategoria' : 'poderesTodosFiltrosTipo';
+    const btn = document.querySelector(`#${grupoId} .filtro-btn[data-valor="${valor}"]`);
+    if (btn) _ativarFiltroBtn(`#${grupoId}`, btn);
+    _pgEstado.todos[eixo] = valor;
     renderPoderesTodosNaSecao();
   };
 
@@ -5722,13 +6275,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Badges
     document.getElementById('dpBadges').innerHTML = `
-      <span class="dp-badge badge-${r.raridade}" style="background:rgba(201,168,76,.1);color:#c9a84c;border:.5px solid rgba(201,168,76,.3)">
+      <span class="dp-badge badge-${r.raridade}">
         ${r.raridade === 'comum' ? 'Comum' : 'Rara'}
       </span>
-      <span class="dp-badge" style="background:rgba(139,0,0,.1);color:#cc4444;border:.5px solid rgba(139,0,0,.3)">
+      <span class="dp-badge badge-fonte">
         ${r.fonte}
       </span>
-      <span class="dp-badge" style="background:rgba(255,255,255,.04);color:#555;border:.5px solid #2a2a2a">
+      <span class="dp-badge badge-pagina">
         p. ${r.pagina}
       </span>`;
 
@@ -5768,9 +6321,6 @@ document.addEventListener('DOMContentLoaded', () => {
       classesEl.innerHTML = r.classesRecomendadas
         .map(c => `<span class="dp-classe-tag">${c}</span>`).join('');
     }
-
-    // Página
-    document.getElementById('dpBtnPdf').textContent = `Ver no Livro — p.${r.pagina}`;
 
     // Destaca card selecionado
     document.querySelectorAll('.race-card').forEach(c => c.classList.remove('selecionado'));
@@ -5867,8 +6417,8 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('opBody').innerHTML = `
       <div class="dp-linha"></div>
       <div class="dp-badges">
-        <span class="dp-badge" style="background:rgba(139,0,0,.1);color:#cc4444;border:.5px solid rgba(139,0,0,.3)">${o.fonte}</span>
-        ${o.temas.map(t => `<span class="dp-badge" style="background:rgba(201,168,76,.08);color:#c9a84c;border:.5px solid rgba(201,168,76,.25)">${t}</span>`).join('')}
+        <span class="dp-badge badge-fonte">${o.fonte}</span>
+        ${o.temas.map(t => `<span class="dp-badge badge-tema">${t}</span>`).join('')}
       </div>
 
       <div class="dp-secao">Descrição</div>
@@ -5935,8 +6485,26 @@ document.addEventListener('DOMContentLoaded', () => {
          <div class="dd-devoto-grupo">Classes</div>
          <div class="dd-devoto-chips">${chipsDevoto(d.devotosClasses, 'classe')}</div>` : ''}`;
 
+    // `d.armaPreferida` não virava link (bug reportado pelo usuário 30/ago).
+    // Duas causas empilhadas, achadas depurando:
+    // 1) não passava por nenhum processamento de keyword, só texto puro;
+    // 2) MESMO se passasse por kw()/processarKeywords(), colidiria pro
+    //    mesmo motivo já documentado no bug dos chips de Origem (item 28):
+    //    "Martelo de Guerra"/"Machado de Guerra" têm a perícia "Guerra"
+    //    como substring, e o Passo 2 de processarKeywords() (dicionário de
+    //    perícias/condições) roda ANTES do Passo 5 (nomes de item) — "Guerra"
+    //    vira placeholder de perícia antes do nome completo da arma
+    //    conseguir casar. Corrigido do mesmo jeito que os chips de Origem:
+    //    link direto pra `abrirBlocoReferencia('item', nome, 'arma')`,
+    //    sem passar pelo pipeline de keywords pra esse campo específico.
+    //    (Nota: essa classe de bug pode existir em qualquer outro texto do
+    //    site citando um item cujo nome contenha uma palavra do dicionário
+    //    de perícias/condições — não investigado além deste campo.)
+    const armaExiste = d.armaPreferida && (window.ARMAS || []).some(a => a.nome === d.armaPreferida);
     const armaHtml = d.armaPreferida
-      ? `<p style="font-size:12px;color:#888;line-height:1.6;margin-bottom:.9rem">${d.armaPreferida}</p>`
+      ? (armaExiste
+          ? `<p style="font-size:12px;color:#888;line-height:1.6;margin-bottom:.9rem"><span class="kw kw-item" style="cursor:pointer" onclick="event.stopPropagation(); window.abrirBlocoReferencia && window.abrirBlocoReferencia('item', '${d.armaPreferida.replace(/'/g, "\\'")}', 'arma')">${d.armaPreferida}</span></p>`
+          : `<p style="font-size:12px;color:#888;line-height:1.6;margin-bottom:.9rem">${d.armaPreferida}</p>`)
       : `<p style="font-size:11px;color:#8a7440;line-height:1.6;margin-bottom:.9rem;font-style:italic">${kw(d.armaPreferidaNota)}</p>`;
 
     // Poderes Concedidos: antes eram só chips de texto que navegavam pra
@@ -5957,7 +6525,7 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('ddBody').innerHTML = `
       <div class="dp-linha"></div>
       <div class="dp-badges">
-        <span class="dp-badge" style="background:rgba(139,0,0,.1);color:#cc4444;border:.5px solid rgba(139,0,0,.3)">${d.fonte}</span>
+        <span class="dp-badge badge-fonte">${d.fonte}</span>
         <span class="e-divina e-${d.energia}">${LABEL_ENERGIA[d.energia]}</span>
       </div>
 
@@ -6344,6 +6912,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // ── FILTROS E BUSCA DE DEUSES ────────────────────────────────
   let filtroEnergiaDeus = 'todos';
+  let filtroRacaDeus = 'todos';
+  let filtroClasseDeus = 'todos';
   let termoBuscaDeus = '';
 
   function aplicarFiltrosDeuses() {
@@ -6351,6 +6921,27 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (filtroEnergiaDeus !== 'todos') {
       lista = lista.filter(d => d.energia === filtroEnergiaDeus);
+    }
+
+    // Filtro de Devoto (raça e/ou classe) — 3 deuses (Aharadak, Thwor,
+    // Valkaria) têm devotosRacas/devotosClasses vazios + devotosNota
+    // "aceita todos sem restrição": esses sempre passam, não importa a
+    // seleção. Com os dois eixos ativos ao mesmo tempo, o match é OU (raça
+    // OU classe bate) — não E: os dados de `devotosRacas`/`devotosClasses`
+    // são recomendações típicas por eixo independente, não uma exigência
+    // de que o mesmo personagem precise satisfazer os dois pra cultuar
+    // aquele deus (decisão registrada no CLAUDE.md, sem confirmação
+    // explícita do usuário — reveja se o resultado parecer contra-intuitivo).
+    if (filtroRacaDeus !== 'todos' || filtroClasseDeus !== 'todos') {
+      lista = lista.filter(d => {
+        const universal = !d.devotosRacas.length && !d.devotosClasses.length && d.devotosNota;
+        if (universal) return true;
+        const raçaAtiva = filtroRacaDeus !== 'todos';
+        const classeAtiva = filtroClasseDeus !== 'todos';
+        const okRaca = raçaAtiva && d.devotosRacas.includes(filtroRacaDeus);
+        const okClasse = classeAtiva && d.devotosClasses.includes(filtroClasseDeus);
+        return (raçaAtiva && classeAtiva) ? (okRaca || okClasse) : (raçaAtiva ? okRaca : okClasse);
+      });
     }
 
     if (termoBuscaDeus) {
@@ -6375,6 +6966,28 @@ document.addEventListener('DOMContentLoaded', () => {
     filtroEnergiaDeus = energia;
     aplicarFiltrosDeuses();
   };
+
+  // Filtro de Devoto (raça/classe) — chamado pelos dois <select> do topo.
+  window.setFiltroDevotoDeus = (eixo, valor) => {
+    if (eixo === 'raca') filtroRacaDeus = valor;
+    else filtroClasseDeus = valor;
+    aplicarFiltrosDeuses();
+  };
+
+  // Popula os <select> de Raça/Classe do filtro de Devoto a partir dos dados
+  // já carregados — evita hardcodar as 17 raças + 14 classes duas vezes.
+  function _popularFiltroDevotoDeus() {
+    const selRaca = document.getElementById('deusesFiltroRaca');
+    if (selRaca && window.RACAS) {
+      const nomes = window.RACAS.map(r => r.nome).sort((a, b) => a.localeCompare(b, 'pt-BR'));
+      selRaca.insertAdjacentHTML('beforeend', nomes.map(n => `<option value="${n}">${n}</option>`).join(''));
+    }
+    const selClasse = document.getElementById('deusesFiltroClasse');
+    if (selClasse && window.CLASSES) {
+      const nomes = window.CLASSES.map(c => c.nome).sort((a, b) => a.localeCompare(b, 'pt-BR'));
+      selClasse.insertAdjacentHTML('beforeend', nomes.map(n => `<option value="${n}">${n}</option>`).join(''));
+    }
+  }
 
   _ligarBusca('buscaDeuses', v => { termoBuscaDeus = v; aplicarFiltrosDeuses(); });
 
@@ -6412,17 +7025,148 @@ document.addEventListener('DOMContentLoaded', () => {
   _ligarBusca('buscaPoderesTormenta', v => { _pgEstado.tormenta.busca = v.toLowerCase(); renderPoderesGeraisNaSecao('tormenta'); });
   _ligarBusca('buscaPoderesTodos', v => { _pgEstado.todos.busca = v.toLowerCase(); renderPoderesTodosNaSecao(); });
 
-  // Busca global no topbar
+  // ── BUSCA GLOBAL — de verdade, por todo o site (30/ago) ────────────
+  // Antes disso, "buscaGlobal" só reaproveitava o filtro de Raças
+  // (`termoBusca`) e forçava `mostrarSecao('racas')` — ou seja, buscar
+  // qualquer coisa (uma magia, um poder, uma criatura) sempre "achava"
+  // resultado nenhum e jogava a pessoa pra página de Raças. Reportado
+  // indiretamente pelo usuário como dificuldade de achar algo específico
+  // pela busca (item 7 do pedido de Polimento). Agora monta um índice com
+  // TODAS as entidades do site (raças, classes, origens, deuses, perícias,
+  // condições, poderes gerais e de classe, magias, todo tipo de item,
+  // criaturas, perigos, ambiente) e mostra um dropdown de resultados que
+  // abrem o painel certo direto, reaproveitando window.abrirBlocoReferencia
+  // e o mapa BLOCO_REF_TIPOS já existente — sem precisar trocar de seção.
+  let _indiceBuscaGlobal = null;
+  function _construirIndiceBuscaGlobal() {
+    const idx = [];
+    const add = (nome, tipo, id, extra, rotulo) => { if (nome) idx.push({ nome, tipo, id, extra, rotulo }); };
+
+    (window.RACAS   || []).forEach(r => add(r.nome, 'raca',   r.id, null, 'Raça'));
+    (window.CLASSES || []).forEach(c => add(c.nome, 'classe', c.id, null, 'Classe'));
+    (window.ORIGENS || []).forEach(o => add(o.nome, 'origem', o.id, null, 'Origem'));
+    (window.DEUSES  || []).forEach(d => add(d.nome, 'deus',   d.id, null, 'Deus'));
+    (window.MAGIAS  || []).forEach(m => add(m.nome, 'magia',  m.nome, null, 'Magia'));
+    (window.CRIATURAS || []).forEach(c => add(c.nome, 'criatura', c.id, null, 'Criatura'));
+    (window.PERIGOS_SIMPLES   || []).forEach(p => add(p.nome, 'perigo', p.id, null, 'Perigo'));
+    (window.PERIGOS_COMPLEXOS || []).forEach(p => add(p.nome, 'perigoComplexo', p.id, null, 'Perigo Complexo'));
+    (window.PERICIAS  || []).forEach(p => add(p.nome, 'pericia', p.nome, null, 'Perícia'));
+    (window.CONDICOES || []).forEach(c => add(c.nome, 'condicao', c.nome, null, 'Condição'));
+    (window.PODERES_GERAIS || []).forEach(p => { if (p.tipo !== 'explicacao') add(p.nome, 'poderGeral', p.nome, null, 'Poder Geral'); });
+    Object.keys(window.PODERES_CLASSES || {}).forEach(classeId => {
+      const classeInfo = (window.CLASSES || []).find(c => c.id === classeId);
+      (window.PODERES_CLASSES[classeId] || []).forEach(p => {
+        if (p.tipo === 'explicacao') return;
+        add(p.nome, 'poderClasse', p.nome, classeId, `Poder de ${classeInfo ? classeInfo.nome : classeId}`);
+      });
+    });
+    Object.keys(ITEM_TIPO_CONFIG).forEach(tipoItem => {
+      (ITEM_TIPO_CONFIG[tipoItem].lista() || []).forEach(it => add(it.nome, 'item', it.nome, tipoItem, 'Item'));
+    });
+    const ambienteColecoes = {
+      clima: window.AMBIENTE_CLIMA, terreno: window.AMBIENTE_TERRENO,
+      masmorra: window.AMBIENTE_MASMORRA_ELEMENTO, ermo: window.AMBIENTE_ERMO_ELEMENTO,
+      'urbano-assentamento': window.AMBIENTE_URBANO_ASSENTAMENTO, 'urbano-elemento': window.AMBIENTE_URBANO_ELEMENTO,
+    };
+    Object.keys(ambienteColecoes).forEach(col => {
+      (ambienteColecoes[col] || []).forEach(it => add(it.nome, 'ambiente', it.id, col, 'Ambiente'));
+    });
+    return idx;
+  }
+
+  function _buscarGlobal(termo) {
+    const t = termo.trim().toLowerCase();
+    if (!t) return [];
+    if (!_indiceBuscaGlobal) _indiceBuscaGlobal = _construirIndiceBuscaGlobal();
+    const comeca = [], contem = [];
+    for (const item of _indiceBuscaGlobal) {
+      const nomeL = item.nome.toLowerCase();
+      if (nomeL.startsWith(t)) comeca.push(item);
+      else if (nomeL.includes(t)) contem.push(item);
+    }
+    return comeca.concat(contem).slice(0, 12);
+  }
+
+  function _renderResultadosBuscaGlobal(resultados, termo) {
+    const painel = document.getElementById('buscaGlobalResultados');
+    if (!painel) return;
+    if (!termo.trim()) { painel.classList.remove('aberto'); painel.innerHTML = ''; return; }
+    if (resultados.length === 0) {
+      painel.innerHTML = `<div class="bgr-vazio">Nada encontrado pra "${termo.trim()}".</div>`;
+      painel.classList.add('aberto');
+      return;
+    }
+    painel.innerHTML = resultados.map((r, i) => `
+      <div class="bgr-item${i === 0 ? ' bgr-ativo' : ''}" data-idx="${i}">
+        <span class="bgr-rotulo">${r.rotulo}</span>
+        <span class="bgr-nome">${r.nome}</span>
+      </div>`).join('');
+    painel.classList.add('aberto');
+    painel.querySelectorAll('.bgr-item').forEach((el, i) => {
+      el.addEventListener('mouseenter', () => {
+        painel.querySelectorAll('.bgr-item').forEach(x => x.classList.remove('bgr-ativo'));
+        el.classList.add('bgr-ativo');
+      });
+      // stopPropagation: sem isso, o mesmo clique que abre o miniPainel
+      // borbulha até o listener "clicar fora fecha o miniPainel" (mais
+      // abaixo no arquivo) — como o clique fisicamente aconteceu FORA do
+      // miniPainel (veio do dropdown de busca), aquele listener via um
+      // painel .aberto que não continha e.target e fechava na hora,
+      // um piscar rápido. Mesmo padrão já usado nos links kw-*/chips.
+      el.addEventListener('click', (e) => { e.stopPropagation(); _abrirResultadoBuscaGlobal(resultados[i]); });
+    });
+  }
+
+  function _abrirResultadoBuscaGlobal(r) {
+    if (!r) return;
+    window.abrirBlocoReferencia && window.abrirBlocoReferencia(r.tipo, r.id, r.extra);
+    const painel = document.getElementById('buscaGlobalResultados');
+    if (painel) { painel.classList.remove('aberto'); painel.innerHTML = ''; }
+    if (buscaGlobal) buscaGlobal.blur();
+  }
+
   const buscaGlobal = document.getElementById('buscaGlobal');
+  let _resultadosBuscaGlobalAtuais = [];
   _ligarBusca('buscaGlobal', v => {
-    termoBusca = v;
-    if (termoBusca) mostrarSecao('racas');
-    aplicarFiltros();
+    _resultadosBuscaGlobalAtuais = _buscarGlobal(v);
+    _renderResultadosBuscaGlobal(_resultadosBuscaGlobalAtuais, v);
   });
   if (buscaGlobal) {
+    buscaGlobal.addEventListener('keydown', e => {
+      const painel = document.getElementById('buscaGlobalResultados');
+      const aberto = painel && painel.classList.contains('aberto') && _resultadosBuscaGlobalAtuais.length > 0;
+      if (e.key === 'ArrowDown' && aberto) {
+        e.preventDefault();
+        const atual = painel.querySelector('.bgr-ativo');
+        const prox = atual && atual.nextElementSibling ? atual.nextElementSibling : painel.firstElementChild;
+        painel.querySelectorAll('.bgr-item').forEach(x => x.classList.remove('bgr-ativo'));
+        if (prox) { prox.classList.add('bgr-ativo'); prox.scrollIntoView({ block: 'nearest' }); }
+      } else if (e.key === 'ArrowUp' && aberto) {
+        e.preventDefault();
+        const atual = painel.querySelector('.bgr-ativo');
+        const ant = atual && atual.previousElementSibling ? atual.previousElementSibling : painel.lastElementChild;
+        painel.querySelectorAll('.bgr-item').forEach(x => x.classList.remove('bgr-ativo'));
+        if (ant) { ant.classList.add('bgr-ativo'); ant.scrollIntoView({ block: 'nearest' }); }
+      } else if (e.key === 'Enter' && aberto) {
+        e.preventDefault();
+        const ativo = painel.querySelector('.bgr-ativo');
+        const idx = ativo ? Number(ativo.dataset.idx) : 0;
+        _abrirResultadoBuscaGlobal(_resultadosBuscaGlobalAtuais[idx]);
+      }
+    });
+    document.addEventListener('click', e => {
+      const painel = document.getElementById('buscaGlobalResultados');
+      if (!painel || !painel.classList.contains('aberto')) return;
+      if (e.target === buscaGlobal || painel.contains(e.target)) return;
+      painel.classList.remove('aberto');
+    });
     document.addEventListener('keydown', e => {
-      if ((e.ctrlKey||e.metaKey) && e.key==='k') { e.preventDefault(); buscaGlobal.focus(); }
-      if (e.key==='Escape') { fecharDetalhe(); toggleSidebarMobile(false); buscaGlobal.blur(); }
+      if ((e.ctrlKey||e.metaKey) && e.key==='k') { e.preventDefault(); buscaGlobal.focus(); buscaGlobal.select(); }
+      if (e.key==='Escape') {
+        const painel = document.getElementById('buscaGlobalResultados');
+        if (painel && painel.classList.contains('aberto')) { painel.classList.remove('aberto'); return; }
+        fecharDetalhe(); toggleSidebarMobile(false); buscaGlobal.blur();
+      }
     });
   }
 
@@ -6451,9 +7195,18 @@ document.addEventListener('DOMContentLoaded', () => {
   if (window.PERICIAS) renderPericias(window.PERICIAS);
   if (window.ORIGENS) renderOrigens(window.ORIGENS);
   if (window.DEUSES) renderDeuses(window.DEUSES);
+  _popularFiltroDevotoDeus();
   if (window.CRIATURAS) { renderCriaturasNaSecao(); carregarCombateSalvo(); atualizarPainelHerois(); }
   if (window.CONDICOES) renderCondicoesNaSecao();
   if (window.ALINHAMENTOS) renderToquesFinais();
+  if (window.REGRAS_TESTES_ARVORE) renderRegrasTestes();
+  if (window.REGRAS_HABILIDADES_ARVORE) renderRegrasHabilidades();
+  if (window.REGRAS_COMBATE_ARVORE) renderRegrasCombate();
+  if (window.REGRAS_MAGIAS_ARVORE) renderRegrasMagias();
+  if (window.REGRAS_TEMPO_ARVORE) renderRegrasTempo();
+  if (window.REGRAS_AMBIENTES_ARVORE) renderRegrasAmbientes();
+  if (window.REGRAS_CONSTRUCAO_ARVORE) renderRegrasConstrucao();
+  if (window.TESOURO_ND_TABELA) { _tgPopularSelectNd(); _tgRenderReferencia(); }
   if (window.ATRIBUTOS_CUSTO) renderAtributosBasicos();
   if (window.TIPOS_PARCEIRO) { renderParceirosNaSecao(); calcularLimiteParceiros(); }
   if (window.PERIGOS_SIMPLES) { preencherFiltroCondicoesPerigo(); renderPerigosNaSecao(); }
@@ -6890,6 +7643,14 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!topo || topo.painelId !== 'miniPainel') return;
     window.voltarReferencia(_pilhaRef.length - 1);
   });
+
+  // Pin + arrastar no mini-painel foi tentado em 30/ago e removido no mesmo
+  // dia, a pedido do usuário: testou e achou que não valia a complexidade
+  // extra, preferiu manter o site mais fluido. Se for reconsiderar no
+  // futuro, o histórico completo da implementação (botão de pin, drag por
+  // left/top, persistência em localStorage, e o ajuste que era necessário
+  // em fecharTodosPaineisDetalhe() pra não fechar o painel pinado ao trocar
+  // de seção) está no changelog do CLAUDE.md, item 33.
 
   // ── CORREÇÃO: fechar pelo X nativo do painel também tira da pilha ──
   // Bug: cada painel tem seu próprio botão de fechar (fecharDetalheDeus,

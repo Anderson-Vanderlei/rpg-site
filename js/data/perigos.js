@@ -123,6 +123,18 @@ window.PERIGOS_SIMPLES = [
   },
   {
     id: 'tormenta-perigo', nome: 'Tormenta', categoria: 'ambiental',
+    // semAutoLink (30/ago): "Tormenta" é também o nome do PRÓPRIO cenário/
+    // fenômeno histórico citado o tempo todo em texto de lore (Deuses,
+    // Raças, Origens...) sem ligação nenhuma com este perigo específico —
+    // ex: "Aharadak... Antigo Lorde da Tormenta" virava link pra este
+    // perigo de área, o que é errado na maioria das vezes que a
+    // palavra aparece. Com essa flag, o Passo 11 de keywords.js (auto-link
+    // de nomes de Perigo) pula esta entrada — ela continua 100% acessível
+    // normalmente pela página de Perigos, só não vira link automático
+    // sempre que a palavra "Tormenta" aparecer em qualquer descrição do
+    // site. Mesmo mecanismo vale pra qualquer nome futuro (de suplemento)
+    // que também seja uma palavra comum do cenário — ver CLAUDE.md §9.1.
+    semAutoLink: true,
     nd: null, ndValor: null, dano: null, resistencia: 'Vontade CD 25 (+2 por dia anterior consecutivo)',
     investigacaoCD: null, ladinagemCD: null, transmissao: null, cd: null,
     progressao: ['frustrada', 'esmorecida', 'confusa', 'insana'],

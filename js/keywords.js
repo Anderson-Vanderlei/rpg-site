@@ -321,6 +321,7 @@ let _CLASSE_LIST = null;
 let _ORIGEM_LIST = null;
 let _DEUS_LIST = null;
 let _CRIATURA_LIST = null;
+let _LENDA_LIST = null;
 let _PERIGO_LIST = null;
 let _PERIGO_COMPLEXO_LIST = null;
 let _AMBIENTE_LIST = null;
@@ -658,6 +659,41 @@ function processarKeywords(texto) {
         placeholders.push(
           `<span class="kw kw-criatura"` +
           ` onclick="event.stopPropagation(); window.abrirBlocoReferencia && window.abrirBlocoReferencia('criatura', '${cr.id}')"` +
+          ` style="cursor:pointer">${capture}</span>`
+        );
+        return `\x00${idx}\x00`;
+      });
+    }
+  }
+
+  // Passo 10.1: nomes de Lendas de Arton (Guia de NPCs) — mesma técnica do
+  // Passo 10 (Criaturas). Adicionado no item 43 (mesmo dia da migração de
+  // schema) — até então window.LENDAS_ARTON (item 42) tinha ficado de fora
+  // do sistema de auto-link, então nomes de NPCs icônicos citados em outra
+  // ficha (outra Lenda, uma Criatura, um item mágico no Gerador de Tesouro
+  // etc.) não viravam link. Roda logo depois de Criaturas de propósito:
+  // nomes de Lendas são próprios (ex. "Beluhga", "Orion Drake") e têm risco
+  // de colisão bem mais baixo que os nomes genéricos de espécie do
+  // Bestiário, mas ainda assim mantém a mesma ordem de prioridade.
+  if (!_LENDA_LIST && typeof window !== 'undefined' && window.LENDAS_ARTON) {
+    _LENDA_LIST = window.LENDAS_ARTON
+      .filter(l => l.nome && !l.semAutoLink)
+      .map(l => ({
+        nome: l.nome, id: l.id,
+        regex: new RegExp(
+          `(?<=[\\s,;:.!?()"'\\-]|^)(${_escapeRegex(l.nome)})(?=[\\s,;:.!?()"'\\-]|$)`,
+          'g'
+        ),
+      }))
+      .sort((a, b) => b.nome.length - a.nome.length);
+  }
+  if (_LENDA_LIST) {
+    for (const ld of _LENDA_LIST) {
+      resultado = resultado.replace(ld.regex, (_, capture) => {
+        const idx = placeholders.length;
+        placeholders.push(
+          `<span class="kw kw-lenda"` +
+          ` onclick="event.stopPropagation(); window.abrirBlocoReferencia && window.abrirBlocoReferencia('lenda', '${ld.id}')"` +
           ` style="cursor:pointer">${capture}</span>`
         );
         return `\x00${idx}\x00`;

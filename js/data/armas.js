@@ -5,7 +5,15 @@
 
    Cada entrada de ARMAS:
    { id, nome, categoria, tipoAtaque, empunhadura, preco, dano, critico,
-     alcance, tipoDano, espacos, habilidades: [], municao, descricao }
+     alcance, tipoDano, espacos, habilidades: [], municao, descricao,
+     fonte?, pagina? }
+
+   fonte/pagina: OPCIONAIS — ausentes em toda arma do livro-base (a
+   badge de fonte assume 'Tormenta 20' quando o campo não existe, ver
+   renderArmaCard/abrirDetalheEquip em compendio.js). Só aparecem numa
+   arma vinda de outro livro-fonte (ex.: Machado de Lenha, Guia de
+   NPCs, p. 71) — padrão pensado pra permitir add. de novos livros
+   sem precisar retroativamente marcar as 40 armas já existentes.
 
    categoria: 'simples' | 'marcial' | 'exotica' | 'fogo' — proficiência
    necessária pra usar sem penalidade de –5 nos testes de ataque.
@@ -138,6 +146,14 @@ const ARMAS = [
     preco: 'T$ 30', dano: '1d6', critico: 'x3', alcance: 'médio', tipoDano: 'Perfuração', espacos: 2,
     habilidades: [], municao: 'flechas',
     descricao: 'Uma arma antiga e comum, este arco é usado primariamente como ferramenta de caça, embora seja usado como arma de guerra por milícias, bandidos e exércitos menos equipados. Pode ser usado montado.',
+  },
+  {
+    id: 'machado-de-lenha', nome: 'Machado de Lenha', categoria: 'simples',
+    tipoAtaque: 'corpo-a-corpo', empunhadura: 'uma-mao',
+    preco: 'T$ 15', dano: '1d6', critico: 'x3', alcance: null, tipoDano: 'Corte', espacos: 1,
+    habilidades: [], municao: null,
+    descricao: 'Uma ferramenta comum. Sua lâmina, projetada para cortar madeira rígida, é capaz de ignorar 5 pontos de Redução de Dano de objetos e construtos.',
+    fonte: 'Guia de NPCs', pagina: 71,
   },
 
   // ══════════════════════ ARMAS MARCIAIS ══════════════════════
@@ -336,6 +352,41 @@ const ARMAS = [
     preco: 'T$ 500', dano: '2d8', critico: '19/x3', alcance: 'médio', tipoDano: 'Perfuração', espacos: 2,
     habilidades: [], municao: 'balas',
     descricao: 'Uma arma de fogo de uso difícil, mas com poder devastador. Recarregar um mosquete é uma ação padrão.',
+  },
+
+  // ══════════════════════ GUIA DE NPCs ══════════════════════
+
+  {
+    id: 'cajado-de-batalha', nome: 'Cajado de Batalha', categoria: 'marcial',
+    tipoAtaque: 'corpo-a-corpo', empunhadura: 'duas-maos',
+    preco: 'T$ 10', dano: '1d8/1d8', critico: 'x2', alcance: null, tipoDano: 'Impacto', espacos: 2,
+    habilidades: ['dupla'], municao: null,
+    descricao: 'Um cajado reforçado com chapas de metal nas pontas. Uma arma discreta, usada por andarilhos que não querem levantar suspeitas.',
+    fonte: 'Guia de NPCs', pagina: 19,
+  },
+  {
+    id: 'balestra', nome: 'Balestra', categoria: 'exotica',
+    tipoAtaque: 'distancia', empunhadura: 'duas-maos',
+    preco: 'T$ 150', dano: '1d12', critico: '19', alcance: 'médio', tipoDano: 'Perfuração', espacos: 2,
+    habilidades: [], municao: 'virotes',
+    descricao: 'A balestra é uma versão mais robusta da besta pesada, que utiliza um sistema de catracas reguláveis para armar seu arco. Esse sistema permite que usuários mais fortes apliquem mais tensão à arma; ao contrário de outras armas de disparo, você aplica sua Força a rolagens de dano com uma balestra. Recarregar uma balestra é uma ação padrão.',
+    fonte: 'Guia de NPCs', pagina: 44,
+  },
+  {
+    id: 'maca-de-guerra', nome: 'Maça de Guerra', categoria: 'exotica',
+    tipoAtaque: 'corpo-a-corpo', empunhadura: 'uma-mao',
+    preco: 'T$ 25', dano: '1d12', critico: 'x3', alcance: null, tipoDano: 'Impacto', espacos: 1,
+    habilidades: ['desbalanceada'], municao: null,
+    descricao: 'Uma versão mais perigosa da maça comum, com uma cabeça formada por grandes placas de metal. O peso da maça de guerra torna seu golpe poderoso, mas desajeitado, fazendo com que ela seja uma arma desbalanceada.',
+    fonte: 'Guia de NPCs', pagina: 65,
+  },
+  {
+    id: 'pistola-tambor', nome: 'Pistola-Tambor', categoria: 'fogo',
+    tipoAtaque: 'distancia', empunhadura: 'uma-mao',
+    preco: 'T$ 2.100', dano: '2d6', critico: '19/x3', alcance: 'curto', tipoDano: 'Perfuração', espacos: 1,
+    habilidades: [], municao: 'balas',
+    descricao: 'Esta arma de fogo possui um tambor giratório que armazena 4 munições. Esse tambor é parte de um mecanismo complexo e por isso conta como uma melhoria para a arma. Recarregar uma pistola-tambor é uma ação completa.',
+    fonte: 'Guia de NPCs',
   },
 
 ];

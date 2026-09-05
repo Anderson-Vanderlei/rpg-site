@@ -4,7 +4,12 @@
    Capítulo 3: Equipamento, pp. 163-166 (Itens Superiores & Melhorias)
 
    Cada entrada:
-   { id, nome, categorias: [], preRequisito, descricao }
+   { id, nome, categorias: [], preRequisito, descricao, fonte?, pagina? }
+
+   fonte/pagina: OPCIONAIS — ausentes em toda melhoria do livro-base (a
+   badge de fonte assume 'Tormenta 20' quando o campo não existe, ver
+   renderModificadorCard/abrirDetalheEquip em compendio.js). Preparado
+   pra próximos suplementos, mesmo sem nenhuma melhoria assim ainda.
 
    categorias: array com uma ou mais de 'arma' | 'armadura' | 'escudo' |
    'esoterico' | 'ferramenta' | 'vestuario' | 'qualquer' — 'qualquer'

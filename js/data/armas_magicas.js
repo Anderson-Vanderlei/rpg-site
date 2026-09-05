@@ -11,7 +11,13 @@
 
    Cada entrada:
    { id, nome, baseId, preco, encantosFixos: [], melhoriasFixas: [],
-     materialFixo: null|id, descricao, especial }
+     materialFixo: null|id, descricao, especial, fonte?, pagina? }
+
+   fonte/pagina: OPCIONAIS — ausentes nos 18 itens do livro-base (a
+   badge de fonte assume 'Tormenta 20' quando o campo não existe, ver
+   renderArmaEspecificaCard/abrirDetalheEquip em compendio.js). Só
+   aparecem num item vindo de outro livro-fonte (ex.: Báculo da Fé,
+   Guia de NPCs, p. 71).
 
    baseId: aponta pro id da arma mundana correspondente em armas.js —
    usado pra puxar dano/crítico/alcance/tipo/espaços e montar a mesma
@@ -141,6 +147,34 @@ const ARMAS_ESPECIFICAS = [
     encantosFixos: ['formidavel'], melhoriasFixas: [], materialFixo: null,
     descricao: 'Esta espada longa formidável revela todo o seu poder apenas quando empunhada por um paladino.',
     especial: 'Se você for um paladino, recebe +5 em testes de ataque e rolagens de dano, o custo de seu Golpe Divino é reduzido em –1 PM e você e seus aliados em alcance curto recebem resistência a magia +5.',
+  },
+  {
+    id: 'baculo-da-fe', nome: 'Báculo da Fé', baseId: 'bordao', preco: 'T$ 45.000',
+    encantosFixos: ['formidavel'], melhoriasFixas: ['banhado-a-ouro'], materialFixo: null,
+    descricao: 'Este bordão banhado a ouro formidável é dedicado a uma divindade específica, que pode ser identificada pelos símbolos em sua empunhadura e extremidades.',
+    especial: 'Quando empunhado por um devoto da divindade à qual é dedicado, causa +1d6 pontos de dano de fogo (se a divindade canaliza energia positiva) ou +1d6 pontos de dano de frio (se canaliza energia negativa).',
+    fonte: 'Guia de NPCs', pagina: 71,
+  },
+  {
+    id: 'avir', nome: 'Avir', baseId: 'montante', preco: 'T$ 96.000',
+    encantosFixos: ['formidavel', 'tumular'], melhoriasFixas: ['macabro', 'macica'], materialFixo: null,
+    descricao: 'Este montante aumentado macabro maciço formidável tumular foi fabricado a partir do fêmur da irmã de Narsogg. Uma arma única, conta como um cajado arcano.',
+    especial: 'Além dos benefícios de contar como um cajado arcano, as magias do usuário que causam dano de trevas causam +1 ponto de dano por dado.',
+    fonte: 'Guia de NPCs',
+  },
+  {
+    id: 'presuntador', nome: 'Presuntador', baseId: 'machado-de-guerra', preco: 'T$ 120.000',
+    encantosFixos: ['magnifica'], melhoriasFixas: ['energetico'], materialFixo: null,
+    descricao: 'Feito de mana solidificado e dado a Klunc como recompensa por um ato especialmente heroico, o Presuntador é um machado de guerra aumentado energético magnífico.',
+    especial: 'Se Klunc ficar inconsciente, o Presuntador continua lutando sozinho, com as mesmas estatísticas que teria se estivesse sendo empunhado. Quando ataca dessa forma, o Presuntador tem Defesa 35, RD 50 e 50 PV.',
+    fonte: 'Guia de NPCs',
+  },
+  {
+    id: 'punhal-escarlate', nome: 'Punhal Escarlate', baseId: 'adaga', preco: 'T$ 41.000',
+    encantosFixos: ['formidavel'], melhoriasFixas: [], materialFixo: null,
+    descricao: 'Criada por Hemera, uma das Obras das Irmãs (presentes de Kallyadranoch), esta adaga formidável causa +1d6 pontos de dano de essência. Conta como um orbe cristalino.',
+    especial: 'Os poderes mágicos deste item só funcionam com devotos de Kallyadranoch.',
+    fonte: 'Guia de NPCs',
   },
 ];
 

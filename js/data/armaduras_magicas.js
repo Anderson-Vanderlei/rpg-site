@@ -9,7 +9,13 @@
    Cada entrada:
    { id, nome, tipo: 'armadura'|'escudo', baseId, preco,
      encantosFixos: [], melhoriasFixas: [], materialFixo: null|id,
-     descricao, especial }
+     descricao, especial, fonte?, pagina? }
+
+   fonte/pagina: OPCIONAIS — ausentes nos 13 itens do livro-base (a
+   badge de fonte assume 'Tormenta 20' quando o campo não existe, ver
+   renderArmaduraEspecificaCard/abrirDetalheEquip em compendio.js). Só
+   aparecem num item vindo de outro livro-fonte (ex.: Batina
+   Consagrada, Guia de NPCs, p. 71).
 ============================================================ */
 
 const ARMADURAS_ESCUDOS_ESPECIFICOS = [
@@ -90,6 +96,20 @@ const ARMADURAS_ESCUDOS_ESPECIFICOS = [
     encantosFixos: ['defensor'], melhoriasFixas: [], materialFixo: null,
     descricao: 'Este escudo pesado defensor é coberto de espinhos.',
     especial: 'Você pode gastar uma ação de movimento e 2 PM para disparar um espinho em um alvo em alcance curto. O espinho acerta automaticamente e causa 1d10+2 pontos de dano de perfuração.',
+  },
+  {
+    id: 'batina-consagrada', nome: 'Batina Consagrada', tipo: 'armadura', baseId: 'armadura-acolchoada', preco: 'T$ 80.000',
+    encantosFixos: ['guardiao', 'refletor'], melhoriasFixas: [], materialFixo: null,
+    descricao: 'Esta armadura acolchoada guardiã refletora é dedicada a uma divindade específica, que pode ser identificada pelos símbolos bordados em seu peito e mangas. Conta como um manto eclesiástico aprimorado.',
+    especial: 'Se vestida por um devoto da divindade à qual é dedicada, fornece redução de dano 5.',
+    fonte: 'Guia de NPCs', pagina: 71,
+  },
+  {
+    id: 'armadura-de-khalmyr', nome: 'Armadura de Khalmyr', tipo: 'armadura', baseId: 'armadura-completa', preco: 'T$ 42.000',
+    encantosFixos: ['defensor'], melhoriasFixas: ['sob-medida'], materialFixo: null,
+    descricao: 'Esta armadura completa sob medida defensora fica armazenada magicamente em uma gargantilha com o símbolo do Deus da Justiça. Enquanto está armazenada dessa forma, a armadura não ocupa nenhum espaço (embora ainda conte como um item vestido) e não impõe nenhuma penalidade ao usuário (como se ele não estivesse de armadura).',
+    especial: 'Ao pronunciar o nome de Khalmyr, o usuário evoca a armadura, que é vestida automaticamente. Devolver a armadura à gargantilha também é uma ação livre.',
+    fonte: 'Guia de NPCs',
   },
 ];
 

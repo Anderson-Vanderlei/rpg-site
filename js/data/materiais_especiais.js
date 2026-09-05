@@ -6,7 +6,12 @@
    Cada entrada:
    { id, nome, precoAdicional: { arma, armaduraLeve, armaduraPesada,
      escudo, esoterico }, efeitos: { arma, armaduraEscudo, esoterico },
-     descricao }
+     descricao, fonte?, pagina? }
+
+   fonte/pagina: OPCIONAIS — ausentes em todo material do livro-base (a
+   badge de fonte assume 'Tormenta 20' quando o campo não existe, ver
+   renderModificadorCard em compendio.js). Preparado pra próximos
+   suplementos, mesmo sem nenhum material assim ainda.
 
    Materiais especiais exigem a melhoria "Material Especial" (ver
    melhorias.js) — o preço adicional listado aqui se soma ao preço da

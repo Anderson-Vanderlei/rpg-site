@@ -9,16 +9,16 @@
    (bate exatamente com as 5 seções que já existem no menu lateral:
    data-secao="poderes-combate" etc.)
 
-   Só a categoria 'combate' está completa nesta primeira fase — as
-   outras 4 (Destino, Magia, Concedidos, Tormenta) entram depois,
-   uma de cada vez. Poderes Concedidos usa os MESMOS nomes já citados
-   em deuses.js (poderesConcedidos[]) — quando essa categoria entrar,
-   dá pra trocar aquelas strings soltas por link direto, sem reescrever
-   deuses.js.
+   As 5 categorias (Combate, Destino, Magia, Concedidos, Tormenta)
+   estão completas. Poderes Concedidos usa os MESMOS nomes já citados
+   em deuses.js (poderesConcedidos[]) — dá pra trocar aquelas strings
+   soltas por link direto, sem reescrever deuses.js.
 
-   ⚠️ 'arma-secundaria-grande' está com descrição PENDENTE — a extração
-   automática não bateu com o nome do poder (ver conversa com o Anderson,
-   14/jul). Não fabriquei texto pra não repetir o erro das raças raras.
+   fonte/pagina: OPCIONAIS — ausentes em todo poder do livro-base (a
+   badge de fonte, `.cp-tag-fonte`, já lê `p.fonte || 'Tormenta 20'`
+   dinamicamente em renderPoderHtml()). Usado pela primeira vez nos
+   poderes concedidos pelos deuses menores do Guia de NPCs e em
+   Caminho da Mão Vazia.
 ============================================================ */
 
 const PODERES_GERAIS = [
@@ -184,6 +184,11 @@ const PODERES_GERAIS = [
   { id: 'vitalidade', nome: 'Vitalidade', categoria: 'combate',
     tipo: 'passivo', custoPM: 0, prerequisito: 'Con 1',
     descricao: 'Você recebe +1 PV por nível de personagem e +2 em Fortitude.' },
+
+  { id: 'caminho-da-mao-vazia', nome: 'Caminho da Mão Vazia', categoria: 'combate',
+    tipo: 'ativo', custoPM: 1, prerequisito: 'Briga ou Estilo Desarmado, Sab 1, ser treinado por Kasumi',
+    descricao: 'Você pode gastar uma ação de movimento e 1 PM para fazer uma coreografia que parece uma dança, mas esconde técnicas que o preparam para a luta. Até o fim da cena, sempre que faz um teste de ataque desarmado, você rola dois dados e usa o melhor resultado. Kasumi pode ensinar suas técnicas a quem se provar digno; isso normalmente envolve ajudar o povo de Nitamu-ra de alguma forma ou sobreviver a um treino especialmente árduo.',
+    fonte: 'Guia de NPCs', pagina: 27 },
 
   // ══════════════════════ DESTINO (20) ══════════════════════
 
@@ -612,6 +617,28 @@ const PODERES_GERAIS = [
   { id: 'zumbificar', nome: 'Zumbificar', categoria: 'concedidos',
     tipo: 'ativo', custoPM: 3, prerequisito: 'Devoto de Tenebra',
     descricao: 'Você pode gastar uma ação completa e 3 PM para reanimar o cadáver de uma criatura Pequena ou Média adjacente por um dia. O cadáver funciona como um parceiro iniciante de um tipo a sua escolha entre combatente, fortão ou guardião. Além disso, quando sofre dano, você pode sacrificar esse parceiro; se fizer isso, sofre apenas metade do dano, mas o cadáver é destruído.' },
+
+  // ══════════════════════ GUIA DE NPCs — concedidos por deuses menores ══════════════════════
+
+  { id: 'investida-tempestade', nome: 'Investida Tempestade', categoria: 'concedidos',
+    tipo: 'ativo', custoPM: 2, prerequisito: 'Devoto de Bentos',
+    descricao: 'Quando faz uma investida, você pode gastar 2 PM para cobrir seu corpo com eletricidade. Se fizer isso, seu ataque causa +2d8 pontos de dano de eletricidade. Além disso, criaturas adjacentes ao caminho que você percorrer na investida sofrem 2d8 pontos de dano de eletricidade e ficam ofuscadas por 1 rodada (Ref CD Sab reduz à metade e evita a condição).',
+    fonte: 'Guia de NPCs', pagina: 7 },
+
+  { id: 'liberdade-irrestrita', nome: 'Liberdade Irrestrita', categoria: 'concedidos',
+    tipo: 'passivo', custoPM: 0, prerequisito: 'Devoto de Gwendolynn',
+    descricao: 'Você recebe +2 em testes de manobra para evitar ser agarrado e de resistência contra efeitos mentais, de medo, de metamorfose e de movimento. Além disso, se falhar num desses testes, pode rolá-lo novamente. Se ainda assim falhar, no início de cada um de seus turnos pode rolar esse teste novamente, como uma ação livre e com um bônus cumulativo de +2, até se libertar.',
+    fonte: 'Guia de NPCs', pagina: 16 },
+
+  { id: 'ginete-altivo', nome: 'Ginete Altivo', categoria: 'concedidos',
+    tipo: 'passivo', custoPM: 0, prerequisito: 'Devoto de Hippion',
+    descricao: 'Enquanto está montado sobre um cavalo, você recebe +2 em testes de ataque e em Cavalgar. Além disso, você passa automaticamente em testes de Cavalgar para não cair do cavalo quando sofre dano e não sofre penalidades para atacar à distância ou lançar magias quando montado em cavalos. Este poder conta como o poder Ginete para efeitos de pré-requisitos de outras habilidades.',
+    fonte: 'Guia de NPCs', pagina: 20 },
+
+  { id: 'salto-anurideo', nome: 'Salto Anurídeo', categoria: 'concedidos',
+    tipo: 'ativo', custoPM: 2, prerequisito: 'Devoto de Inghlblhpholtsgt',
+    descricao: 'Você pode gastar uma ação de movimento e 2 PM para saltar 9m em qualquer direção. Se terminar o salto em alcance corpo a corpo de uma criatura e atacá-la no mesmo turno, você recebe os benefícios e as penalidades de uma investida e sua arma causa um dado extra de dano do mesmo tipo durante esse ataque. Você pode aprender Primor Atlético como uma magia divina. Se fizer isso, o custo dela diminui em –1 PM.',
+    fonte: 'Guia de NPCs', pagina: 23 },
 
   // ══════════════════════ TORMENTA (22) ══════════════════════
   // Regra geral do grupo: escolher qualquer poder da Tormenta custa 1

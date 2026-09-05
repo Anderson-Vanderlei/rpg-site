@@ -229,6 +229,25 @@ html, body {
 .nav-sub-sub-item span { font-family:'Cinzel',serif; font-size:8px; letter-spacing:.06em; color:#444; transition:color .15s; }
 .nav-sub-sub-item:hover span, .nav-sub-sub-item.ativo span { color:#cc4444; }
 
+/* Grupos de 4º nível dentro de "Deuses" (Principais / Deuses Menores) —
+   reaproveita a marcação de .nav-sub-sub-item, só adiciona a seta própria
+   (03/set, pedido do usuário: nav lateral Deuses > Principais/Menores). */
+.nav-sub-sub-item.tem-netos .seta { margin-left:auto; font-size:9px; transition:transform .2s, color .15s; }
+.nav-sub-sub-item.tem-netos.expandido .seta { transform:rotate(90deg); color:#cc4444; }
+.nav-sub-sub-sub { display:none; }
+.nav-sub-sub-item.tem-netos.expandido + .nav-sub-sub-sub { display:block; }
+.nav-sub-sub-sub-item {
+  display:flex; align-items:center; gap:6px;
+  padding:.35rem 1rem .35rem 4.5rem;
+  cursor:pointer;
+  border-left:2px solid transparent;
+  transition:all .15s;
+}
+.nav-sub-sub-sub-item:hover { background:rgba(139,0,0,.05); border-left-color:#8B000044; }
+.nav-sub-sub-sub-item.ativo { background:rgba(139,0,0,.08); border-left-color:#8B0000; }
+.nav-sub-sub-sub-item span { font-family:'Cinzel',serif; font-size:7.5px; letter-spacing:.05em; color:#444; transition:color .15s; }
+.nav-sub-sub-sub-item:hover span, .nav-sub-sub-sub-item.ativo span { color:#cc4444; }
+
 /* Itens de raça individualmente */
 .nav-raca-item {
   display:flex; align-items:center; gap:8px;
@@ -395,8 +414,18 @@ html, body {
 .badge-comum   { background:rgba(201,168,76,.12); color:#c9a84c; border-color:rgba(201,168,76,.3); }
 .badge-rara    { background:rgba(136,136,255,.12); color:#8888ff; border-color:rgba(136,136,255,.3); }
 .badge-fonte   { background:rgba(139,0,0,.12); color:#cc4444; border-color:rgba(139,0,0,.3); }
+/* Suplementos (qualquer fonte != 'Tormenta 20') ganham cor roxa em vez do
+   vermelho do livro-base — aplicada via JS (ver _colorirBadgesFonte em
+   compendio.js), pra identificar de relance conteúdo de outros livros
+   (Guia de NPCs, e futuros suplementos) espalhado pelas outras seções. */
+.badge-fonte.badge-fonte-suplemento,
+.cp-tag-fonte.badge-fonte-suplemento { background:rgba(152,120,200,.14); color:#9878c8; border-color:rgba(152,120,200,.35); }
 .badge-tema    { background:rgba(201,168,76,.08); color:#c9a84c; border-color:rgba(201,168,76,.25); }
 .badge-pagina  { background:rgba(255,255,255,.04); color:#555; border-color:#2a2a2a; }
+/* Divindade menor explicitamente vetada pra PJs no livro (ex.: Sartan) —
+   vermelho vivo, mais saturado que .badge-fonte, pra chamar atenção de
+   relance no card e no painel de detalhe (04/set). */
+.badge-restrito { background:rgba(255,40,40,.14); color:#ff5555; border-color:rgba(255,40,40,.45); font-weight:600; }
 
 /* Corpo do card */
 .rc-body { padding:.9rem; flex:1; display:flex; flex-direction:column; }
@@ -539,6 +568,20 @@ html, body {
 .dc-desc { font-size:12px; color:#666; line-height:1.6; margin-bottom:.8rem; }
 .dc-footer { margin-top:auto; display:flex; gap:6px; }
 
+/* ── CARD DE DEUS MENOR (03/set): reaproveita .deus-card/.dc-* inteiro,
+   só adiciona epíteto + linha de natureza/status divino ── */
+.dc-epiteto { font-size:11px; color:#8a7440; font-style:italic; margin:-4px 0 6px; }
+.dc-natureza-linha { display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:.6rem; }
+.dc-natureza-tag {
+  font-family:'Cinzel',serif; font-size:9px; letter-spacing:.05em; text-transform:uppercase;
+  color:#cc4444; background:rgba(139,0,0,.12); border:.5px solid rgba(139,0,0,.35);
+  border-radius:3px; padding:2px 6px; white-space:nowrap;
+}
+.dc-status-divino { display:flex; gap:2px; }
+.sd-dot { width:6px; height:6px; border-radius:50%; }
+.sd-dot.on { background:#c9a84c; }
+.sd-dot.off { background:#2a2a2a; }
+
 /* ── PAINEL DE DETALHES ──────────────────────────────────────────────
    Largura ÚNICA pra todos os painéis de detalhe (Raça, Classe, Origem,
    Deus, Criatura, Perigo, Ambiente, Equipamento, Magia) — antes cada um
@@ -652,10 +695,10 @@ html, body {
    .ref-prof-label mais abaixo), efeito de baralho aberto em leque. */
 .detalhe-painel.aberto.ref-empilhado {
   transform-origin: right center;
-  transform: translateX(calc(var(--ref-prof, 1) * -44px)) scale(calc(1 - var(--ref-prof, 1) * 0.045));
+  transform: translateX(calc(var(--ref-prof, 1) * -52px)) scale(calc(1 - var(--ref-prof, 1) * 0.045));
   filter: brightness(.6) saturate(.8);
   box-shadow: -16px 0 40px rgba(0,0,0,.6);
-  border-left: 4px solid var(--painel-cor, #8B0000);
+  border-left: 2px solid var(--painel-cor, #8B0000);
   pointer-events: none;
 }
 .detalhe-painel.aberto.ref-empilhado .ref-prof-label { pointer-events: auto; }
@@ -664,11 +707,16 @@ html, body {
    nome de quem está "por baixo" (ex: "Bárbaro") e é clicável, pulando
    direto pra ele (mesma ideia da trilha, só que sempre visível em vez
    de precisar abrir o menu). Só existe enquanto o painel está
-   .ref-empilhado — inserida/removida via JS em _aplicarEmpilhamentoVisual(). */
+   .ref-empilhado — inserida/removida via JS em _aplicarEmpilhamentoVisual().
+   Alargada de 28px pra 36px e com fundo em degradê na cor de identidade
+   do painel (--painel-cor) + friso de luz na borda direita — em vez de
+   uma tira quase lisa, agora lê como uma "lombada de livro" de verdade
+   entre o painel recuado e o que está aberto na frente (pedido 03/set:
+   virar essa tira num elemento visual reconhecível, não só uma linha). */
 .ref-prof-label {
   position: absolute;
   left: 0; top: 0; bottom: 0;
-  width: 28px;
+  width: 36px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -678,13 +726,33 @@ html, body {
   font-size: 11px;
   letter-spacing: .08em;
   color: var(--painel-cor, #cc4444);
-  background: linear-gradient(90deg, rgba(0,0,0,.35), transparent);
+  /* Fallback simples (sem color-mix) primeiro; navegador que suporta
+     color-mix() sobrescreve com a versão que usa a cor de identidade
+     de verdade — se não suportar, a declaração seguinte é descartada
+     inteira e essa aqui continua valendo. */
+  background:
+    linear-gradient(90deg, rgba(255,255,255,.05), transparent 8px),
+    linear-gradient(90deg, rgba(0,0,0,.55), rgba(5,3,3,.4));
+  background:
+    linear-gradient(90deg, rgba(255,255,255,.05), transparent 8px),
+    linear-gradient(90deg, color-mix(in srgb, var(--painel-cor, #8B0000) 30%, #050303), rgba(5,3,3,.4));
+  box-shadow: inset -2px 0 3px rgba(0,0,0,.5);
   cursor: pointer;
   white-space: nowrap;
   overflow: hidden;
   transition: color .15s;
 }
 .ref-prof-label:hover { color: #fff; }
+
+/* Quando o painel aberto na frente tem algo empilhado atrás (classe
+   .tem-pilha-atras, setada via JS em _aplicarEmpilhamentoVisual()), o
+   título deixa de ficar colado na emenda com a lombada e passa a
+   centralizar no espaço do cabeçalho — em vez de "grudado" na costura,
+   fica com respiro dos dois lados (pedido 03/set: centralizar o nome
+   entre a lombada do painel de trás e o ícone-marca-d'água à direita). */
+.detalhe-painel.tem-pilha-atras .dp-hero { justify-content: center; }
+.detalhe-painel.tem-pilha-atras .dp-hero-content { text-align: center; }
+.detalhe-painel.tem-pilha-atras .dp-tipo { justify-content: center; }
 
 /* Mini-painel recuado — mesma ideia, mas parte da própria transform de
    "pop" dele (scale+translateY) em vez da de slide dos painéis grandes. */
@@ -814,6 +882,51 @@ html, body {
   font-size:8px; color:#c9a84c; margin-right:6px; display:inline-flex; align-items:center; gap:3px;
   background:rgba(201,168,76,.1); border:.5px solid rgba(201,168,76,.3); border-radius:2px; padding:1px 5px;
 }
+
+/* Golpe Pessoal do Guerreiro (item 49) — multi-seleção de efeitos com
+   soma de custo no TOPO da lista (ao contrário do total dos Aprimoramentos
+   de Magia, que fica embaixo — aqui o usuário pediu no topo pra não
+   precisar rolar a lista toda pra ver o custo). Reaproveita a mesma
+   linguagem visual do `.mg-aprim`/`.mg-pm-total`, só com nome próprio
+   (`.gp-*`) por estar embutido dentro do card do poder na lista, não num
+   painel de detalhe à parte. */
+.gp-pm-total {
+  display:flex; align-items:center; gap:7px; margin-bottom:10px; padding:8px 10px;
+  border:.5px solid rgba(201,168,76,.3); border-radius:4px;
+  background:rgba(201,168,76,.06); font-size:11px; color:#999;
+}
+.gp-pm-total i { color:#c9a84c; font-size:14px; }
+.gp-pm-total strong { color:#c9a84c; font-size:15px; }
+.gp-pm-total .gp-pm-min { color:#8a7440; font-size:9px; }
+.gp-efeitos { display:flex; flex-direction:column; gap:6px; }
+.gp-efeito {
+  display:flex; gap:9px; align-items:flex-start; padding:8px 10px;
+  border:.5px solid #222; border-radius:4px; transition:all .15s;
+}
+.gp-efeito.selecionado { background:rgba(201,168,76,.06); border-color:rgba(201,168,76,.25); }
+.gp-efeito-check {
+  width:14px; height:14px; border-radius:3px; border:1px solid #444; flex-shrink:0; margin-top:2px;
+  cursor:pointer; display:flex; align-items:center; justify-content:center;
+}
+.gp-efeito.selecionado .gp-efeito-check { background:#c9a84c; border-color:#c9a84c; color:#0a0a0a; font-size:10px; }
+.gp-efeito-stepper { display:flex; align-items:center; gap:5px; flex-shrink:0; }
+.gp-efeito-stepper button {
+  width:16px; height:16px; border-radius:3px; border:.5px solid #444; background:transparent;
+  color:#999; font-size:11px; cursor:pointer; display:flex; align-items:center; justify-content:center; line-height:1;
+}
+.gp-efeito-stepper button:hover { border-color:#c9a84c; color:#c9a84c; }
+.gp-efeito-stepper button:disabled { opacity:.3; cursor:default; }
+.gp-efeito-qtd { font-size:11px; color:#ccc; min-width:12px; text-align:center; }
+.gp-efeito-corpo { flex:1; }
+.gp-efeito-hd { display:flex; align-items:center; gap:6px; flex-wrap:wrap; }
+.gp-efeito-hd > i { color:#c9a84c; font-size:12px; }
+.gp-efeito-nome { font-size:11px; color:#ddd; font-weight:600; }
+.gp-efeito-custo {
+  font-size:9px; background:rgba(68,170,238,.15); color:#44aaee; border-radius:2px; padding:1px 5px;
+  font-weight:600;
+}
+.gp-efeito-desc { font-size:10.5px; color:#999; line-height:1.55; margin-top:3px; }
+.gp-tag-fonte { font-size:8px; }
 .mg-requer i { font-size:9px; }
 
 .mg-opcoes-wrap { margin-bottom:12px; }
@@ -1200,6 +1313,19 @@ html, body {
 .tg-nota { font-size:10px; color:#666; font-style:italic; margin:6px 0 0; }
 .tg-tabela-ref td, .tg-tabela-ref th { text-align:center; }
 
+/* ── LENDAS DE ARTON (Personagens > Lendas, Guia de NPCs) ── */
+.ld-epiteto { font-size:11.5px; color:#c9a84c; font-style:italic; margin:-4px 0 6px; }
+.ld-nd-nota { font-size:11px; color:#888; display:flex; gap:6px; align-items:flex-start; }
+.ld-tag-deus-menor { background:rgba(255,215,110,.14); color:#ffd76e; border-color:rgba(255,215,110,.4); display:inline-flex; margin-bottom:8px; }
+.ld-destaque {
+  background:rgba(201,168,76,.06); border:.5px solid rgba(201,168,76,.25); border-radius:6px;
+  padding:10px 12px; margin-bottom:8px;
+}
+.ld-destaque-artefato { background:rgba(126,200,160,.06); border-color:rgba(126,200,160,.25); }
+.ld-destaque-nome { font-size:13px; font-weight:600; color:#e0c878; display:flex; gap:6px; align-items:center; margin-bottom:4px; }
+.ld-destaque-artefato .ld-destaque-nome { color:#7ec8a0; }
+.ld-destaque-texto { font-size:12px; color:#aaa; line-height:1.7; }
+
 .eq-stats-grid {
   display:grid; grid-template-columns:1fr 1fr; gap:8px 16px;
   background:rgba(255,255,255,.02); border:.5px solid #1a1a1a; border-radius:5px;
@@ -1306,6 +1432,172 @@ html, body {
 .dp-hab-nome { font-family:'Cinzel',serif; font-size:9px; color:var(--hc,#c9a84c); letter-spacing:.06em; margin-bottom:3px; }
 .dp-hab-desc { font-size:12px; color:#666; line-height:1.65; }
 .dp-habilidade.penalidade { --hc:#8B0000; border-color:rgba(139,0,0,.3); }
+
+/* Sub-rótulo de agrupamento dentro de Habilidades Raciais — usado por
+   raças com múltiplas variantes/heranças (ex.: Moreau) pra indicar a
+   qual variante cada bloco de habilidades pertence (04/set). Mais leve
+   que .dp-secao (que já marca a seção "Habilidades Raciais" inteira). */
+.dp-hab-subgrupo {
+  font-family:'Cinzel',serif; font-size:8px; color:#777;
+  letter-spacing:.15em; text-transform:uppercase;
+  margin:.7rem 0 .35rem; padding-left:2px;
+}
+.dp-hab-subgrupo:first-child { margin-top:0; }
+
+/* Seletor de herança/variante no painel de detalhe de Raça (04/set —
+   ex.: Moreau, com 12 heranças de animal). Clicar num chip realça o
+   grupo de habilidades daquela variante e mostra seu bônus de atributo
+   específico; os outros grupos ficam esmaecidos, sem sumir. */
+.dp-variante-picker { margin:.6rem 0 .9rem; }
+.dp-variante-picker-label {
+  font-family:'Cinzel',serif; font-size:8px; color:#555;
+  letter-spacing:.15em; text-transform:uppercase; margin-bottom:.4rem;
+}
+.dp-variante-picker-chips { display:flex; flex-wrap:wrap; gap:6px; }
+
+/* Golem Desperto (e futuras raças com múltiplos grupos independentes:
+   Chassi, Fonte de Energia, Tamanho) — cada grupo vira seu próprio bloco
+   rotulado dentro do mesmo picker (04/set, item 31). */
+.dp-variante-picker-grupo:not(:last-child) { margin-bottom:.7rem; }
+.dp-variante-chip {
+  font-size:11px; color:#999; background:#0a0707;
+  border:.5px solid #222; border-radius:20px;
+  padding:.3rem .75rem; cursor:pointer; transition:all .15s ease;
+}
+.dp-variante-chip:hover { border-color:#444; color:#ccc; }
+.dp-variante-chip.selecionado {
+  background:var(--hc,#c9a84c22); border-color:var(--hc,#c9a84c);
+  color:var(--hc,#c9a84c); font-weight:600;
+}
+
+.dp-hab-grupo { transition:opacity .2s ease; border-radius:4px; }
+.dp-hab-grupo--destaque {
+  outline:1px solid rgba(201,168,76,.35); outline-offset:4px;
+  background:rgba(201,168,76,.04);
+}
+.dp-hab-grupo--apagado { opacity:.35; }
+
+/* Card clicável dentro do acordeão por grupo (Golem Desperto — 05/set,
+   item 35): o próprio card de opção (Barro, Bronze, Alquímica...) é o
+   "chip" agora, clicar nele chama `selecionarGrupoDetalhe` direto — só
+   precisa do cursor de mão, o resto do destaque/esmaecimento já vem de
+   `.dp-hab-grupo--destaque`/`--apagado` acima, sem CSS novo. */
+.dp-hab-grupo--clicavel { cursor:pointer; }
+.dp-hab-grupo--clicavel:hover .cp-poder { border-color:#333; }
+
+/* Acordeão de heranças no painel de detalhe (Moreau) — 05/set, item 32.
+   Reaproveita `.cp-secao-sub`/`.cp-categoria-body`/`.collapsed`/
+   `.cp-collapse-icon` (mesmo mecanismo das categorias especiais de
+   Poderes de Classe, tipo "Armadilhas" do Caçador) só com um pouco de
+   espaçamento próprio; os cards de dentro usam `.cp-poder` (mesmo
+   visual dos poderes/escolhas de Origem), sem CSS extra. */
+.dp-heranca-titulo { margin-top:1rem; }
+.dp-heranca-acc { margin-bottom:2px; border-radius:4px; transition:background .15s ease; }
+.dp-heranca-acc-hd { margin:10px 0 6px; }
+.dp-heranca-acc-body { padding-left:2px; }
+
+/* Escolher a herança do personagem (item 42, 05/set) — antes era uma
+   estrela separada no cabeçalho (item 33) + um botão dentro do corpo
+   (item 40); o usuário achou a estrela feia e pediu o mesmo estilo do
+   Golem Desperto (item 35): clicar direto no card já escolhe. Agora é só
+   isso — clicar em qualquer lugar do corpo expandido (`.dp-heranca-acc-body--clicavel`)
+   chama `escolherHerancaDetalhe`; o destaque abaixo é o único indicador
+   visual, sem ícone. */
+.dp-heranca-acc-body--clicavel { cursor:pointer; }
+.dp-heranca-acc-body--clicavel:hover .cp-poder { border-color:#333; }
+.dp-heranca-acc--escolhida {
+  background:rgba(201,168,76,.05);
+  outline:1px solid rgba(201,168,76,.25); outline-offset:3px;
+}
+
+/* Variante única "simples" (item 47, Suraggel) — mesma escolha de
+   `.dp-heranca-acc`/`.dp-heranca-acc--escolhida` acima, mas sem cabeçalho
+   de expandir/colapsar (só 1 habilidade por lado, os 2 cards já cabem
+   sempre visíveis). `.dp-heranca-simples-head` imita o rótulo do
+   `.cp-secao-sub` (Cinzel, uppercase, linha decorativa), só que sem
+   cursor de clique próprio — o card inteiro já é clicável. */
+.dp-heranca-simples-head {
+  font-family:'Cinzel',serif; font-size:8px; letter-spacing:.2em;
+  text-transform:uppercase; margin:10px 0 6px 2px;
+  display:flex; align-items:center; gap:6px;
+}
+.dp-heranca-simples-head::after { content:''; flex:1; height:.5px; background:currentColor; opacity:.25; }
+
+/* Linha "topo" de cada lista de escolha (título + expandir/recolher tudo)
+   e campo de busca (itens 37/38). */
+.dp-heranca-topo { display:flex; align-items:center; gap:10px; margin-top:1rem; }
+.dp-heranca-topo .dp-heranca-titulo { margin-top:0; flex:1; }
+.dp-heranca-expandir-btn {
+  flex-shrink:0; display:flex; align-items:center; gap:4px;
+  background:none; border:.5px solid #222; border-radius:4px;
+  padding:.25rem .55rem; font-size:9px; color:#666; cursor:pointer;
+  transition:all .15s ease; white-space:nowrap;
+}
+.dp-heranca-expandir-btn:hover { border-color:#444; color:#ccc; }
+.dp-busca-escolha {
+  display:block; width:100%; box-sizing:border-box; margin:.5rem 0 .8rem;
+  background:#0a0707; border:.5px solid #222; border-radius:4px;
+  padding:.45rem .6rem; font-family:'Crimson Text',serif; font-size:12px;
+  color:#aaa; outline:none; transition:border-color .15s;
+}
+.dp-busca-escolha:focus { border-color:rgba(201,168,76,.4); }
+.dp-busca-escolha::placeholder { color:#3a3a3a; }
+
+/* Resumo de atributo direto no cabeçalho do acordeão (item 36) — ex.:
+   "CAR +1, livre×2" numa herança, ou "(8 opções)"/"· Gelo Eterno" num
+   grupo do Golem. Cor neutra pra não competir com o nome; fica dourado
+   quando já tem uma opção escolhida. */
+.dp-heranca-acc-resumo {
+  font-size:8px; color:#555; letter-spacing:.02em; margin:0 4px;
+  text-transform:none; font-family:'Crimson Text',serif;
+}
+.dp-heranca-acc-resumo--escolhida { color:#c9a84c; }
+
+/* Resultado escondido pela busca (item 37). */
+.dp-heranca-acc--oculta, .dp-hab-grupo--oculta { display:none; }
+
+/* Resumo fixo da escolha atual (item 39) — gruda no topo do `.dp-body`
+   (que é quem rola) enquanto se navega pela lista de heranças/grupos, sem
+   precisar voltar pra Atributos lá em cima pra conferir o que já foi
+   escolhido. Só aparece quando existe alguma escolha salva. */
+.dp-resumo-escolha {
+  position:sticky; top:-1px; z-index:3;
+  background:#100d09; border:.5px solid rgba(201,168,76,.3);
+  border-radius:4px; padding:.5rem .7rem; margin-bottom:.7rem;
+  font-size:11px; color:#c9a84c;
+}
+.dp-resumo-escolha strong { color:#f0dfae; }
+
+/* Mini-lista de água/ar/fogo/terra dentro do card "Elemental" da Fonte de
+   Energia do Golem Desperto (item 41). Virou clicável no item 47 — cada
+   chip marca qual elemento reflete a fonte do personagem, reaproveitando
+   o mesmo mapa de escolha dos outros grupos (`selecionarGrupoDetalhe`). */
+.dp-elemental-sub { display:flex; gap:6px; flex-wrap:wrap; margin:6px 0 2px; }
+.dp-elemental-sub-chip {
+  font-size:9px; color:#666; display:inline-flex; align-items:center; gap:3px;
+  background:#0a0707; border:.5px solid #1a1a1a; border-radius:10px; padding:2px 6px;
+  cursor:pointer; transition:all .15s ease;
+}
+.dp-elemental-sub-chip:hover { border-color:#3a3a3a; color:#999; }
+.dp-elemental-sub-chip.selecionado {
+  color:#c9a84c; border-color:rgba(201,168,76,.4); background:rgba(201,168,76,.08);
+}
+
+/* Texto de confirmação da escolha simples por chips (item 48) — aparece
+   logo abaixo dos chips, dentro da própria habilidade, só depois que uma
+   opção é escolhida (ex.: "Herança Dracônica" do Kallyanach, "Fonte
+   Elemental" do Golem, "Resistência Elemental" do Qareen). */
+.dp-escolha-simples-texto {
+  margin:4px 0 2px; padding:.4rem .6rem;
+  background:rgba(201,168,76,.06); border-left:2px solid rgba(201,168,76,.4);
+  border-radius:3px; font-size:11px; color:#c9a84c; line-height:1.4;
+}
+
+.dp-atrib-variante {
+  grid-column:1 / -1; border-color:rgba(201,168,76,.3);
+  background:rgba(201,168,76,.06);
+}
+.dp-atrib-variante .dp-atrib-l { color:#c9a84c; }
 
 /* Painel de Parceiros — bônus por patamar (Iniciante/Veterano/Mestre).
    Reaproveita .cp-var-nivel/.cp-var-nivel-badge (já existem, tuned pra
@@ -1512,7 +1804,7 @@ html, body {
 .tag-ativo, .tag-passivo, .tag-custo-pm, .tag-bonus, .tag-especial,
 .cc-prof-tag, .cp-tag-fonte, .cp-tag-categoria, .cp-poder-nivel,
 .cp-var-nivel-badge, .per-tag, .cr-tag, .e-divina, .calc-grupo-tag, .cp-prereq-node,
-.badge-dur {
+.badge-dur, .badge-restrito {
   font-family: 'Cinzel', serif;
   font-size: 7px;
   padding: 2px 7px;
@@ -1960,6 +2252,23 @@ html, body {
 .cr-tag-conjurador { background:rgba(120,90,200,.12); color:#a894e0; border-color:rgba(120,90,200,.3); }
 .cr-tag-conjurador i { margin-right:2px; }
 
+/* Selo "Parceiro" (item 46) — mesma cor de `.kw-parceiro` (keywords.js),
+   pra ficar consistente com a palavra "parceiro" destacada em qualquer
+   texto corrido do site. Clicável: pula direto pra página de Parceiros
+   (`irParaParceiro`), por isso o cursor e o hover, diferente do resto
+   dos chips de tipo/tamanho que são só informativos. */
+.cr-tag-parceiro { background:rgba(192,122,48,.12); color:#c07a30; border-color:rgba(192,122,48,.35); cursor:pointer; }
+.cr-tag-parceiro i { margin-right:2px; }
+.cr-tag-parceiro:hover { color:#dd9450; border-color:#dd9450cc; background:rgba(192,122,48,.2); }
+.cr-icone-parceiro { color:#c07a30; }
+
+/* Chip de raça clicável (item 43+) — quando o valor de `raca` bate com uma
+   raça jogável (racas.js), o chip vira link pro painel de Raça. Mesmo
+   dourado de `.kw-raca` (keywords.js), pra ficar óbvio que é clicável,
+   diferente dos demais chips (tipo/tamanho) que são só informativos. */
+.cr-tag-link { color:#c9a84c; border-color:#c9a84ccc; cursor:pointer; }
+.cr-tag-link:hover { color:#e0c070; border-color:#e0c070cc; background:rgba(201,168,76,.08); }
+
 /* Destaque de "Ameaça Solo" no painel de detalhe da criatura */
 .dp-hero.cr-hero-solo { box-shadow: inset 0 -3px 0 0 #8b1a1a; }
 .dp-hero.cr-hero-solo .dp-hero-icon { color: #cc4444; }
@@ -2211,6 +2520,8 @@ html, body {
 .kw-deus:hover    { color: #ffe080; border-color: #ffe080cc; }
 .kw-criatura { color: #b06848; border-color: #b06848cc; cursor: pointer; }
 .kw-criatura:hover { color: #d08868; border-color: #d08868cc; }
+.kw-lenda   { color: #9878c8; border-color: #9878c8cc; cursor: pointer; }
+.kw-lenda:hover   { color: #b898e8; border-color: #b898e8cc; }
 .kw-perigo  { color: #cc5050; border-color: #cc5050cc; cursor: pointer; }
 .kw-perigo:hover  { color: #ec7070; border-color: #ec7070cc; }
 .kw-ambiente { color: #6ab090; border-color: #6ab090cc; cursor: pointer; }
@@ -2326,6 +2637,14 @@ html, body {
   border-color: rgba(123,76,204,.3);
 }
 
+/* Tag "Lendário" dos Artefatos — dourada (pedido do usuário), separada de
+   .tag-especial (roxa) pra não afetar as tags de categoria dos poderes. */
+.tag-lendario {
+  background: rgba(212,175,55,.14);
+  color: #d4af37;
+  border-color: rgba(212,175,55,.4);
+}
+
 /* ── Variação inline — dentro da habilidade fixa ── */
 .cp-var-inline {
   background: rgba(30,20,60,.25);
@@ -2387,6 +2706,22 @@ html, body {
 .cp-var-opt-row-desc {
   font-size: 12px; color: #5a4a90; line-height: 1.55;
 }
+
+/* Marcador de "opção escolhida" (item 50) — só nas linhas de variação
+   que declaram `--selecionavel` (Caminhos de classe no 1º/5º nível e
+   Forma Selvagem do druida); as listas puramente informativas
+   (`renderVariacaoEmSecao`) continuam com `.cp-var-opt-row` puro, sem
+   cursor de clique nem estado de seleção. */
+.cp-var-opt-row--selecionavel { cursor: pointer; transition: background .15s, border-color .15s; }
+.cp-var-opt-row--selecionavel:hover { background: rgba(144,128,216,.06); }
+.cp-var-opt-row--selecionavel.selecionado {
+  background: rgba(144,128,216,.10);
+  border-bottom-color: rgba(144,128,216,.25);
+}
+.cp-var-opt-row-check {
+  font-size: 13px; color: #9080d8; opacity: 0; flex-shrink: 0; margin-top: 3px;
+}
+.cp-var-opt-row--selecionavel.selecionado .cp-var-opt-row-check { opacity: 1; }
 
 /* Botão adicionar ao personagem */
 .cp-poder-add-btn {

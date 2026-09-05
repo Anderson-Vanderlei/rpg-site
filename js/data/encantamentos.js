@@ -11,8 +11,14 @@
    futuramente, Maldições — e a lista deve crescer independente das
    armas/armaduras específicas nomeadas.
 
-   Cada entrada de ENCANTOS_ARMA:
-   { id, nome, custoEncantos: 1|2, efeito, descricao, preRequisito? }
+   Cada entrada de ENCANTOS_ARMA/ENCANTOS_ARMADURA:
+   { id, nome, custoEncantos: 1|2, efeito, descricao, preRequisito?,
+     fonte?, pagina? }
+
+   fonte/pagina: OPCIONAIS — ausentes em todo encanto do livro-base (a
+   badge de fonte assume 'Tormenta 20' quando o campo não existe, ver
+   renderModificadorCard/abrirDetalheEquip em compendio.js). Preparado
+   pra próximos suplementos, mesmo sem nenhum encanto assim ainda.
 
    custoEncantos: a maioria vale 1, mas Energética, Lancinante e
    Magnífica contam como DOIS encantos cada (a tabela original manda

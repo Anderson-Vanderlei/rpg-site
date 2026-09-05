@@ -9,11 +9,16 @@
    preço fixos) — não recebem "encantos" escolhidos livremente.
 
    Cada entrada:
-   { id, nome, categoria: 'menor'|'medio'|'maior', preco, descricao }
+   { id, nome, categoria: 'menor'|'medio'|'maior', preco, descricao, fonte?, pagina? }
 
    Categoria define a CD de fabricação (Ofício-artesão): menor CD 30,
    médio CD 40, maior CD 50 — mesma regra dos itens específicos de
    armas/armaduras (não repetida aqui campo a campo).
+
+   fonte/pagina: OPCIONAIS — ausentes em todo acessório do livro-base
+   (a badge de fonte assume 'Tormenta 20' quando o campo não existe).
+   Só aparecem num item vindo de outro livro-fonte (ex.: Braceletes
+   das Escamas, Guia de NPCs).
 ============================================================ */
 
 const ACESSORIOS = [
@@ -109,6 +114,12 @@ const ACESSORIOS = [
     descricao: 'Esta pulseira de platina aguça todos os seus movimentos. Você recebe +2 em Destreza (somente após um dia de uso).' },
   { id: 'tiara-da-sapiencia', nome: 'Tiara da Sapiência', categoria: 'medio', preco: 'T$ 25.500',
     descricao: 'Esta tiara delicada possui uma gema que descansa sobre a testa. Você recebe +2 em Inteligência (somente após um dia de uso).' },
+  { id: 'braceletes-das-escamas', nome: 'Braceletes das Escamas', categoria: 'medio', preco: 'T$ 21.000',
+    descricao: 'Criados por Acteia, uma das Obras das Irmãs (presentes de Kallyadranoch), estes braceletes de aço escurecido são entalhados de forma a parecer escamas de dragão. Fornecem redução de dano 5 e contam como uma luva de ferro. Os poderes mágicos deste item só funcionam com devotos de Kallyadranoch.',
+    fonte: 'Guia de NPCs' },
+  { id: 'face-draconica', nome: 'Face Dracônica', categoria: 'medio', preco: 'T$ 25.000',
+    descricao: 'Esta máscara dourada, semelhante ao rosto estilizado de um dragão, fortalece o poder arcano do usuário. Fruto do poder de Ilítia, uma das Obras das Irmãs (presentes de Kallyadranoch), fornece +2 na CD para resistir a suas habilidades mágicas (incluindo magias) e conta como um medalhão de prata. Os poderes mágicos deste item só funcionam com devotos de Kallyadranoch.',
+    fonte: 'Guia de NPCs' },
 
   // ══════════════════════ MAIORES (T$ 30.000 – 150.000) ══════════════════════
 

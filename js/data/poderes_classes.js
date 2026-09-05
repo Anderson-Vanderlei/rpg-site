@@ -2,9 +2,13 @@
    TORMENTA 20 — poderes_classes.js
    Poderes de Classe — Edição Jogo do Ano v1.3
    Cap. 1: Construção de Personagem, pp. 36–84
-   Cada entrada: { id, nome, tipo, custoPM, prerequisito, descricao, categoriaEspecial }
+   Cada entrada: { id, nome, tipo, custoPM, prerequisito, descricao, categoriaEspecial, fonte?, pagina? }
    tipo: 'ativo' | 'passivo'
    categoriaEspecial: null | 'musica' | 'bravata' | 'postura' | 'armadilha' | 'missa' | 'julgamento' | 'virtude'
+
+   fonte/pagina: OPCIONAIS — ausentes em todo poder do livro-base (a
+   badge de fonte lê `p.fonte || 'Tormenta 20'` em renderPoderHtml()).
+   Usado pela primeira vez em Serpentes Dracônicas (Guia de NPCs).
 ============================================================ */
 
 const PODERES_CLASSES = {
@@ -49,6 +53,7 @@ const PODERES_CLASSES = {
     { id: 'raio-arcano', nome: 'Raio Arcano', tipo: 'ativo', custoPM: 0, prerequisito: null, descricao: 'Você pode gastar uma ação padrão para causar 1d8 de dano de essência num alvo em alcance curto. Esse dano aumenta em +1d8 para cada círculo de magia acima do 1º que você puder lançar. O alvo pode fazer um teste de Reflexos (CD atributo-chave) para reduzir o dano à metade.' },
     { id: 'raio-elemental', nome: 'Raio Elemental', tipo: 'ativo', custoPM: 1, prerequisito: 'Raio Arcano', descricao: 'Quando usa Raio Arcano, você pode pagar 1 PM para que ele cause dano de ácido, eletricidade, fogo, frio ou trevas. Se o alvo falhar no teste de Reflexos, sofre uma condição de acordo com o tipo.' },
     { id: 'raio-poderoso', nome: 'Raio Poderoso', tipo: 'passivo', custoPM: 0, prerequisito: 'Raio Arcano', descricao: 'Os dados de dano do seu Raio Arcano aumentam para d12 e o alcance dele aumenta para médio.' },
+    { id: 'serpentes-draconicas', nome: 'Serpentes Dracônicas', tipo: 'ativo', custoPM: 1, prerequisito: 'medusa, feiticeiro (linhagem dracônica)', descricao: 'Quando lança uma magia que causa dano do tipo de sua linhagem dracônica, você pode gastar +1 PM para aumentar o dano dessa magia em +1d12.', fonte: 'Guia de NPCs', pagina: 25 },
     { id: 'tinta-do-mago', nome: 'Tinta do Mago', tipo: 'passivo', custoPM: 0, prerequisito: 'Mago, treinado em Ofício (escriba)', descricao: 'Você pode criar pergaminhos, como se tivesse o poder Escrever Pergaminho. Se tiver ambos, seu custo para criar pergaminhos é reduzido à metade.' },
 
     { id: '_explicacao-linhagens',
@@ -797,96 +802,82 @@ const PODERES_CLASSES = {
       prerequisito: '5º nível de guerreiro',
       categoriaEspecial: 'golpe-pessoal',
       descricao: 'Quando faz um ataque, você pode desferir seu Golpe Pessoal, uma técnica única cujos efeitos são determinados por você. O Golpe Pessoal só pode ser usado com uma arma específica escolhida ao adquirir o poder.',
-      opcoesModo: 'variacao',
+      opcoesModo: 'golpe-pessoal',
       opcoesTitulo: {
         icone: 'ti-tool',
         titulo: 'Efeitos Disponíveis',
-        subtitulo: 'Combine livremente — o custo total é a soma dos custos dos efeitos escolhidos (mínimo 1 PM)',
+        subtitulo: 'Marque quantos efeitos quiser — o custo total é a soma dos custos escolhidos (mínimo 1 PM)',
       },
       opcoes: [
         {
-          nome: 'Amplo (+3 PM)',
-          icone: 'ti-circles',
+          id: 'amplo', nome: 'Amplo', custoPM: 3, icone: 'ti-circles', fonte: 'Tormenta 20',
           descricao: 'Seu ataque atinge todas as criaturas em alcance curto (incluindo aliados, mas não você mesmo). Faça um único teste de ataque e compare com a Defesa de cada criatura.',
         },
         {
-          nome: 'Atordoante (+2 PM)',
-          icone: 'ti-stars',
+          id: 'atordoante', nome: 'Atordoante', custoPM: 2, icone: 'ti-stars', fonte: 'Tormenta 20',
           descricao: 'Uma criatura que sofra dano do ataque fica atordoada por uma rodada (apenas uma vez por cena; Fortitude CD For anula).',
         },
         {
-          nome: 'Brutal (+1 PM)',
-          icone: 'ti-axe',
+          id: 'brutal', nome: 'Brutal', custoPM: 1, icone: 'ti-axe', fonte: 'Tormenta 20',
           descricao: 'Fornece um dado extra de dano do mesmo tipo da arma.',
         },
         {
-          nome: 'Conjurador (custo da magia +1 PM)',
-          icone: 'ti-wand',
-          descricao: 'Escolha uma magia de 1º ou 2º círculo que tenha como alvo uma criatura ou área. Se acertar o golpe, você lança a magia como uma ação livre, tendo como alvo a criatura atingida ou como centro o ponto atingido. Atributo-chave é um mental à sua escolha.',
+          id: 'conjurador', nome: 'Conjurador', custoPM: 0, icone: 'ti-wand', fonte: 'Tormenta 20',
+          custoNota: 'Custo da magia +1 PM',
+          descricao: 'Escolha uma magia de 1º ou 2º círculo que tenha como alvo uma criatura ou área. Se acertar o golpe, você lança a magia como uma ação livre, tendo como alvo a criatura atingida ou como centro o ponto atingido. Atributo-chave é um mental à sua escolha. Considere que a mão da arma está livre para lançar esta magia.',
         },
         {
-          nome: 'Destruidor (+2 PM)',
-          icone: 'ti-skull',
+          id: 'destruidor', nome: 'Destruidor', custoPM: 2, icone: 'ti-skull', fonte: 'Tormenta 20',
           descricao: 'Aumenta o multiplicador de crítico em +1.',
         },
         {
-          nome: 'Distante (+1 PM)',
-          icone: 'ti-arrows-maximize',
+          id: 'distante', nome: 'Distante', custoPM: 1, icone: 'ti-arrows-maximize', fonte: 'Tormenta 20',
           descricao: 'Aumenta o alcance em um passo (de corpo a corpo para curto, de curto para médio ou de médio para longo). Outras características não mudam — um ataque corpo a corpo com alcance curto continua usando Luta e somando Força no dano.',
         },
         {
-          nome: 'Elemental (+2 PM)',
-          icone: 'ti-flame',
+          id: 'elemental', nome: 'Elemental', custoPM: 2, icone: 'ti-flame', fonte: 'Tormenta 20',
+          tipo: 'aumenta',
           descricao: 'Causa +2d6 pontos de dano de ácido, eletricidade, fogo ou frio. Você pode escolher este efeito mais vezes para aumentar o dano em +2d6 (do mesmo tipo ou de outro), pagando +2 PM a cada vez.',
         },
         {
-          nome: 'Impactante (+1 PM)',
-          icone: 'ti-hand-stop',
+          id: 'impactante', nome: 'Impactante', custoPM: 1, icone: 'ti-hand-stop', fonte: 'Tormenta 20',
           descricao: 'Empurra o alvo 1,5m para cada 10 pontos de dano causado (arredondado para baixo). Por exemplo, 3m para 22 pontos de dano.',
         },
         {
-          nome: 'Letal (+2 PM)',
-          icone: 'ti-sword',
+          id: 'letal', nome: 'Letal', custoPM: 2, icone: 'ti-sword', fonte: 'Tormenta 20',
+          tipo: 'aumenta', maxVezes: 2,
           descricao: 'Aumenta a margem de ameaça em +2. Você pode escolher este efeito duas vezes para aumentar a margem de ameaça em +5 no total.',
         },
         {
-          nome: 'Penetrante (+1 PM)',
-          icone: 'ti-arrow-narrow-right',
+          id: 'penetrante', nome: 'Penetrante', custoPM: 1, icone: 'ti-arrow-narrow-right', fonte: 'Tormenta 20',
           descricao: 'Ignora 10 pontos de redução de dano do alvo.',
         },
         {
-          nome: 'Preciso (+1 PM)',
-          icone: 'ti-crosshair',
+          id: 'preciso', nome: 'Preciso', custoPM: 1, icone: 'ti-crosshair', fonte: 'Tormenta 20',
           descricao: 'Quando faz o teste de ataque, você rola dois dados e usa o melhor resultado.',
         },
         {
-          nome: 'Qualquer Arma (+1 PM)',
-          icone: 'ti-list',
+          id: 'qualquer-arma', nome: 'Qualquer Arma', custoPM: 1, icone: 'ti-list', fonte: 'Tormenta 20',
           descricao: 'Você pode usar seu Golpe Pessoal com qualquer tipo de arma, em vez de apenas a arma específica escolhida.',
         },
         {
-          nome: 'Ricocheteante (+1 PM)',
-          icone: 'ti-arrow-back-up',
+          id: 'ricocheteante', nome: 'Ricocheteante', custoPM: 1, icone: 'ti-arrow-back-up', fonte: 'Tormenta 20',
           descricao: 'A arma volta para você após o ataque. Só pode ser usado com armas de arremesso.',
         },
         {
-          nome: 'Teleguiado (+1 PM)',
-          icone: 'ti-target',
+          id: 'teleguiado', nome: 'Teleguiado', custoPM: 1, icone: 'ti-target', fonte: 'Tormenta 20',
           descricao: 'Ignora penalidades por camuflagem ou cobertura leves.',
         },
         {
-          nome: 'Lento (–2 PM)',
-          icone: 'ti-clock',
+          id: 'lento', nome: 'Lento', custoPM: -2, icone: 'ti-clock', fonte: 'Tormenta 20',
           descricao: 'Reduz o custo total em 2 PM. Seu ataque exige uma ação completa para ser usado (em vez de ação padrão).',
         },
         {
-          nome: 'Perto da Morte (–2 PM)',
-          icone: 'ti-heartbeat',
+          id: 'perto-da-morte', nome: 'Perto da Morte', custoPM: -2, icone: 'ti-heartbeat', fonte: 'Tormenta 20',
           descricao: 'Reduz o custo total em 2 PM. O ataque só pode ser usado se você estiver com um quarto de seus PV ou menos.',
         },
         {
-          nome: 'Sacrifício (–2 PM)',
-          icone: 'ti-heart-broken',
+          id: 'sacrificio', nome: 'Sacrifício', custoPM: -2, icone: 'ti-heart-broken', fonte: 'Tormenta 20',
           descricao: 'Reduz o custo total em 2 PM. Sempre que usa seu Golpe Pessoal, você perde 10 PV.',
         },
       ],

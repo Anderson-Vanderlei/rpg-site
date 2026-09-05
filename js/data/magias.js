@@ -5,7 +5,12 @@
 
    Cada entrada:
    { id, nome, tipo, escola, circulo, execucao, alcance, alvoArea,
-     duracao, resistencia, descricao, aprimoramentos: [] }
+     duracao, resistencia, descricao, aprimoramentos: [], fonte?, pagina? }
+
+   fonte/pagina: OPCIONAIS — ausentes em toda magia do livro-base (a
+   badge de fonte assume 'Tormenta 20' quando o campo não existe). Só
+   aparecem numa magia vinda de outro livro-fonte (ex.: Preparação de
+   Batalha, Guia de NPCs).
 
    tipo: 'arcana' | 'divina' | 'universal' — "Universal" é tag OFICIAL
    do livro (não é dedução nossa), usada quando a magia funciona igual
@@ -941,6 +946,15 @@ const MAGIAS = [
       { custoPM: 7, tipo: 'muda', efeito: 'muda o alcance para médio. Requer 3º círculo.' },
       { custoPM: 12, tipo: 'muda', efeito: 'muda a duração para cena. Requer 4º círculo.' },
     ],
+  },
+  {
+    id: 'preparacao-de-batalha', nome: 'Preparação de Batalha', tipo: 'universal', escola: 'convocacao', circulo: 2,
+    execucao: 'padrão', alcance: 'toque', alvoArea: 'até dois itens que você possua, entre armas, armaduras e escudos', duracao: 'permanente até ser descarregada', resistencia: null,
+    descricao: 'Esta magia é utilizada por clérigos e bardos que não precisam (ou não podem) estar sempre com suas armas ou armaduras. A magia é lançada sobre até dois itens que você possua. A partir daí, em qualquer momento, você pode usar uma ação completa para convocar os itens, que aparecem sobre seu corpo e em suas mãos (conforme apropriado ao item). O efeito é espalhafatoso, sendo praticamente impossível utilizá-lo sem chamar atenção. A magia funciona independentemente da distância dos itens, desde que estejam no mesmo Plano, mas termina se você perder a posse deles. Custo Adicional: penalidade de 1 PM.',
+    aprimoramentos: [
+      { custoPM: 1, tipo: 'aumenta', efeito: 'aumenta o número de alvos em dois e o custo adicional em +1 PM.' },
+    ],
+    fonte: 'Guia de NPCs', pagina: 20,
   },
   {
     id: 'purificacao', nome: 'Purificação', tipo: 'divina', escola: 'evocacao', circulo: 2,

@@ -2,7 +2,11 @@
    TORMENTA 20 — condicoes.js
    Dados oficiais — Edição Jogo do Ano v1.3
    Apêndice: Condições, pp. 394–395
-   Cada entrada: { id, nome, categoria, descricao, pagina }
+   Cada entrada: { id, nome, categoria, descricao, pagina, fonte? }
+   fonte: OPCIONAL — ausente em toda condição do livro-base (a badge de
+   fonte assume 'Tormenta 20' quando o campo não existe, ver
+   renderCondicaoCard em compendio.js). Preparado pra próximos
+   suplementos, mesmo sem nenhuma condição assim ainda.
    categoria: a "família" que o próprio livro cita entre parênteses no
    fim do efeito (Medo, Mental, Movimento, Sentidos, Metabolismo, Veneno,
    Cansaço, Metamorfose) — quando o livro não cita nenhuma, o campo fica

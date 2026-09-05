@@ -118,15 +118,32 @@
         <!-- Lista de origens gerada pelo JS -->
         <div class="nav-sub-sub" id="navListaOrigens" style="display:none"></div>
 
-        <!-- Deuses → expande lista -->
+        <!-- Deuses → expande grupos (Principais / Deuses Menores) -->
         <div class="nav-sub-item tem-filhos" data-secao="deuses"
              onclick="toggleSubItem(this,'deuses')">
           <i class="ti ti-sun" aria-hidden="true"></i>
           <span class="sub-label">Deuses</span>
           <i class="ti ti-chevron-right seta" style="margin-left:auto;font-size:10px" aria-hidden="true"></i>
         </div>
-        <!-- Lista de deuses gerada pelo JS -->
-        <div class="nav-sub-sub" id="navListaDeuses" style="display:none"></div>
+        <!-- Dois grupos (Principais/Menores) — cada um expande sua própria
+             lista de deuses, gerada pelo JS (renderDeuses/renderDeusesMenores) -->
+        <div class="nav-sub-sub" id="navListaDeuses" style="display:none">
+          <div class="nav-sub-sub-item tem-netos" data-grupo-deus="maiores"
+               onclick="toggleDeusGrupo(this,'maiores')">
+            <i class="ti ti-sun" aria-hidden="true" style="font-size:11px"></i>
+            <span>Principais</span>
+            <i class="ti ti-chevron-right seta" aria-hidden="true"></i>
+          </div>
+          <div class="nav-sub-sub-sub" id="navListaDeusesPrincipais" style="display:none"></div>
+
+          <div class="nav-sub-sub-item tem-netos" data-grupo-deus="menores"
+               onclick="toggleDeusGrupo(this,'menores')">
+            <i class="ti ti-moon-stars" aria-hidden="true" style="font-size:11px"></i>
+            <span>Deuses Menores</span>
+            <i class="ti ti-chevron-right seta" aria-hidden="true"></i>
+          </div>
+          <div class="nav-sub-sub-sub" id="navListaDeusesMenores" style="display:none"></div>
+        </div>
 
         <!-- Regras Gerais (antes "Toques Finais") -->
         <div class="nav-sub-item" data-secao="toques"
@@ -433,6 +450,8 @@
           <p class="dp-historia" id="dpHistoria">—</p>
 
           <div class="dp-secao">Habilidades Raciais</div>
+          <div id="dpResumoEscolha" class="dp-resumo-escolha" style="display:none;"></div>
+          <div id="dpVariantePicker" class="dp-variante-picker" style="display:none;"></div>
           <div id="dpHabilidades"></div>
 
           <div class="dp-secao">Classes Recomendadas</div>
@@ -478,6 +497,8 @@
             <p class="calc-combate-nota" style="margin-bottom:8px;">Escolha a variante da raça:</p>
             <div id="atribVarianteChips" class="tf-atrib-chips"></div>
           </div>
+
+          <div id="atribGruposWrap" style="display:none;"></div>
 
           <div class="eq-tabela-scroll" style="margin-top:14px;">
             <table class="eq-tabela atrib-tabela">
@@ -626,8 +647,18 @@
 
       <div class="section-hero">
         <div class="section-hero-bg"></div>
-        <h1>Deuses</h1>
-        <p>O Panteão dos Vinte — divindades que aceitam devotos em troca de poderes concedidos, cada uma com suas próprias crenças e obrigações.</p>
+        <h1 id="deusesHeroTitulo">Deuses</h1>
+        <p id="deusesHeroDesc">O Panteão dos Vinte — divindades que aceitam devotos em troca de poderes concedidos, cada uma com suas próprias crenças e obrigações.</p>
+      </div>
+
+      <!-- Abas Principais/Deuses Menores (mesmo padrão visual de #rgAbas) -->
+      <div class="rg-abas" id="deusesAbas" style="margin:0 1.5rem .8rem;">
+        <button class="filtro-btn a" data-aba="maiores" onclick="setAbaDeuses(this,'maiores')">
+          <i class="ti ti-sun" aria-hidden="true"></i> Principais
+        </button>
+        <button class="filtro-btn" data-aba="menores" onclick="setAbaDeuses(this,'menores')">
+          <i class="ti ti-moon-stars" aria-hidden="true"></i> Deuses Menores
+        </button>
       </div>
 
       <div class="toolbar">
@@ -651,6 +682,25 @@
         <select id="deusesFiltroClasse" class="filtro-select" onchange="setFiltroDevotoDeus('classe', this.value)" title="Filtrar por classe devota">
           <option value="todos">Qualquer classe</option>
         </select>
+        <!-- Filtros extras, só fazem sentido na aba Deuses Menores (03/set) -->
+        <span id="deusesFiltrosMenoresExtra" style="display:none;gap:8px;flex-wrap:wrap;">
+          <select id="deusesFiltroNatureza" class="filtro-select" onchange="setFiltroNaturezaDeus(this.value)" title="Filtrar por natureza">
+            <option value="todos">Qualquer natureza</option>
+            <option value="mortal ascendido">Mortal Ascendido</option>
+            <option value="dragão-real">Dragão-Real</option>
+            <option value="objeto desperto">Objeto Desperto</option>
+            <option value="conceito vivo">Conceito Vivo</option>
+            <option value="entidade primordial">Entidade Primordial</option>
+          </select>
+          <select id="deusesFiltroStatusDivino" class="filtro-select" onchange="setFiltroStatusDivinoDeus(this.value)" title="Filtrar por status divino">
+            <option value="todos">Qualquer status divino</option>
+            <option value="1">Status Divino 1</option>
+            <option value="2">Status Divino 2</option>
+            <option value="3">Status Divino 3</option>
+            <option value="4">Status Divino 4</option>
+            <option value="5">Status Divino 5</option>
+          </select>
+        </span>
         <span class="filtro-count" id="deusesCount">20 divindades</span>
       </div>
 
@@ -2133,11 +2183,119 @@
     <div id="secao-complicacoes"    class="secao-conteudo placeholder-area" style="display:none">
       <i class="ti ti-help" aria-hidden="true"></i><h2>Complicações</h2><p>Em breve</p>
     </div>
-    <div id="secao-lendas"          class="secao-conteudo placeholder-area" style="display:none">
-      <i class="ti ti-crown" aria-hidden="true"></i><h2>Lendas</h2><p>Em breve</p>
+    <div id="secao-lendas" class="secao-conteudo" style="display:none;flex-direction:column;flex:1;overflow:hidden;">
+      <div class="section-hero">
+        <div class="section-hero-bg"></div>
+        <h1>Lendas de Arton</h1>
+        <p>Personagens icônicos do cenário — heróis e vilões que já apareceram em romances, quadrinhos ou campanhas oficiais de Tormenta. Podem ser mentores, contratantes, aliados, rivais ou inimigos do grupo. <strong>Guia de NPCs</strong>, pp. 4-65.</p>
+      </div>
+
+      <p class="calc-combate-nota" style="margin:0 20px 14px;"><i class="ti ti-alert-triangle" aria-hidden="true"></i> Os textos desta seção podem conter spoilers de romances, quadrinhos ou campanhas onde esses personagens aparecem.</p>
+
+      <div class="toolbar" style="flex-direction:column;align-items:stretch;gap:8px;">
+        <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
+          <div class="search-inline">
+            <i class="ti ti-search" aria-hidden="true"></i>
+            <input type="text" id="buscaLendas" placeholder="Buscar lenda…" />
+          </div>
+          <span class="filtro-count" id="lendasCount" style="margin-left:auto;">51 lendas</span>
+        </div>
+        <div id="lendasFiltroND" style="display:flex;gap:8px;flex-wrap:wrap;">
+          <button class="filtro-btn a" onclick="setFiltroLenda('nd',this,'todos')">Todos os ND</button>
+          <button class="filtro-btn" onclick="setFiltroLenda('nd',this,'0-5')">ND ¼–5</button>
+          <button class="filtro-btn" onclick="setFiltroLenda('nd',this,'6-10')">ND 6–10</button>
+          <button class="filtro-btn" onclick="setFiltroLenda('nd',this,'11-15')">ND 11–15</button>
+          <button class="filtro-btn" onclick="setFiltroLenda('nd',this,'16-20')">ND 16–20</button>
+          <button class="filtro-btn" onclick="setFiltroLenda('nd',this,'21-99')">ND S / S+</button>
+        </div>
+        <div id="lendasFiltroExtra" style="display:flex;gap:8px;flex-wrap:wrap;">
+          <button class="filtro-btn a" onclick="setFiltroLenda('extra',this,'todos')">Todas</button>
+          <button class="filtro-btn" onclick="setFiltroLenda('extra',this,'poder')">Com Poder Concedido</button>
+          <button class="filtro-btn" onclick="setFiltroLenda('extra',this,'artefato')">Com Artefato</button>
+        </div>
+      </div>
+
+      <div class="cards-area">
+        <div class="cards-grid" id="lendasGrid"></div>
+      </div>
+    </div><!-- /secao-lendas -->
+
+    <div class="detalhe-painel" id="lendaPainel">
+      <div class="dp-hero" id="ldHero">
+        <div class="dp-hero-bg" id="ldHeroBg"></div>
+        <i class="ti ti-crown dp-hero-icon" id="ldHeroIcon" aria-hidden="true"></i>
+        <div class="dp-hero-content">
+          <div class="dp-tipo" id="ldTipo"><i class="ti ti-crown" aria-hidden="true"></i> Lenda de Arton</div>
+          <div class="dp-nome" id="ldNome">—</div>
+          <div class="dp-sub" id="ldSub">—</div>
+          <div class="eq-preco-fixo" id="ldNdFixo">
+            <i class="ti ti-shield-chevron" aria-hidden="true"></i>
+            <span id="ldNdFixoValor">ND —</span>
+          </div>
+        </div>
+        <button class="dp-fechar" onclick="fecharDetalheLenda()">
+          <i class="ti ti-x" aria-hidden="true"></i>
+        </button>
+      </div>
+      <div class="dp-body" id="ldBody"></div>
     </div>
-    <div id="secao-povo"            class="secao-conteudo placeholder-area" style="display:none">
-      <i class="ti ti-users" aria-hidden="true"></i><h2>Povo</h2><p>Em breve</p>
+
+    <div id="secao-povo" class="secao-conteudo" style="display:none;flex-direction:column;flex:1;overflow:hidden;">
+      <div class="section-hero">
+        <div class="section-hero-bg"></div>
+        <h1>Povo de Arton</h1>
+        <p>NPCs genéricos — os "papéis" reutilizáveis do dia a dia de Arton: o ferreiro, o guarda, o assassino de aluguel. Fichas mais simples que as Lendas, raramente pensadas para combate direto. <strong>Guia de NPCs</strong>, pp. 66-79.</p>
+      </div>
+
+      <div class="toolbar" style="flex-direction:column;align-items:stretch;gap:8px;">
+        <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
+          <div class="search-inline">
+            <i class="ti ti-search" aria-hidden="true"></i>
+            <input type="text" id="buscaPovo" placeholder="Buscar NPC…" />
+          </div>
+          <span class="filtro-count" id="povoCount" style="margin-left:auto;">40 NPCs</span>
+        </div>
+        <div id="povoFiltroSubsecao" style="display:flex;gap:8px;flex-wrap:wrap;">
+          <button class="filtro-btn a" onclick="setFiltroPovo('subsecao',this,'todos')">Todas as subseções</button>
+          <button class="filtro-btn" onclick="setFiltroPovo('subsecao',this,'a-plebe')">A Plebe</button>
+          <button class="filtro-btn" onclick="setFiltroPovo('subsecao',this,'o-templo')">O Templo</button>
+          <button class="filtro-btn" onclick="setFiltroPovo('subsecao',this,'a-lei')">A Lei</button>
+          <button class="filtro-btn" onclick="setFiltroPovo('subsecao',this,'o-crime')">O Crime</button>
+          <button class="filtro-btn" onclick="setFiltroPovo('subsecao',this,'a-corte')">A Corte</button>
+          <button class="filtro-btn" onclick="setFiltroPovo('subsecao',this,'mercenarios')">Mercenários</button>
+        </div>
+        <div id="povoFiltroND" style="display:flex;gap:8px;flex-wrap:wrap;">
+          <button class="filtro-btn a" onclick="setFiltroPovo('nd',this,'todos')">Todos os ND</button>
+          <button class="filtro-btn" onclick="setFiltroPovo('nd',this,'0-2')">ND ¼–2</button>
+          <button class="filtro-btn" onclick="setFiltroPovo('nd',this,'3-5')">ND 3–5</button>
+          <button class="filtro-btn" onclick="setFiltroPovo('nd',this,'6-10')">ND 6–10</button>
+        </div>
+      </div>
+
+      <div class="cards-area">
+        <div class="cards-grid" id="povoGrid"></div>
+        <div id="povoNotas"></div>
+      </div>
+    </div><!-- /secao-povo -->
+
+    <div class="detalhe-painel" id="povoPainel">
+      <div class="dp-hero" id="pvHero">
+        <div class="dp-hero-bg" id="pvHeroBg"></div>
+        <i class="ti ti-users dp-hero-icon" id="pvHeroIcon" aria-hidden="true"></i>
+        <div class="dp-hero-content">
+          <div class="dp-tipo" id="pvTipo"><i class="ti ti-users" aria-hidden="true"></i> Povo de Arton</div>
+          <div class="dp-nome" id="pvNome">—</div>
+          <div class="dp-sub" id="pvSub">—</div>
+          <div class="eq-preco-fixo" id="pvNdFixo">
+            <i class="ti ti-shield-chevron" aria-hidden="true"></i>
+            <span id="pvNdFixoValor">ND —</span>
+          </div>
+        </div>
+        <button class="dp-fechar" onclick="fecharDetalhePovo()">
+          <i class="ti ti-x" aria-hidden="true"></i>
+        </button>
+      </div>
+      <div class="dp-body" id="pvBody"></div>
     </div>
     <div id="secao-parceiros" class="secao-conteudo" style="display:none;flex-direction:column;flex:1;overflow:hidden;">
 
@@ -2212,6 +2370,7 @@
 <script src="../js/data/condicoes.js"></script>
 <script src="../js/data/origens.js"></script>
 <script src="../js/data/deuses.js"></script>
+<script src="../js/data/deuses_menores.js"></script>
 <script src="../js/data/toques_finais.js"></script>
 <script src="../js/data/regras_testes.js"></script>
 <script src="../js/data/regras_habilidades_efeitos.js"></script>
@@ -2236,6 +2395,8 @@
 <script src="../js/data/acessorios.js"></script>
 <script src="../js/data/artefatos.js"></script>
 <script src="../js/data/criaturas.js"></script>
+<script src="../js/data/lendas.js"></script>
+<script src="../js/data/povo.js"></script>
 <script src="../js/data/parceiros.js"></script>
 <script src="../js/data/perigos.js"></script>
 <script src="../js/data/ambiente.js"></script>

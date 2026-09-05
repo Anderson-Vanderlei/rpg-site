@@ -21,7 +21,16 @@
    o livro já traz prontos).
 
    Cada tipo: { id, nome, icone, descricao (quem costuma ser esse
-   parceiro), niveis: [{label:'Iniciante'|'Veterano'|'Mestre', descricao}] }.
+   parceiro), niveis: [{label:'Iniciante'|'Veterano'|'Mestre', descricao}],
+   fonte?, pagina? }.
+
+   fonte/pagina: OPCIONAIS em qualquer entrada de TIPOS_PARCEIRO ou
+   MONTARIAS_PARCEIRO — ausentes no livro-base (a badge de fonte assume
+   'Tormenta 20', "Cap. 6, pp. 260-262" quando o campo não existe, ver
+   abrirDetalheParceiro em compendio.js). Preparado pra próximos
+   suplementos, mesmo sem nenhum parceiro assim ainda — parceiros do
+   Bestiário (grupo 'bestiario') já herdam `fonte`/`pagina` direto de
+   criaturas.js, sem precisar de nada aqui.
 
    MONTARIAS_PARCEIRO: os 6 parceiros-montaria NOMEADOS do livro
    (Cavalo, Cão de Caça, Lobo-das-Cavernas, Grifo, Gorlogg, Trobo) —

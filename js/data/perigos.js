@@ -19,7 +19,11 @@
 //     dano (string|null), resistencia (string|null),
 //     investigacaoCD (number|null), ladinagemCD (number|null),
 //     transmissao (string|null), cd (number|null),
-//     progressao (string[]|null), descricao (string), pagina }
+//     progressao (string[]|null), descricao (string), pagina, fonte? }
+// fonte: OPCIONAL — ausente em todo perigo do livro-base (a badge de
+// fonte assume 'Tormenta 20' quando o campo não existe, ver
+// renderPerigoCard/abrirDetalhePerigo em compendio.js). Preparado pra
+// próximos suplementos, mesmo sem nenhum perigo assim ainda.
 // Observação: a extração em texto plano do PDF não preserva itálico, então
 // não foi possível identificar com certeza quais armadilhas são "mágicas"
 // (nome em itálico no livro) — esse campo foi deixado de fora desta leva
@@ -36,7 +40,7 @@
 //       lógica de "quem venceu" calculada por código — só a citação do
 //       livro para o mestre interpretar durante a mesa),
 //     acoes: [{ nome, pericia (string|null), cd (number|string|null), texto }],
-//     pagina }
+//     pagina, fonte? } — mesma convenção opcional de fonte do array acima.
 // ============================================================================
 
 window.PERIGOS_SIMPLES = [

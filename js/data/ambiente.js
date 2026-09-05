@@ -14,6 +14,13 @@
 // site espera — um padrão novo, pensado pra ser reaproveitado por futuras
 // páginas com dados igualmente variados (ex: Complicações).
 //
+// fonte: campo OPCIONAL em qualquer uma das coleções abaixo (junto de
+// `pagina`) — ausente em todo item do livro-base (a badge de fonte
+// assume 'Tormenta 20' quando o campo não existe, ver
+// renderAmbienteCard/abrirDetalheAmbiente em compendio.js). Preparado
+// pra próximos suplementos, mesmo sem nenhum item assim ainda; não
+// repetido campo a campo nos schemas abaixo.
+//
 // window.AMBIENTE_CLIMA — os 10 efeitos de clima do livro (p. 267).
 //   categoria: 'temperatura' | 'visibilidade' | 'precipitacao' | 'vento'
 //   Schema: { id, nome, categoria, efeito, stats, pagina }

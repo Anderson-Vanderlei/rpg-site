@@ -5,7 +5,13 @@
 
    Cada entrada:
    { id, nome, categoria, preco, bonusDefesa, penalidadeArmadura,
-     espacos, descricao }
+     espacos, descricao, fonte?, pagina? }
+
+   fonte/pagina: OPCIONAIS — ausentes em toda armadura do livro-base (a
+   badge de fonte assume 'Tormenta 20' quando o campo não existe, ver
+   renderArmaduraCard/abrirDetalheEquip em compendio.js). Só aparecem
+   numa armadura vinda de outro livro-fonte — preparado pra próximos
+   suplementos, mesmo sem nenhum item assim ainda.
 
    categoria: 'leve' | 'pesada' | 'escudo'
    - Leves: vestir/remover é ação completa. Não impedem Destreza na Defesa.

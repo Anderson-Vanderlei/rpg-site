@@ -11,11 +11,18 @@
    capítulo de Itens Mágicos.
 
    Cada entrada:
-   { id, nome, descricao, tabela? }
+   { id, nome, descricao, tabela?, fonte?, pagina? }
 
    tabela (só o Baralho do Caos tem): {colunas, linhas}, reaproveitando
    o mesmo formato/render de outras tabelas do site (Vidência, Animar
    Objetos em magias.js) — as 22 cartas do d% embutido no artefato.
+
+   fonte/pagina: OPCIONAIS — ausentes nos 5 artefatos do livro-base (a
+   badge de fonte assume 'Tormenta 20' quando o campo não existe). Só
+   aparecem num artefato vindo de outro livro-fonte (ex.: Guia de NPCs).
+   Kum'shrak e Gemas Eternas foram colocados aqui (em vez de Armas/
+   Itens) por serem narrativamente únicos, sem preço/tabela de
+   fabricação — o mesmo perfil dos demais artefatos deste arquivo.
 ============================================================ */
 
 const ARTEFATOS = [
@@ -66,6 +73,49 @@ const ARTEFATOS = [
   {
     id: 'rubis-da-virtude', nome: 'Os Rubis da Virtude',
     descricao: 'Criados para selar um pacto entre os deuses do Panteão, os Rubis da Virtude quase foram a causa de sua morte. Cada um, se destruído, destruiria também o deus que estivesse secretamente ligado a ele — sem que fosse possível descobrir qual rubi pertencia a quem. Entregues a cada deus após sua criação, seriam mantidos como provas de confiança, garantias de que os deuses, mesmo aqueles envolvidos em disputas, jamais tentariam destruir uns aos outros.\n\nAs gemas não podem ser danificadas por mortais ou mesmo por deuses menores — apenas um deus do Panteão pode destruí-las. Além disso, não podem ser detectadas por meios mágicos.\n\nMesmo sem saber a quem estava ligada, cada deus guardou em lugar seguro a gema em sua posse. No entanto, conseguindo o que parecia ser impossível, Sszzaas — o mais traiçoeiro e furtivo dos seres — roubou todos os rubis. Ele foi descoberto e julgado antes de descobrir como utilizá-los, mas teve tempo de escondê-los em Arton. E os Rubis, protegidos de qualquer detecção mágica, não puderam ser encontrados. Como castigo, Sszzaas foi transformado em avatar e condenado a vagar pelo mundo até ser destruído ou aceito de volta. Os Rubis estavam desaparecidos, mas nenhum mortal poderia danificá-los — mesmo assim, para evitar riscos, Khalmyr decretou que as ligações vitais entre os rubis e os deuses fossem rompidas.\n\nMesmo sem essa conexão, as gemas ainda eram poderosas, pois traziam parte da essência divina dos vinte deuses. Sabendo que poderia utilizá-las de alguma forma, Sszzaas tratou de mantê-las longe dos olhos dos deuses, até o último instante.\n\nMecanicamente, cada Rubi da Virtude fornece a seu portador um nível de experiência em uma classe que ele já possua. Para isso, a gema deve ser incrustada no corpo da criatura, o que exige um teste de Cura (CD 25) — o efeito leva um dia para se manifestar. Por sua invulnerabilidade, cada Rubi fornece redução de dano 2 e +1 em testes de resistência, cumulativos com efeitos já existentes, incluindo outros rubis. Por fim, por sua indetectabilidade, cada rubi torna o portador mais difícil de observar por meios mágicos — um conjurador que lance uma magia de adivinhação contra o portador de um destes artefatos deve passar em um teste de Misticismo (CD 30 + a quantidade de rubis) ou a magia não terá efeito.',
+  },
+
+  // ══════════════════════ GUIA DE NPCs ══════════════════════
+
+  {
+    id: 'armadura-de-cranio-negro', nome: 'Armadura de Crânio Negro',
+    descricao: 'Esta armadura foi criada pelos diabretes negociantes a partir das memórias de Ellisa Thorn, ex-membro do Esquadrão do Inferno. Sua aparência é notável e ameaçadora: completamente negra, parece sugar a luz e destaca-se até mesmo contra o céu noturno. O elmo tem a forma de um crânio estilizado, com adornos que o tornam ainda mais sinistro. Ela é uma armadura completa fortificada guardiã macabra que parece se mover sozinha (suas placas deslizam para manter o usuário protegido e defendê-lo). Apesar de seu peso e rigidez, não atrapalha os movimentos, permitindo saltos e acrobacias em meio ao combate: conta como uma armadura leve com penalidade de armadura 0. Contudo, por ser feita a partir das memórias de uma artoniana, a armadura tem um efeito colateral: bombardeia o usuário com impressões da vida de Ellisa Thorn. Molda o estilo de luta e até mesmo parte do comportamento do usuário para refletir os membros do Esquadrão do Inferno. Por exemplo, Crânio Negro luta com duas espadas (como Vallen Allond), rastreia (como a própria Ellisa ou Andilla Dente-de-Ferro) e repete "não há morte" (como Gregor Vahn).\n\nAtualmente em posse de Crânio Negro, junto com o Anel da Felicidade de Vallen.',
+    fonte: 'Guia de NPCs', pagina: 8,
+  },
+  {
+    id: 'anel-da-felicidade-de-vallen', nome: 'Anel da Felicidade de Vallen',
+    descricao: 'Este anel foi criado pelos diabretes negociantes a partir da felicidade de Vallen Allond. Foi concedido a Crânio Negro por motivos que apenas os diabretes conhecem — mas que, de forma geral, podem ser resumidos a sadismo e desejo de destruição. O anel da felicidade de Vallen fornece cura acelerada 10 (somente após um dia de uso) que recupera até perda de vida. Além disso, se o usuário for morto enquanto estiver usando o anel e continuar com ele, irá recuperar 1 ponto de vida por dia e, quando chegar a PV positivos, será ressuscitado. Sendo feito a partir da felicidade de Vallen Allond, o anel tem um efeito colateral: o usuário é assaltado por visões desse aventureiro e sente compulsão de protegê-lo, estar perto dele ou garantir sua felicidade. É claro que, para um usuário insano, os conceitos de "proteger" e "garantir a felicidade" tornam-se bem distorcidos… O anel também influencia o comportamento do usuário (tornando-o um pouco mais semelhante a Vallen).\n\nAtualmente em posse de Crânio Negro, junto com a Armadura de Crânio Negro.',
+    fonte: 'Guia de NPCs', pagina: 8,
+  },
+  {
+    id: 'artefato-de-cross', nome: 'O Artefato de Cross',
+    descricao: 'Esta arma única é um item puramente mundano e tecnológico, inventado e forjado pelas mentes geniais e doentias de demônios. Ela é composta por diversos canos de mosquete, que giram por meio de engrenagens quando o usuário puxa uma alavanca. O artefato é pesado e desajeitado, mas quando acionado, dispara todos os seus canos, banhando os alvos com uma chuva de chumbo. O Artefato de Cross é uma arma de fogo de duas mãos (dano 2d12, crítico 19/x3, alcance médio, perfuração) que fornece +10 nos testes de ataque e, em caso de acerto, causa +1d12 pontos de dano para cada 2 pontos pelos quais o resultado do ataque passar a Defesa do alvo. Recarregá-lo é uma ação padrão.\n\nAtualmente está em posse do Senhor Porrada, que vaga pelos ermos para mantê-lo longe da civilização.',
+    fonte: 'Guia de NPCs', pagina: 48,
+  },
+  {
+    id: 'carthalkan', nome: 'Carthalkan, a Espada Cristalina',
+    descricao: 'Esta espada longa atroz e pungente é feita de um cristal translúcido. Empunhá-la traz uma sensação estranha, pois ela não tem o peso de materiais comuns, como metal ou madeira. Quando brandida por um herdeiro da família Sharpblade, a arma emite uma luz límpida e revela todos os seus poderes: torna-se uma espada longa atroz pungente ameaçadora magnífica, que tem dano base 4d8.\n\nAtualmente em posse da Rainha-Imperatriz Shivara, junto com a Coroa Imperial.',
+    fonte: 'Guia de NPCs', pagina: 44,
+  },
+  {
+    id: 'coroa-imperial', nome: 'Coroa Imperial',
+    descricao: 'Símbolo do trono do Reinado, esta coroa é usada pelos Reis-Imperadores há séculos. Ao longo das gerações, foi imbuída pela força de cada um dos monarcas que a usou, até se tornar um artefato capaz de auxiliar o regente na tarefa de guiar a humanidade. O usuário da Coroa Imperial recebe +2 em Sabedoria e Carisma (cumulativo com outros itens), aplica seu Carisma na Defesa e em testes de resistência e recebe imunidade a encantamento. Como um artefato, a Coroa Imperial não pode ser danificada por meios mundanos. A única maneira de destruí-la é roubá-la e escondê-la em uma masmorra. Se nenhum herói resgatar a Coroa dentro de um ano e um dia, ela será reduzida a pó.\n\nAtualmente em posse da Rainha-Imperatriz Shivara, junto com Carthalkan, a Espada Cristalina.',
+    fonte: 'Guia de NPCs', pagina: 44,
+  },
+  {
+    id: 'coroa-de-allihanna', nome: 'Coroa de Allihanna',
+    descricao: 'Este artefato, criado pela própria Deusa da Natureza, tem a aparência de uma coroa de madeira e vinhas. Concede Força +3, Constituição +3 e redução de dano 20.',
+    fonte: 'Guia de NPCs', pagina: 31,
+  },
+  {
+    id: 'kumshrak', nome: 'Kum\'shrak',
+    descricao: 'Arma ritualística empunhada apenas pelos melhores guerreiros duyshidakk, um kum\'shrak é uma arma especial que extrai poder de suas vítimas. Seguindo as leis de Lamnor e do Akzath, por ser empregado como uma ferramenta de "morte" cujo único propósito é pôr "fim" à vida, o kum\'shrak está próximo das "trevas". Assim, conforme é empunhada em combate, a arma se torna cada vez mais escura, afiada e avessa à vida, até alcançar um ponto em que se torna capaz de ferir qualquer ser vivo que a toque. Mesmo seu proprietário pode ser ferido pelo kum\'shrak; se a arma não sentir que será usada em combate, pode manifestar seu poder sombrio. Se for usado como ferramenta, o kum\'shrak pode impor uma penalidade de –5 em testes, se for usado para cortar alimentos, pode envenená-los, se o portador estiver com medo ou fugir, pode perder 1d4 pontos de vida e assim por diante.\n\nUm kum\'shrak recém-criado é um osso grande, que funciona como uma arma improvisada (–2 em ataques, dano 1d6, crítico x2, impacto, 1 espaço, T$ –). Quando mata pela primeira vez, torna-se uma clava. Quando mata cinco vítimas, torna-se um machado de batalha. Ao fazer sua décima vítima, o kum\'shrak recebe uma melhoria escolhida por seu portador. Depois disso, sempre que dobra seu número de mortes (20, 40 etc.), adquire uma nova melhoria, até um máximo de quatro melhorias. Além das melhorias normais, um kum\'shrak tem acesso a três melhorias exclusivas: Eviscerador (uma criatura atingida fica sangrando, Fort CD For evita), Necrótico (uma criatura atingida fica fraca, Fort CD For evita) e Peçonhento (uma criatura atingida perde 1d6 pontos de vida por veneno).',
+    fonte: 'Guia de NPCs', pagina: 36,
+  },
+  {
+    id: 'gemas-eternas', nome: 'Gemas Eternas',
+    descricao: 'Esta joia é formada por uma correntinha de mitral, adornada por safiras, esmeraldas, rubis e diamantes que emitem luz própria, brilhando com todas as cores do arco-íris. A beleza das Gemas Eternas só é rivalizada por seu poder. O usuário recebe +2 em Carisma, +5 na Defesa e 1 ponto de mana extra por nível (após um dia de uso). Se possuir a capacidade de lançar magias arcanas, a CD de suas magias aumenta em +2.\n\nAtualmente em posse de Thantalla.',
+    fonte: 'Guia de NPCs', pagina: 59,
   },
 
 ];

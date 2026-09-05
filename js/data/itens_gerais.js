@@ -4,7 +4,12 @@
    Capítulo 3: Equipamento, pp. 154-163 (Itens Gerais)
 
    Cada entrada:
-   { id, nome, categoria, preco, espacos, descricao }
+   { id, nome, categoria, preco, espacos, descricao, fonte?, pagina? }
+
+   fonte/pagina: OPCIONAIS — ausentes em todo item do livro-base (a
+   badge de fonte assume 'Tormenta 20' quando o campo não existe, ver
+   renderItemGeralCard/abrirDetalheEquip em compendio.js). Preparado
+   pra próximos suplementos, mesmo sem nenhum item assim ainda.
 
    categoria: 'aventura' | 'ferramentas' | 'vestuario' | 'esotericos' |
    'alquimicos-preparados' | 'alquimicos-catalisadores' |
